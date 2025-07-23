@@ -1,9 +1,20 @@
-import Image from "next/image";
+"use client";
+import { useState } from "react";
+import Header from "../components/Header";
+import HeroImage from "../components/HeroImage";
+import PropertyFilters from "../components/PropertyFilters";
+import PropertyList from "../components/PropertyList";
 
 export default function Home() {
+  const [activeTab, setActiveTab] = useState("comprar");
   return (
-    <main className="flex min-h-screen items-center justify-center">
-      <h1 className="text-4xl font-bold text-primary">Título</h1>
-    </main>
+    <div className="min-h-screen bg-background">
+      <Header />
+      <HeroImage />
+      <div className="max-w-7xl mx-auto">
+        <PropertyFilters activeTab={activeTab} onTabChange={setActiveTab} />
+        <PropertyList activeTab={activeTab} />
+      </div>
+    </div>
   );
 }
