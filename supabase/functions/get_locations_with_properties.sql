@@ -1,3 +1,5 @@
+DROP FUNCTION IF EXISTS get_locations_with_properties(TEXT, TEXT);
+
 CREATE OR REPLACE FUNCTION get_locations_with_properties(
   p_agency_id TEXT,
   p_query TEXT DEFAULT NULL
@@ -32,7 +34,7 @@ BEGIN
   
   -- Bairros
   SELECT DISTINCT 
-    ROW_NUMBER() OVER (ORDER BY ll.neighborhood) + 10000 as id,
+    (ROW_NUMBER() OVER (ORDER BY ll.neighborhood) + 10000)::INTEGER as id,
     ll.neighborhood as name,
     'neighborhood'::TEXT as type,
     c.name as city_name,

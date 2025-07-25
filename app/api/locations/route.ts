@@ -40,7 +40,6 @@ export async function GET(req: NextRequest) {
           });
 
         if (error) {
-          console.error('RPC Error:', error);
           throw new Error('RPC function not available');
         }
 
@@ -57,7 +56,6 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json(groupedData);
       } catch (rpcError) {
-        console.log('Falling back to original approach...');
         
         const { data: listings, error: listingsError } = await supabaseAgent
           .from("listing")

@@ -2,6 +2,7 @@ export type FetchListingsParams = {
   cityId: number;
   transactionType: "sale" | "rent";
   tipo?: "Casa" | "Apartamento";
+  bairro?: string;
   limit?: number;
   offset?: number;
 };

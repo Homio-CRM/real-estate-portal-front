@@ -29,6 +29,7 @@ function ResultadosContent() {
         cityId: validation.cityId!,
         transactionType,
         tipo: filters.tipo as "Casa" | "Apartamento",
+        bairro: filters.bairro,
         limit: 30,
         offset: 0,
       });

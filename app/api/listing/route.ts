@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const transactionType = searchParams.get("transactionType");
   const cityId = searchParams.get("cityId");
+  const bairro = searchParams.get("bairro");
   const limit = Number(searchParams.get("limit") || 30);
   const offset = Number(searchParams.get("offset") || 0);
 
@@ -14,10 +15,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
   }
 
-  const { data: locations, error: locError } = await supabaseAgent
+  let query = supabaseAgent
     .from("listing_location")
     .select("listing_id")
     .eq("city_id", Number(cityId));
+
+  if (bairro) {
+    query = query.eq("neighborhood", bairro);
+  }
+
+  const { data: locations, error: locError } = await query;
   if (locError) {
     return NextResponse.json({ error: locError.message }, { status: 500 });
   }
