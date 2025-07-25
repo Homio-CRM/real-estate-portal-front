@@ -1,49 +1,62 @@
 "use client";
 
 type PropertyFiltersProps = {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  filters: {
+    tipo: string;
+    localizacao: string;
+    operacao: string;
+  };
+  onFilterChange: (key: string, value: string) => void;
+  onSearch: () => void;
 };
 
-const tabs = [
-  { label: "Comprar", value: "comprar" },
-  { label: "Alugar", value: "alugar" },
-];
-
-export default function PropertyFilters({ activeTab, onTabChange }: PropertyFiltersProps) {
+export default function PropertyFilters({ filters, onFilterChange, onSearch }: PropertyFiltersProps) {
   return (
-    <section className="w-full bg-background py-6 px-4 rounded-b-3xl shadow-sm">
-      <div className="flex gap-8 border-b border-border mb-6">
-        {tabs.map((tab) => (
-          <button
-            key={tab.value}
-            className={`pb-2 px-2 text-lg font-medium transition-colors ${activeTab === tab.value ? "text-primary border-b-2 border-primary" : "text-foreground border-b-2 border-transparent"}`}
-            onClick={() => onTabChange(tab.value)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-      <div className="flex flex-col md:flex-row gap-4 items-center">
-        <div className="flex flex-col w-full md:w-1/4">
-          <label className="mb-1 text-sm text-muted-foreground">Tipo de imóvel</label>
-          <select className="border border-border rounded px-3 py-2 bg-background text-foreground">
-            <option>Todos os imóveis</option>
-            <option>Casa</option>
-            <option>Apartamento</option>
-            <option>Terreno</option>
-          </select>
-        </div>
-        <div className="flex flex-col w-full md:w-2/4">
+    <section className="w-full bg-background py-10 px-4 rounded-b-3xl shadow-sm flex justify-center items-center min-h-[60vh]">
+      <form className="w-full max-w-md flex flex-col items-center gap-4" onSubmit={e => { e.preventDefault(); onSearch(); }}>
+        <div className="flex flex-col w-full">
           <label className="mb-1 text-sm text-muted-foreground">Onde deseja morar?</label>
           <input
             type="text"
             placeholder="Digite o nome da rua, bairro ou cidade"
             className="border border-border rounded px-3 py-2 bg-background text-foreground"
+            value={filters.localizacao}
+            onChange={e => onFilterChange("localizacao", e.target.value)}
           />
         </div>
-        <button className="mt-6 md:mt-5 h-12 px-8 rounded bg-primary text-primary-foreground font-semibold text-base">Buscar</button>
-      </div>
+        <div className="flex flex-row w-full gap-4">
+          <div className="flex flex-col w-1/2">
+            <label className="mb-1 text-sm text-muted-foreground">Operação</label>
+            <select
+              className="border border-border rounded px-3 py-2 bg-background text-foreground"
+              value={filters.operacao}
+              onChange={e => onFilterChange("operacao", e.target.value)}
+            >
+              <option value="comprar">Comprar</option>
+              <option value="alugar">Alugar</option>
+            </select>
+          </div>
+          <div className="flex flex-col w-1/2">
+            <label className="mb-1 text-sm text-muted-foreground">Tipo de imóvel</label>
+            <select
+              className="border border-border rounded px-3 py-2 bg-background text-foreground"
+              value={filters.tipo}
+              onChange={e => onFilterChange("tipo", e.target.value)}
+            >
+              <option value="">Todos os imóveis</option>
+              <option value="Casa">Casa</option>
+              <option value="Apartamento">Apartamento</option>
+              <option value="Terreno">Terreno</option>
+            </select>
+          </div>
+        </div>
+        <button
+          className="mt-4 h-12 w-full rounded bg-primary text-primary-foreground font-semibold text-base"
+          type="submit"
+        >
+          Buscar
+        </button>
+      </form>
     </section>
   );
 } 

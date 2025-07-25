@@ -1,19 +1,35 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Header from "../components/Header";
-import HeroImage from "../components/HeroImage";
 import PropertyFilters from "../components/PropertyFilters";
-import PropertyList from "../components/PropertyList";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState("comprar");
+  const router = useRouter();
+  const [filters, setFilters] = useState({
+    tipo: "",
+    localizacao: "",
+    operacao: "comprar",
+  });
+
+  function handleFilterChange(key: string, value: string) {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function handleSearch() {
+    const params = new URLSearchParams(filters as Record<string, string>).toString();
+    router.push(`/resultados?${params}`);
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <HeroImage />
       <div className="max-w-7xl mx-auto">
-        <PropertyFilters activeTab={activeTab} onTabChange={setActiveTab} />
-        <PropertyList activeTab={activeTab} />
+        <PropertyFilters
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onSearch={handleSearch}
+        />
       </div>
     </div>
   );

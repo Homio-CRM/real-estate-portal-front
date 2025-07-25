@@ -14,7 +14,11 @@ type Property = {
 };
 
 type PropertyListProps = {
-  activeTab: string;
+  filters: {
+    tipo: string;
+    localizacao: string;
+    operacao: string;
+  };
 };
 
 const mockProperties: Property[] = [
@@ -27,7 +31,7 @@ const mockProperties: Property[] = [
     parking: 2,
     price: "R$ 299.000",
     iptu: "R$ 183",
-    image: "/public/house1.jpg",
+    image: "/house1.jpg",
   },
   {
     title: "Loteamento Green Ville, Atibaia",
@@ -37,7 +41,7 @@ const mockProperties: Property[] = [
     bathrooms: 4,
     parking: 5,
     price: "Aluguel de R$ 11.000/mês",
-    image: "/public/house2.jpg",
+    image: "/house2.jpg",
     forRent: true,
   },
   {
@@ -48,7 +52,7 @@ const mockProperties: Property[] = [
     bathrooms: 3,
     parking: 3,
     price: "R$ 195.000",
-    image: "/public/house3.jpg",
+    image: "/house3.jpg",
   },
   {
     title: "Mansões Recreio Estrela",
@@ -59,17 +63,36 @@ const mockProperties: Property[] = [
     parking: 3,
     price: "R$ 450.000",
     iptu: "R$ 700",
-    image: "/public/house4.jpg",
+    image: "/house4.jpg",
   },
 ];
 
-export default function PropertyList({ activeTab }: PropertyListProps) {
+export type { PropertyListProps };
+export function PropertyList({ filters }: PropertyListProps) {
   const filtered = mockProperties.filter((property) => {
-    if (activeTab === "comprar") {
-      return !property.forRent;
+    if (filters.operacao === "comprar") {
+      if (property.forRent) return false;
     }
-    if (activeTab === "alugar") {
-      return property.forRent;
+    if (filters.operacao === "alugar") {
+      if (!property.forRent) return false;
+    }
+    if (filters.tipo && filters.tipo !== "") {
+      if (
+        filters.tipo === "Casa" && property.title.toLowerCase().indexOf("casa") === -1 && property.address.toLowerCase().indexOf("casa") === -1
+      ) return false;
+      if (
+        filters.tipo === "Apartamento" && property.title.toLowerCase().indexOf("apartamento") === -1 && property.address.toLowerCase().indexOf("apartamento") === -1
+      ) return false;
+      if (
+        filters.tipo === "Terreno" && property.title.toLowerCase().indexOf("terreno") === -1 && property.address.toLowerCase().indexOf("terreno") === -1
+      ) return false;
+    }
+    if (filters.localizacao && filters.localizacao !== "") {
+      const loc = filters.localizacao.toLowerCase();
+      if (
+        property.address.toLowerCase().indexOf(loc) === -1 &&
+        property.title.toLowerCase().indexOf(loc) === -1
+      ) return false;
     }
     return true;
   });
