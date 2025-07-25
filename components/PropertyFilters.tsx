@@ -1,27 +1,17 @@
 "use client";
 
-type PropertyFiltersProps = {
-  filters: {
-    tipo: string;
-    localizacao: string;
-    operacao: string;
-  };
-  onFilterChange: (key: string, value: string) => void;
-  onSearch: () => void;
-};
+import CityAutocomplete from "./CityAutocomplete";
+import { PropertyFiltersProps } from "../types/components";
 
 export default function PropertyFilters({ filters, onFilterChange, onSearch }: PropertyFiltersProps) {
   return (
     <section className="w-full bg-background py-10 px-4 rounded-b-3xl shadow-sm flex justify-center items-center min-h-[60vh]">
       <form className="w-full max-w-md flex flex-col items-center gap-4" onSubmit={e => { e.preventDefault(); onSearch(); }}>
         <div className="flex flex-col w-full">
-          <label className="mb-1 text-sm text-muted-foreground">Onde deseja morar?</label>
-          <input
-            type="text"
-            placeholder="Digite o nome da rua, bairro ou cidade"
-            className="border border-border rounded px-3 py-2 bg-background text-foreground"
+          <label className="mb-1 text-sm text-muted-foreground">Cidade</label>
+          <CityAutocomplete
             value={filters.localizacao}
-            onChange={e => onFilterChange("localizacao", e.target.value)}
+            onChange={value => onFilterChange("localizacao", value)}
           />
         </div>
         <div className="flex flex-row w-full gap-4">

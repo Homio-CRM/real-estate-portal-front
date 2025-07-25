@@ -106,4 +106,11 @@ export type ListingFeatures = {
   marina?: boolean;
   hammock_area?: boolean;
   orchid_garden?: boolean;
+};
+
+export type PropertyCard = Listing & ListingDetails & ListingLocation & {
+  image?: string;
+  forRent?: boolean;
+  price?: string;
+  iptu?: string;
 }; 

@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Header from "../components/Header";
 import PropertyFilters from "../components/PropertyFilters";
+import { buildResultsUrl } from "../lib/navigation";
 
 export default function Home() {
   const router = useRouter();
@@ -17,8 +18,8 @@ export default function Home() {
   }
 
   function handleSearch() {
-    const params = new URLSearchParams(filters as Record<string, string>).toString();
-    router.push(`/resultados?${params}`);
+    const url = buildResultsUrl(filters as Record<string, string>);
+    router.push(url);
   }
 
   return (
