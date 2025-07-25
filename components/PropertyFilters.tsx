@@ -1,19 +1,36 @@
 "use client";
 
-import CityAutocomplete from "./CityAutocomplete";
+import { useState, useEffect } from "react";
+import AutocompleteField from "./AutocompleteField";
 import { PropertyFiltersProps } from "../types/components";
 
 export default function PropertyFilters({ filters, onFilterChange, onSearch }: PropertyFiltersProps) {
+  const [isLocationValid, setIsLocationValid] = useState(false);
+
+  useEffect(() => {
+    const handleNeighborhoodSelected = (event: CustomEvent) => {
+      const { cityId, neighborhoodName } = event.detail;
+      onFilterChange("localizacao", String(cityId));
+      onFilterChange("bairro", neighborhoodName);
+    };
+
+    window.addEventListener('neighborhoodSelected', handleNeighborhoodSelected as EventListener);
+    
+    return () => {
+      window.removeEventListener('neighborhoodSelected', handleNeighborhoodSelected as EventListener);
+    };
+  }, [onFilterChange]);
   return (
     <section className="w-full bg-background py-10 px-4 rounded-b-3xl shadow-sm flex justify-center items-center min-h-[60vh]">
       <form className="w-full max-w-md flex flex-col items-center gap-4" onSubmit={e => { e.preventDefault(); onSearch(); }}>
-        <div className="flex flex-col w-full">
-          <label className="mb-1 text-sm text-muted-foreground">Cidade</label>
-          <CityAutocomplete
-            value={filters.localizacao}
-            onChange={value => onFilterChange("localizacao", value)}
-          />
-        </div>
+        <AutocompleteField
+          value={filters.localizacao}
+          onChange={value => onFilterChange("localizacao", value)}
+          onValidityChange={setIsLocationValid}
+          placeholder="Onde deseja morar?"
+          label="Localização"
+          type="location"
+        />
         <div className="flex flex-row w-full gap-4">
           <div className="flex flex-col w-1/2">
             <label className="mb-1 text-sm text-muted-foreground">Operação</label>
@@ -41,8 +58,13 @@ export default function PropertyFilters({ filters, onFilterChange, onSearch }: P
           </div>
         </div>
         <button
-          className="mt-4 h-12 w-full rounded bg-primary text-primary-foreground font-semibold text-base"
+          className={`mt-4 h-12 w-full rounded font-semibold text-base ${
+            isLocationValid
+              ? "bg-primary text-primary-foreground" 
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          }`}
           type="submit"
+          disabled={!isLocationValid}
         >
           Buscar
         </button>

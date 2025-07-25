@@ -11,12 +11,15 @@ export type PropertyCarouselProps = {
   properties: PropertyCard[];
 };
 
-export type CityAutocompleteProps = {
-  value: string;
-  onChange: (value: string) => void;
-};
-
 export type CityAutocomplete = {
   id: number;
   name: string;
+};
+
+export type NeighborhoodAutocomplete = {
+  id: number;
+  name: string;
+  type: string;
+  city_name: string;
+  city_id?: number;
 }; 

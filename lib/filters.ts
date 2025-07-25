@@ -4,6 +4,7 @@ export type Filters = {
   tipo: string;
   localizacao: string;
   operacao: string;
+  bairro?: string;
 };
 
 export function parseFiltersFromSearchParams(searchParams: URLSearchParams): Filters {
@@ -11,6 +12,7 @@ export function parseFiltersFromSearchParams(searchParams: URLSearchParams): Fil
     tipo: searchParams.get("tipo") || "",
     localizacao: searchParams.get("localizacao") || "",
     operacao: searchParams.get("operacao") || "comprar",
+    bairro: searchParams.get("bairro") || "",
   };
 }
 

@@ -3,7 +3,7 @@ import { supabaseAgent } from "../../../lib/supabaseAgent";
 import { ListingLocationResponse, ListingResponse, ListingDetailsResponse } from "../../../types/api";
 
 export async function GET(req: NextRequest) {
-  const agencyId = process.env.NEXT_PUBLIC_LOCATION_ID!;
+  const agencyId = process.env.LOCATION_ID!;
   const { searchParams } = new URL(req.url);
   const transactionType = searchParams.get("transactionType");
   const cityId = searchParams.get("cityId");

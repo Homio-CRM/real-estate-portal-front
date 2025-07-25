@@ -11,6 +11,7 @@ export default function Home() {
     tipo: "",
     localizacao: "",
     operacao: "comprar",
+    bairro: "",
   });
 
   function handleFilterChange(key: string, value: string) {
