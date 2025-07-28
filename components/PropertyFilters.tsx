@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import AutocompleteField from "./AutocompleteField";
 import { PropertyFiltersProps } from "../types/components";
 
+
 export default function PropertyFilters({ filters, onFilterChange, onSearch }: PropertyFiltersProps) {
   const [isLocationValid, setIsLocationValid] = useState(false);
+  const [locationFieldKey, setLocationFieldKey] = useState(0);
 
   useEffect(() => {
     const handleNeighborhoodSelected = (event: CustomEvent) => {
@@ -22,8 +24,13 @@ export default function PropertyFilters({ filters, onFilterChange, onSearch }: P
   }, [onFilterChange]);
   return (
     <section className="w-full bg-background py-10 px-4 rounded-b-3xl shadow-sm flex justify-center items-center min-h-[60vh]">
-      <form className="w-full max-w-md flex flex-col items-center gap-4" onSubmit={e => { e.preventDefault(); onSearch(); }}>
+      <form className="w-full max-w-md flex flex-col items-center gap-4" onSubmit={e => { 
+        e.preventDefault(); 
+        setLocationFieldKey(prev => prev + 1);
+        onSearch(); 
+      }}>
         <AutocompleteField
+          key={locationFieldKey}
           value={filters.localizacao}
           onChange={value => onFilterChange("localizacao", value)}
           onValidityChange={setIsLocationValid}
