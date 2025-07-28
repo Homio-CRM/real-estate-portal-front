@@ -50,12 +50,12 @@ export async function GET(req: NextRequest) {
         }
 
         const groupedData = {
-          neighborhoods: data.filter((item: any) => item.type === 'neighborhood'),
-          cities: data.filter((item: any) => item.type === 'city')
+          neighborhoods: data.filter((item: { type: string }) => item.type === 'neighborhood'),
+          cities: data.filter((item: { type: string }) => item.type === 'city')
         };
 
         return NextResponse.json(groupedData);
-      } catch (rpcError) {
+      } catch {
         
         const { data: listings, error: listingsError } = await supabaseAgent
           .from("listing")

@@ -12,4 +12,10 @@ export async function fetchListings({ cityId, transactionType, tipo, bairro, lim
   const res = await fetch(`/api/listing?${params.toString()}`);
   if (!res.ok) return [];
   return await res.json();
+}
+
+export async function fetchListingById(listingId: string) {
+  const res = await fetch(`/api/listing/${listingId}`);
+  if (!res.ok) return null;
+  return await res.json();
 } 

@@ -108,9 +108,10 @@ export type ListingFeatures = {
   orchid_garden?: boolean;
 };
 
-export type PropertyCard = Listing & ListingDetails & ListingLocation & {
+export type PropertyCard = Listing & ListingDetails & ListingLocation & ListingFeatures & {
   image?: string;
   forRent?: boolean;
   price?: string;
   iptu?: string;
+  media?: MediaItem[];
 }; 
