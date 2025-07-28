@@ -69,7 +69,22 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
               <option value="">Todos os imóveis</option>
               <option value="Casa">Casa</option>
               <option value="Apartamento">Apartamento</option>
-              <option value="Terreno">Terreno</option>
+              <option value="Casa de Condominio">Casa de Condominio</option>
+              <option value="Cobertura">Cobertura</option>
+              <option value="Flat">Flat</option>
+              <option value="Kitnet/Conjugado">Kitnet/Conjugado</option>
+              <option value="Lote/Terreno">Lote/Terreno</option>
+              <option value="Sobrado">Sobrado</option>
+              <option value="Edificio Residencial">Edificio Residencial</option>
+              <option value="Fazenda/Sítios/Chácaras">Fazenda/Sítios/Chácaras</option>
+              <option value="Consultório">Consultório</option>
+              <option value="Galpão/Depósito/Armazém">Galpão/Depósito/Armazém</option>
+              <option value="Imóvel Comercial">Imóvel Comercial</option>
+              <option value="Lote/ Terreno">Lote/ Terreno</option>
+              <option value="Ponto">Ponto</option>
+              <option value="Comercial/Loja/Box">Comercial/Loja/Box</option>
+              <option value="sala/conjunto">sala/conjunto</option>
+              <option value="Prédio/Edifício Inteiro">Prédio/Edifício Inteiro</option>
             </select>
           </div>
           
