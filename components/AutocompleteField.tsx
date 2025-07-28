@@ -7,6 +7,7 @@ type AutocompleteFieldProps = {
   value: string;
   onChange: (value: string) => void;
   onValidityChange?: (isValid: boolean) => void;
+  onItemSelect?: (item: { name: string; type: string; id: number }) => void;
   placeholder: string;
   label: string;
   type: "city" | "neighborhood" | "location";
@@ -20,6 +21,7 @@ export default function AutocompleteField({
   value, 
   onChange, 
   onValidityChange, 
+  onItemSelect,
   placeholder, 
   label, 
   type, 
@@ -48,18 +50,15 @@ export default function AutocompleteField({
       return;
     }
     
-    // Se o usuário já selecionou algo, não sobrescrever
     if (userSelected) {
       return;
     }
     
-    // Se o tipo é neighborhood, não tentar buscar por ID pois estamos usando city_id
     if (type === "neighborhood") {
       return;
     }
     
     const fetchItemName = async () => {
-      // Para busca por ID, sempre usar type "city" pois a API só suporta isso
       const item = await fetchLocationById(value, "city");
       if (item) {
         setInput(item.name);
@@ -70,7 +69,7 @@ export default function AutocompleteField({
     fetchItemName();
   }, [value, onValidityChange, type, userSelected]);
 
-    useEffect(() => {
+  useEffect(() => {
     if (!input) {
       setLocationData({ neighborhoods: [], cities: [] });
       setError(null);
@@ -91,8 +90,8 @@ export default function AutocompleteField({
       return;
     }
 
-    // Se já temos dados iniciais, filtrar do cache
-    if (hasInitialDataRef.current && input.length > 1) {
+    // Se já temos dados em cache, filtrar localmente primeiro
+    if (hasInitialDataRef.current && cachedDataRef.current) {
       const filteredData = {
         neighborhoods: cachedDataRef.current.neighborhoods.filter((item: NeighborhoodAutocomplete) => 
           item.name.toLowerCase().includes(input.toLowerCase())
@@ -101,61 +100,71 @@ export default function AutocompleteField({
           item.name.toLowerCase().includes(input.toLowerCase())
         )
       };
+      
       setLocationData(filteredData);
-      setError(null);
-      return;
+      setShowOptions(true);
+      
+      // Se encontramos resultados no cache, não fazer nova requisição
+      if (filteredData.neighborhoods.length > 0 || filteredData.cities.length > 0) {
+        return;
+      }
     }
 
-    // Se é a primeira letra ou não temos dados iniciais, fazer requisição
-    if (input.length === 1 || !hasInitialDataRef.current) {
+    // Só fazer nova requisição se não temos dados ou se o cache não tem resultados
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    debounceRef.current = setTimeout(async () => {
       setLoading(true);
       setError(null);
-      setSelectedItem(null);
-      onValidityChange?.(false);
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(async () => {
-        try {
-          const data = await fetchLocationsByQuery(input);
-          setLocationData(data);
-          cachedDataRef.current = data;
-          hasInitialDataRef.current = true;
-          setError(null);
-        } catch (error: unknown) {
-          setLocationData({ neighborhoods: [], cities: [] });
-          setError(error instanceof Error ? error.message : "Erro ao buscar opções");
-          onValidityChange?.(false);
-        } finally {
-          setLoading(false);
-        }
-      }, 300);
-    }
-  }, [input, onValidityChange, type, cityId]);
+
+      try {
+        const result = await fetchLocationsByQuery(input);
+
+        setLocationData(result);
+        cachedDataRef.current = result;
+        hasInitialDataRef.current = true;
+        setShowOptions(true);
+      } catch (err) {
+        setError("Erro ao buscar localizações");
+        setLocationData({ neighborhoods: [], cities: [] });
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [input, type, cityId]);
 
   function handleSelect(item: CityAutocomplete | NeighborhoodAutocomplete) {
     setInput(item.name);
     setSelectedItem(item);
     setUserSelected(true);
+    setShowOptions(false);
     
-    if ('type' in item && item.type === 'neighborhood') {
-      // Para bairros, usar o city_id como identificador
-      const neighborhoodItem = item as NeighborhoodAutocomplete;
-      if (neighborhoodItem.city_id) {
-        onChange(String(neighborhoodItem.city_id));
-        // Disparar evento para atualizar o campo bairro
-        const event = new CustomEvent('neighborhoodSelected', {
-          detail: {
-            cityId: neighborhoodItem.city_id,
-            neighborhoodName: item.name
-          }
-        });
-        window.dispatchEvent(event);
-      }
-    } else {
-      // Para cidades, usar o ID normalmente
+    if (type === "neighborhood") {
       onChange(String(item.id));
+      
+      onItemSelect?.({
+        name: item.name,
+        type: 'neighborhood',
+        id: item.id
+      });
+    } else {
+      onChange(String(item.id));
+      
+      onItemSelect?.({
+        name: item.name,
+        type: 'city',
+        id: item.id
+      });
     }
     
-    setShowOptions(false);
     onValidityChange?.(true);
   }
 
@@ -169,6 +178,7 @@ export default function AutocompleteField({
   }
 
   const hasOptions = locationData.cities.length > 0 || locationData.neighborhoods.length > 0;
+  const isSelected = selectedItem !== null;
 
   return (
     <div className={`flex flex-col w-full ${className}`}>
@@ -176,11 +186,19 @@ export default function AutocompleteField({
       <div className="relative w-full">
         <input
           type="text"
-          className={`w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${inputClassName}`}
+          className={`w-full border rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary text-sm transition-colors ${
+            isSelected 
+              ? "border-primary bg-primary/5" 
+              : "border-gray-300 focus:border-primary"
+          } ${inputClassName}`}
           placeholder={placeholder}
           value={input}
           onChange={handleInputChange}
-          onFocus={() => setShowOptions(true)}
+          onFocus={() => {
+            if (!isSelected) {
+              setShowOptions(true);
+            }
+          }}
           onBlur={() => {
             setTimeout(() => {
               setShowOptions(false);
@@ -196,7 +214,10 @@ export default function AutocompleteField({
           <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-auto shadow-lg">
             {locationData.neighborhoods.length > 0 && (
               <div>
-                <div className="px-3 py-2 text-sm font-semibold text-gray-600 bg-gray-50 border-b border-gray-200">
+                <div className="px-3 py-2 text-sm font-semibold text-primary bg-primary/5 border-b border-gray-200 flex items-center gap-2">
+                  <div className="w-4 h-4 bg-primary rounded-sm flex items-center justify-center">
+                    <div className="w-2 h-2 bg-white rounded-sm"></div>
+                  </div>
                   Bairros
                 </div>
                 <ul>
@@ -214,7 +235,10 @@ export default function AutocompleteField({
             )}
             {locationData.cities.length > 0 && (
               <div>
-                <div className="px-3 py-2 text-sm font-semibold text-gray-600 bg-gray-50 border-b border-gray-200">
+                <div className="px-3 py-2 text-sm font-semibold text-primary bg-primary/5 border-b border-gray-200 flex items-center gap-2">
+                  <div className="w-4 h-4 bg-primary rounded-sm flex items-center justify-center">
+                    <div className="w-2 h-2 bg-white rounded-sm"></div>
+                  </div>
                   Cidades
                 </div>
                 <ul>
@@ -233,7 +257,7 @@ export default function AutocompleteField({
           </div>
         )}
         {loading && (
-          <div className="absolute right-3 top-3 w-4 h-4 animate-spin border-2 border-blue-600 border-t-transparent rounded-full"></div>
+          <div className="absolute right-3 top-3 w-4 h-4 animate-spin border-2 border-primary border-t-transparent rounded-full"></div>
         )}
         {error && showOptions && (
           <div className="absolute z-10 w-full bg-white border border-red-500 rounded-lg mt-1 p-3 text-red-600 text-sm">
