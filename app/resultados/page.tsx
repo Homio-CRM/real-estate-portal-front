@@ -39,34 +39,44 @@ function ResultadosContent() {
     quartos: "",
     banheiros: "",
     vagas: "",
+    precoMin: "",
+    precoMax: "",
+    areaMin: "",
+    areaMax: "",
+    anoMin: "",
+    anoMax: "",
+    caracteristicas: [] as string[],
   });
 
-  useEffect(() => {
+  const fetchResults = async (currentFilters = filters) => {
     setLoading(true);
-    async function fetchResults() {
-      const validation = validateFilters(initialFilters);
-      if (!validation.isValid) {
-        setResults([]);
-        setLoading(false);
-        return;
-      }
-
-      const transactionType = getTransactionType(initialFilters.operacao);
-      const listings = await fetchListings({
-        cityId: validation.cityId!,
-        transactionType,
-        tipo: initialFilters.tipo as "Casa" | "Apartamento",
-        bairro: initialFilters.bairro,
-        limit: 30,
-        offset: 0,
-      });
-      setResults(listings);
+    const validation = validateFilters(initialFilters);
+    if (!validation.isValid) {
+      setResults([]);
       setLoading(false);
+      return;
     }
+
+    const transactionType = getTransactionType(currentFilters.operacao || initialFilters.operacao);
+    
+    const listings = await fetchListings({
+      cityId: validation.cityId!,
+      transactionType,
+      tipo: currentFilters.tipo ? (currentFilters.tipo as "Casa" | "Apartamento") : undefined,
+      bairro: initialFilters.bairro,
+      limit: 100,
+      offset: 0,
+    });
+    
+    setResults(listings);
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchResults();
   }, [initialFilters]);
 
-  const handleFilterChange = (key: string, value: string) => {
+  const handleFilterChange = (key: string, value: string | string[]) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
@@ -77,22 +87,103 @@ function ResultadosContent() {
       quartos: "",
       banheiros: "",
       vagas: "",
+      precoMin: "",
+      precoMax: "",
+      areaMin: "",
+      areaMax: "",
+      anoMin: "",
+      anoMax: "",
+      caracteristicas: [],
     });
   };
 
   const handleSearch = () => {
-    // Implementar busca com novos filtros
-    console.log("Buscar com filtros:", filters);
+    fetchResults(filters);
   };
 
   const filteredResults = results.filter(property => {
-    if (filters.tipo) {
+    // Se não há filtros aplicados, mostrar todos os resultados
+    const hasActiveFilters = filters.tipo || filters.operacao || filters.quartos || filters.banheiros || 
+                           filters.vagas || filters.precoMin || filters.precoMax || filters.areaMin || 
+                           filters.areaMax || filters.anoMin || filters.anoMax || filters.caracteristicas.length > 0;
+    
+    if (!hasActiveFilters) {
+      return true;
+    }
+    
+    if (filters.tipo && filters.tipo !== "") {
       const translatedType = translatePropertyType(property.property_type);
       if (translatedType !== filters.tipo) return false;
     }
-    if (filters.quartos && property.bedroom_count !== parseInt(filters.quartos)) return false;
-    if (filters.banheiros && property.bathroom_count !== parseInt(filters.banheiros)) return false;
-    if (filters.vagas && property.garage_count !== parseInt(filters.vagas)) return false;
+    
+    if (filters.operacao && filters.operacao !== "") {
+      const isForRent = property.forRent;
+      if (filters.operacao === "comprar" && isForRent) return false;
+      if (filters.operacao === "alugar" && !isForRent) return false;
+    }
+    
+    if (filters.quartos && filters.quartos !== "") {
+      const quartos = parseInt(filters.quartos);
+      if (filters.quartos === "5+" && (property.bedroom_count || 0) < 5) return false;
+      if (filters.quartos !== "5+" && property.bedroom_count !== quartos) return false;
+    }
+    
+    if (filters.banheiros && filters.banheiros !== "") {
+      const banheiros = parseInt(filters.banheiros);
+      if (filters.banheiros === "5+" && (property.bathroom_count || 0) < 5) return false;
+      if (filters.banheiros !== "5+" && property.bathroom_count !== banheiros) return false;
+    }
+    
+    if (filters.vagas && filters.vagas !== "") {
+      const vagas = parseInt(filters.vagas);
+      if (filters.vagas === "5+" && (property.garage_count || 0) < 5) return false;
+      if (filters.vagas !== "5+" && property.garage_count !== vagas) return false;
+    }
+    
+    if (filters.precoMin && filters.precoMin !== "") {
+      const precoMin = parseFloat(filters.precoMin);
+      const propertyPrice = property.forRent 
+        ? property.rental_price_amount 
+        : property.list_price_amount;
+      if (!propertyPrice || propertyPrice < precoMin) return false;
+    }
+    
+    if (filters.precoMax && filters.precoMax !== "") {
+      const precoMax = parseFloat(filters.precoMax);
+      const propertyPrice = property.forRent 
+        ? property.rental_price_amount 
+        : property.list_price_amount;
+      if (!propertyPrice || propertyPrice > precoMax) return false;
+    }
+    
+    if (filters.areaMin && filters.areaMin !== "") {
+      const areaMin = parseFloat(filters.areaMin);
+      if (!property.area || property.area < areaMin) return false;
+    }
+    
+    if (filters.areaMax && filters.areaMax !== "") {
+      const areaMax = parseFloat(filters.areaMax);
+      if (!property.area || property.area > areaMax) return false;
+    }
+    
+    if (filters.anoMin && filters.anoMin !== "") {
+      const anoMin = parseInt(filters.anoMin);
+      if (!property.year_built || property.year_built < anoMin) return false;
+    }
+    
+    if (filters.anoMax && filters.anoMax !== "") {
+      const anoMax = parseInt(filters.anoMax);
+      if (!property.year_built || property.year_built > anoMax) return false;
+    }
+    
+    if (filters.caracteristicas.length > 0) {
+      const hasAllFeatures = filters.caracteristicas.every(feature => {
+        const featureKey = feature.toLowerCase().replace(/\s+/g, '_');
+        return property[featureKey as keyof typeof property] === true;
+      });
+      if (!hasAllFeatures) return false;
+    }
+    
     return true;
   });
 

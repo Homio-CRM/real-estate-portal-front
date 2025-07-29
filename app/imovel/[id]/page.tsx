@@ -205,6 +205,24 @@ export default function PropertyDetailPage() {
                 <h1 className="text-3xl font-bold text-gray-900">{property.title}</h1>
               </div>
 
+              <div className="flex items-center gap-4 mb-6">
+                <div className="text-2xl font-bold text-green-600">
+                  {property.price}
+                </div>
+                <button 
+                  className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                  onClick={() => {
+                    const phone = property.owner_phone || property.agent_phone;
+                    if (phone) {
+                      window.open(`tel:${phone}`, '_self');
+                    }
+                  }}
+                >
+                  <Phone size={20} />
+                  Contatar
+                </button>
+              </div>
+
                              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                  <div className="lg:col-span-2 space-y-6">
                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -280,6 +298,24 @@ export default function PropertyDetailPage() {
                        <p className="text-gray-700">{property.description}</p>
                      </div>
                    )}
+
+                   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                     <button 
+                       className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors text-lg"
+                       onClick={() => {
+                         const phone = property.owner_phone || property.agent_phone;
+                         if (phone) {
+                           window.open(`tel:${phone}`, '_self');
+                         }
+                       }}
+                     >
+                       <Phone size={24} />
+                       Contatar Agora
+                     </button>
+                     <p className="text-center text-sm text-gray-600 mt-2">
+                       Entre em contato para mais informações
+                     </p>
+                   </div>
                 </div>
 
                                  <div className="space-y-6">
@@ -294,7 +330,7 @@ export default function PropertyDetailPage() {
                      </div>
                    </div>
 
-                                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                      <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
                        <Phone size={20} className="text-purple-600" />
                        Contatos
@@ -350,14 +386,16 @@ export default function PropertyDetailPage() {
                      </div>
                    </div>
 
-                                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                      <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
                        <span className="text-green-600">$</span>
                        Resumo Financeiro
                      </h3>
                      <div className="space-y-2 text-gray-700">
                        <div>
-                         <span className="font-medium">Aluguel mensal:</span> {property.price}
+                         <span className="font-medium">
+                           {property.forRent ? "Aluguel mensal:" : "Valor do imóvel:"}
+                         </span> {property.price}
                        </div>
                        {property.property_administration_fee_amount && (
                          <div>

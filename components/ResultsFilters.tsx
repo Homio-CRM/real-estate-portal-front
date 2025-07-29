@@ -19,8 +19,15 @@ type ResultsFiltersProps = {
     quartos: string;
     banheiros: string;
     vagas: string;
+    precoMin: string;
+    precoMax: string;
+    areaMin: string;
+    areaMax: string;
+    anoMin: string;
+    anoMax: string;
+    caracteristicas: string[];
   };
-  onFilterChange: (key: string, value: string) => void;
+  onFilterChange: (key: string, value: string | string[]) => void;
   onClearFilters: () => void;
   onSearch: () => void;
 };
@@ -141,6 +148,8 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
             <label className="block text-sm text-gray-700 mb-1">Preço Mínimo</label>
             <input
               type="number"
+              value={filters.precoMin}
+              onChange={(e) => onFilterChange("precoMin", e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary text-sm"
               placeholder="0"
             />
@@ -149,6 +158,8 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
             <label className="block text-sm text-gray-700 mb-1">Preço Máximo</label>
             <input
               type="number"
+              value={filters.precoMax}
+              onChange={(e) => onFilterChange("precoMax", e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary text-sm"
               placeholder="Sem limite"
             />
@@ -163,6 +174,8 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
             <label className="block text-sm text-gray-700 mb-1">Área Mínima</label>
             <input
               type="number"
+              value={filters.areaMin}
+              onChange={(e) => onFilterChange("areaMin", e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary text-sm"
               placeholder="0"
             />
@@ -171,6 +184,8 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
             <label className="block text-sm text-gray-700 mb-1">Área Máxima</label>
             <input
               type="number"
+              value={filters.areaMax}
+              onChange={(e) => onFilterChange("areaMax", e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary text-sm"
               placeholder="Sem limite"
             />
@@ -185,6 +200,8 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
             <label className="block text-sm text-gray-700 mb-1">Ano Mínimo</label>
             <input
               type="number"
+              value={filters.anoMin}
+              onChange={(e) => onFilterChange("anoMin", e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary text-sm"
               placeholder="Ex: 2000"
             />
@@ -193,6 +210,8 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
             <label className="block text-sm text-gray-700 mb-1">Ano Máximo</label>
             <input
               type="number"
+              value={filters.anoMax}
+              onChange={(e) => onFilterChange("anoMax", e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary text-sm"
               placeholder="Ex: 2024"
             />
@@ -214,7 +233,15 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
             "Espaço Gourmet"
           ].map((feature) => (
             <label key={feature} className="flex items-center space-x-2 cursor-pointer">
-              <Checkbox />
+              <Checkbox 
+                checked={filters.caracteristicas.includes(feature)}
+                onCheckedChange={() => {
+                  const newCaracteristicas = filters.caracteristicas.includes(feature)
+                    ? filters.caracteristicas.filter(f => f !== feature)
+                    : [...filters.caracteristicas, feature];
+                  onFilterChange("caracteristicas", newCaracteristicas);
+                }}
+              />
               <span className="text-sm text-gray-700">{feature}</span>
             </label>
           ))}

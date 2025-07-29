@@ -97,7 +97,7 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
               value={filters.localizacao}
               onChange={value => onFilterChange("localizacao", value)}
               onValidityChange={setIsLocationValid}
-              placeholder="Digite o nome da rua, bairro ou cidade"
+              placeholder="Digite o nome do bairro ou cidade"
               label="Onde deseja morar?"
               type="location"
             />

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { Home, Building2 } from "lucide-react";
 import type { CityAutocomplete, NeighborhoodAutocomplete } from "../types/components";
 import { fetchLocationById, fetchLocationsByQuery, LocationResult } from "../lib/fetchLocations";
 
@@ -215,9 +216,7 @@ export default function AutocompleteField({
             {locationData.neighborhoods.length > 0 && (
               <div>
                 <div className="px-3 py-2 text-sm font-semibold text-primary bg-primary/5 border-b border-gray-200 flex items-center gap-2">
-                  <div className="w-4 h-4 bg-primary rounded-sm flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white rounded-sm"></div>
-                  </div>
+                  <Home className="w-4 h-4 text-primary" />
                   Bairros
                 </div>
                 <ul>
@@ -236,9 +235,7 @@ export default function AutocompleteField({
             {locationData.cities.length > 0 && (
               <div>
                 <div className="px-3 py-2 text-sm font-semibold text-primary bg-primary/5 border-b border-gray-200 flex items-center gap-2">
-                  <div className="w-4 h-4 bg-primary rounded-sm flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white rounded-sm"></div>
-                  </div>
+                  <Building2 className="w-4 h-4 text-primary" />
                   Cidades
                 </div>
                 <ul>
