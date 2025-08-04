@@ -63,7 +63,7 @@ function getAmenityIcon(amenity: string) {
   return icons[amenity] || Building;
 }
 
-export default function PropertyDetailPage() {
+export default function ListingDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [property, setProperty] = useState<PropertyCardType | null>(null);
@@ -111,7 +111,7 @@ export default function PropertyDetailPage() {
                 onClick={() => router.back()}
                 className="text-primary hover:underline"
               >
-                Voltar aos resultados
+                Voltar aos listings
               </button>
             </div>
           </div>
@@ -150,7 +150,7 @@ export default function PropertyDetailPage() {
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
           >
             <ArrowLeft size={20} />
-            Voltar aos resultados
+            Voltar aos listings
           </button>
 
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">

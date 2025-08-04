@@ -41,7 +41,7 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
 
   const handleCardClick = () => {
     if (listing_id) {
-      router.push(`/imovel/${listing_id}`);
+      router.push(`/listings/${listing_id}`);
     }
   };
 

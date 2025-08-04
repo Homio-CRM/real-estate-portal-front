@@ -12,6 +12,25 @@ export type Listing = {
   agent_email?: string;
 };
 
+export type Condominium = {
+  id: string;
+  name: string;
+  agency_id: string;
+};
+
+export type CondominiumDetails = {
+  condominium_id: string;
+  is_launch?: boolean;
+  min_price?: number;
+  max_price?: number;
+  min_area?: number;
+  max_area?: number;
+  year_built?: number;
+  total_units?: number;
+  description?: string;
+  usage_type?: string;
+};
+
 export type ListingDetails = {
   listing_id: string;
   iptu_amount?: number;
@@ -19,9 +38,7 @@ export type ListingDetails = {
   iptu_period?: string;
   list_price_amount?: number;
   list_price_currency?: string;
-  rental_price_amount?: number;
-  rental_price_currency?: string;
-  rental_price_period?: string;
+  rental_period?: string;
   property_administration_fee_amount?: number;
   property_administration_fee_currency?: string;
   description?: string;
@@ -38,8 +55,9 @@ export type ListingDetails = {
   year_built?: number;
 };
 
-export type ListingLocation = {
-  listing_id: string;
+export type EntityLocation = {
+  entity_id: string;
+  entity_type: "listing" | "condominium";
   display_address: string;
   country_code: string;
   state_id: number;
@@ -52,6 +70,16 @@ export type ListingLocation = {
   postal_code?: string;
   latitude?: number;
   longitude?: number;
+};
+
+export type ListingLocation = EntityLocation & {
+  entity_type: "listing";
+  entity_id: string;
+};
+
+export type CondominiumLocation = EntityLocation & {
+  entity_type: "condominium";
+  entity_id: string;
 };
 
 export type MediaItem = {
@@ -75,8 +103,9 @@ export type State = {
   abbreviation: string;
 };
 
-export type ListingFeatures = {
-  listing_id: string;
+export type EntityFeatures = {
+  entity_id: string;
+  entity_type: "listing" | "condominium";
   pool?: boolean;
   gym?: boolean;
   party_room?: boolean;
@@ -108,10 +137,26 @@ export type ListingFeatures = {
   orchid_garden?: boolean;
 };
 
+export type ListingFeatures = EntityFeatures & {
+  entity_type: "listing";
+  entity_id: string;
+};
+
+export type CondominiumFeatures = EntityFeatures & {
+  entity_type: "condominium";
+  entity_id: string;
+};
+
 export type PropertyCard = Listing & ListingDetails & ListingLocation & ListingFeatures & {
   image?: string;
   forRent?: boolean;
   price?: string;
   iptu?: string;
+  media?: MediaItem[];
+};
+
+export type CondominiumCard = Condominium & CondominiumDetails & CondominiumLocation & CondominiumFeatures & {
+  image?: string;
+  price?: string;
   media?: MediaItem[];
 }; 

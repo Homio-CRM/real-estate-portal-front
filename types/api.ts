@@ -7,8 +7,19 @@ export type FetchListingsParams = {
   offset?: number;
 };
 
-export type ListingLocationResponse = {
-  listing_id: string;
+export type EntityLocationResponse = {
+  entity_id: string;
+  entity_type: "listing" | "condominium";
+};
+
+export type ListingLocationResponse = EntityLocationResponse & {
+  entity_type: "listing";
+  entity_id: string;
+};
+
+export type CondominiumLocationResponse = EntityLocationResponse & {
+  entity_type: "condominium";
+  entity_id: string;
 };
 
 export type ListingResponse = {
@@ -25,6 +36,12 @@ export type ListingResponse = {
   agent_email?: string;
 };
 
+export type CondominiumResponse = {
+  id: string;
+  name: string;
+  agency_id: string;
+};
+
 export type ListingDetailsResponse = {
   listing_id: string;
   iptu_amount?: number;
@@ -32,9 +49,7 @@ export type ListingDetailsResponse = {
   iptu_period?: string;
   list_price_amount?: number;
   list_price_currency?: string;
-  rental_price_amount?: number;
-  rental_price_currency?: string;
-  rental_price_period?: string;
+  rental_period?: string;
   property_administration_fee_amount?: number;
   property_administration_fee_currency?: string;
   description?: string;
@@ -49,4 +64,17 @@ export type ListingDetailsResponse = {
   suite_count?: number;
   usage_type?: string;
   year_built?: number;
+};
+
+export type CondominiumDetailsResponse = {
+  condominium_id: string;
+  is_launch?: boolean;
+  min_price?: number;
+  max_price?: number;
+  min_area?: number;
+  max_area?: number;
+  year_built?: number;
+  total_units?: number;
+  description?: string;
+  usage_type?: string;
 }; 

@@ -26,15 +26,17 @@ export async function GET(
       .single();
 
     const { data: location } = await supabaseAgent
-      .from("listing_location")
+      .from("entity_location")
       .select("*")
-      .eq("listing_id", id)
+      .eq("entity_id", id)
+      .eq("entity_type", "listing")
       .single();
 
     const { data: features } = await supabaseAgent
-      .from("listing_features")
+      .from("entity_features")
       .select("*")
-      .eq("listing_id", id)
+      .eq("entity_id", id)
+      .eq("entity_type", "listing")
       .single();
 
     const { data: media } = await supabaseAgent

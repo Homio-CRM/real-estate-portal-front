@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -10,7 +10,7 @@ import {
 } from "./ui/select";
 import { Checkbox } from "./ui/checkbox";
 import { Button } from "./ui/button";
-import { Plus, Search, X } from "lucide-react";
+import { X } from "lucide-react";
 
 type ResultsFiltersProps = {
   filters: {
@@ -32,7 +32,76 @@ type ResultsFiltersProps = {
   onSearch: () => void;
 };
 
+function formatCurrency(value: string): string {
+  if (!value) return "";
+  
+  // Remove tudo que não é número
+  const numbers = value.replace(/\D/g, "");
+  
+  if (numbers === "") return "";
+  
+  // Converte para número e formata
+  const num = parseInt(numbers);
+  return num.toLocaleString("pt-BR");
+}
+
+function parseCurrency(value: string): number {
+  if (!value) return 0;
+  const numbers = value.replace(/\D/g, "");
+  return parseFloat(numbers) || 0;
+}
+
 export default function ResultsFilters({ filters, onFilterChange, onClearFilters, onSearch }: ResultsFiltersProps) {
+  const [precoMinDisplay, setPrecoMinDisplay] = useState(filters.precoMin);
+  const [precoMaxDisplay, setPrecoMaxDisplay] = useState(filters.precoMax);
+
+  // Sincronizar estados de exibição quando os filtros mudam
+  useEffect(() => {
+    if (filters.precoMin) {
+      setPrecoMinDisplay(formatCurrency(filters.precoMin));
+    } else {
+      setPrecoMinDisplay("");
+    }
+  }, [filters.precoMin]);
+
+  useEffect(() => {
+    if (filters.precoMax) {
+      setPrecoMaxDisplay(formatCurrency(filters.precoMax));
+    } else {
+      setPrecoMaxDisplay("");
+    }
+  }, [filters.precoMax]);
+
+  const handlePrecoMinChange = (value: string) => {
+    const formatted = formatCurrency(value);
+    setPrecoMinDisplay(formatted);
+    
+    // Só atualiza o filtro se o valor for válido
+    if (formatted) {
+      const numericValue = parseCurrency(formatted);
+      if (numericValue > 0) {
+        onFilterChange("precoMin", numericValue.toString());
+      }
+    } else {
+      onFilterChange("precoMin", "");
+    }
+  };
+
+  const handlePrecoMaxChange = (value: string) => {
+    const formatted = formatCurrency(value);
+    setPrecoMaxDisplay(formatted);
+    
+    // Só atualiza o filtro se o valor for válido
+    if (formatted) {
+      const numericValue = parseCurrency(formatted);
+      if (numericValue > 0) {
+        onFilterChange("precoMax", numericValue.toString());
+      }
+    } else {
+      onFilterChange("precoMax", "");
+    }
+  };
+
   return (
     <div className="space-y-4 w-80">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
@@ -147,21 +216,21 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
           <div>
             <label className="block text-sm text-gray-700 mb-1">Preço Mínimo</label>
             <input
-              type="number"
-              value={filters.precoMin}
-              onChange={(e) => onFilterChange("precoMin", e.target.value)}
+              type="text"
+              value={precoMinDisplay}
+              onChange={(e) => handlePrecoMinChange(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary text-sm"
-              placeholder="0"
+              placeholder="R$ 100.000"
             />
           </div>
           <div>
             <label className="block text-sm text-gray-700 mb-1">Preço Máximo</label>
             <input
-              type="number"
-              value={filters.precoMax}
-              onChange={(e) => onFilterChange("precoMax", e.target.value)}
+              type="text"
+              value={precoMaxDisplay}
+              onChange={(e) => handlePrecoMaxChange(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary text-sm"
-              placeholder="Sem limite"
+              placeholder="R$ 1.000.000"
             />
           </div>
         </div>
@@ -251,16 +320,10 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
         </div>
       </div>
 
-      <div className="flex gap-3">
-        <Button variant="outline" onClick={onClearFilters} className="flex-1">
-          <X className="mr-2 h-4 w-4" />
-          Limpar
-        </Button>
-        <Button onClick={onSearch} className="flex-1">
-          <Search className="mr-2 h-4 w-4" />
-          Buscar Imóveis
-        </Button>
-      </div>
+      <Button variant="outline" onClick={onClearFilters} className="w-full">
+        <X className="mr-2 h-4 w-4" />
+        Limpar Filtros
+      </Button>
     </div>
   );
 } 

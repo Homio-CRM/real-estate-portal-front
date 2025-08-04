@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Header from "../components/Header";
 import HeroSearchBar from "../components/HeroSearchBar";
-import { buildResultsUrl } from "../lib/navigation";
+import { buildListingsUrl } from "../lib/navigation";
 
 export default function Home() {
   const router = useRouter();
@@ -19,7 +19,7 @@ export default function Home() {
   }
 
   function handleSearch() {
-    const url = buildResultsUrl(filters as Record<string, string>);
+    const url = buildListingsUrl(filters as Record<string, string>);
     router.push(url);
   }
 

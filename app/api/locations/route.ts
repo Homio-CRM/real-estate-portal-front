@@ -66,23 +66,49 @@ export async function GET(req: NextRequest) {
           return NextResponse.json({ error: listingsError.message }, { status: 500 });
         }
 
-        if (!listings || listings.length === 0) {
+        const { data: condominiums, error: condominiumsError } = await supabaseAgent
+          .from("condominium")
+          .select("id")
+          .eq("agency_id", agencyId);
+
+        if (condominiumsError) {
+          return NextResponse.json({ error: condominiumsError.message }, { status: 500 });
+        }
+
+        const listingIds = (listings || []).map((listing: { listing_id: string }) => listing.listing_id);
+        const condominiumIds = (condominiums || []).map((condominium: { id: string }) => condominium.id);
+
+        if (listingIds.length === 0 && condominiumIds.length === 0) {
           return NextResponse.json({ neighborhoods: [], cities: [] });
         }
 
-        const listingIds = listings.map((listing: { listing_id: string }) => listing.listing_id);
-
-        // Buscar cidades
+        // Buscar cidades de listings
         const { data: cityLocations, error: cityLocationsError } = await supabaseAgent
-          .from("listing_location")
+          .from("entity_location")
           .select("city_id")
-          .in("listing_id", listingIds);
+          .in("entity_id", listingIds)
+          .eq("entity_type", "listing");
 
         if (cityLocationsError) {
           return NextResponse.json({ error: cityLocationsError.message }, { status: 500 });
         }
 
-        const cityIds = [...new Set(cityLocations.map((location: { city_id: number }) => location.city_id))];
+        // Buscar cidades de condomínios
+        const { data: condominiumCityLocations, error: condominiumCityLocationsError } = await supabaseAgent
+          .from("entity_location")
+          .select("city_id")
+          .in("entity_id", condominiumIds)
+          .eq("entity_type", "condominium");
+
+        if (condominiumCityLocationsError) {
+          return NextResponse.json({ error: condominiumCityLocationsError.message }, { status: 500 });
+        }
+
+        const allCityIds = [
+          ...(cityLocations || []).map((location: { city_id: number }) => location.city_id),
+          ...(condominiumCityLocations || []).map((location: { city_id: number }) => location.city_id)
+        ];
+        const cityIds = [...new Set(allCityIds)];
 
         const { data: cities, error: citiesError } = await supabaseAgent
           .from("city")
@@ -96,11 +122,12 @@ export async function GET(req: NextRequest) {
           return NextResponse.json({ error: citiesError.message }, { status: 500 });
         }
 
-        // Buscar bairros
+        // Buscar bairros de listings
         const { data: neighborhoodLocations, error: neighborhoodLocationsError } = await supabaseAgent
-          .from("listing_location")
+          .from("entity_location")
           .select("neighborhood, city_id")
-          .in("listing_id", listingIds)
+          .in("entity_id", listingIds)
+          .eq("entity_type", "listing")
           .not("neighborhood", "is", null)
           .not("neighborhood", "eq", "");
 
@@ -108,8 +135,26 @@ export async function GET(req: NextRequest) {
           return NextResponse.json({ error: neighborhoodLocationsError.message }, { status: 500 });
         }
 
+        // Buscar bairros de condomínios
+        const { data: condominiumNeighborhoodLocations, error: condominiumNeighborhoodLocationsError } = await supabaseAgent
+          .from("entity_location")
+          .select("neighborhood, city_id")
+          .in("entity_id", condominiumIds)
+          .eq("entity_type", "condominium")
+          .not("neighborhood", "is", null)
+          .not("neighborhood", "eq", "");
+
+        if (condominiumNeighborhoodLocationsError) {
+          return NextResponse.json({ error: condominiumNeighborhoodLocationsError.message }, { status: 500 });
+        }
+
+        const allNeighborhoodLocations = [
+          ...(neighborhoodLocations || []),
+          ...(condominiumNeighborhoodLocations || [])
+        ];
+
         const uniqueNeighborhoods = [...new Set(
-          neighborhoodLocations
+          allNeighborhoodLocations
             .map((location: { neighborhood: string }) => location.neighborhood)
             .filter((neighborhood: string) => 
               neighborhood && 

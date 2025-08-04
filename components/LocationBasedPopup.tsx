@@ -116,7 +116,7 @@ export default function LocationBasedPopup({
                     key={property.listing_id}
                     className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
                     onClick={() => {
-                      window.location.href = `/imovel/${property.listing_id}`;
+                                              window.location.href = `/listings/${property.listing_id}`;
                     }}
                   >
                     {/* Imagem */}
@@ -210,7 +210,7 @@ export default function LocationBasedPopup({
             </button>
             <button
               onClick={() => {
-                window.location.href = "/resultados";
+                window.location.href = "/listings";
               }}
               className="flex-1 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
             >

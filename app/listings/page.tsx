@@ -9,7 +9,7 @@ import ResultsFilters from "../../components/ResultsFilters";
 import LocationSearchField from "../../components/LocationSearchField";
 import { PropertyCard as PropertyCardType } from "../../types/listings";
 import { parseFiltersFromSearchParams, validateFilters, getTransactionType } from "../../lib/filters";
-import { buildResultsUrl } from "../../lib/navigation";
+import { buildListingsUrl } from "../../lib/navigation";
 
 function translatePropertyType(propertyType: string): string {
   const translations: { [key: string]: string } = {
@@ -29,7 +29,7 @@ function translatePropertyType(propertyType: string): string {
   return translations[propertyType.toLowerCase()] || propertyType;
 }
 
-function ResultadosContent() {
+function ListingsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const initialFilters = useMemo(() => parseFiltersFromSearchParams(searchParams), [searchParams]);
@@ -106,7 +106,7 @@ function ResultadosContent() {
       }
     });
     
-    const newUrl = buildResultsUrl(urlFilters);
+    const newUrl = buildListingsUrl(urlFilters);
     router.push(newUrl);
   };
 
@@ -143,7 +143,7 @@ function ResultadosContent() {
       }
     });
     
-    const newUrl = buildResultsUrl(urlFilters);
+    const newUrl = buildListingsUrl(urlFilters);
     router.push(newUrl);
   };
 
@@ -303,10 +303,10 @@ function ResultadosContent() {
   );
 }
 
-export default function Resultados() {
+export default function Listings() {
   return (
     <Suspense fallback={<LoadingModal />}>
-      <ResultadosContent />
+      <ListingsContent />
     </Suspense>
   );
 } 

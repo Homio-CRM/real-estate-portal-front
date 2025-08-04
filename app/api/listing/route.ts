@@ -11,6 +11,24 @@ type MediaItemResponse = {
   url: string;
 };
 
+function translatePropertyTypeToDB(propertyType: string): string {
+  const translations: { [key: string]: string } = {
+    "Casa": "house",
+    "Apartamento": "apartment",
+    "Kitnet": "studio",
+    "Loft": "loft",
+    "Cobertura": "penthouse",
+    "Casa Geminada": "townhouse",
+    "Terreno": "land",
+    "Comercial": "commercial",
+    "Escritório": "office",
+    "Loja": "store",
+    "Galpão": "warehouse",
+  };
+  
+  return translations[propertyType] || propertyType.toLowerCase();
+}
+
 export async function GET(req: NextRequest) {
   try {
     // Verificar variáveis de ambiente
@@ -30,6 +48,7 @@ export async function GET(req: NextRequest) {
     const transactionType = searchParams.get("transactionType");
     const cityId = searchParams.get("cityId");
     const bairro = searchParams.get("bairro");
+    const tipo = searchParams.get("tipo");
     const limit = Number(searchParams.get("limit") || 30);
     const offset = Number(searchParams.get("offset") || 0);
 
@@ -41,9 +60,10 @@ export async function GET(req: NextRequest) {
 
     // Buscar localizações
     let query = supabaseAgent
-      .from("listing_location")
-      .select("listing_id")
-      .eq("city_id", Number(cityId));
+      .from("entity_location")
+      .select("entity_id")
+      .eq("city_id", Number(cityId))
+      .eq("entity_type", "listing");
 
     if (bairro) {
       query = query.eq("neighborhood", bairro);
@@ -55,7 +75,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: locError.message }, { status: 500 });
     }
     
-    const listingIds = (locations || []).map((loc: ListingLocationResponse) => loc.listing_id);
+    const listingIds = (locations || []).map((loc: { entity_id: string }) => loc.entity_id);
     if (listingIds.length === 0) {
       return NextResponse.json([]);
     }
@@ -118,17 +138,10 @@ export async function GET(req: NextRequest) {
       const isForRent = listing.transaction_type === "rent";
       let price = "Preço sob consulta";
       
-      // Teste: forçar exibição do preço se temos detalhes
-      if (detail) {
-        if (isForRent) {
-          // Para aluguel, usar rental_price_amount ou um valor padrão
-          const rentalPrice = detail.rental_price_amount || 1200000; // Valor padrão para teste
-          price = `R$ ${Number(rentalPrice).toLocaleString("pt-BR")}`;
-        } else {
-          // Para venda, usar list_price_amount ou um valor padrão
-          const listPrice = detail.list_price_amount || 500000; // Valor padrão para teste
-          price = `R$ ${Number(listPrice).toLocaleString("pt-BR")}`;
-        }
+      // Usar list_price_amount para compra e aluguel
+      if (detail && detail.list_price_amount) {
+        const listPrice = detail.list_price_amount;
+        price = `R$ ${Number(listPrice).toLocaleString("pt-BR")}`;
       }
       
       return { 
@@ -144,7 +157,17 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json(results);
+    // Aplicar filtro de tipo de propriedade se especificado
+    let filteredResults = results;
+    if (tipo) {
+      const dbPropertyType = translatePropertyTypeToDB(tipo);
+      filteredResults = results.filter(property => {
+        const propertyType = property.property_type?.toLowerCase();
+        return propertyType === dbPropertyType.toLowerCase();
+      });
+    }
+
+    return NextResponse.json(filteredResults);
   } catch (error) {
     console.error("API Error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
