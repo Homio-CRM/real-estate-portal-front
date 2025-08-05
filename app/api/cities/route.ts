@@ -5,16 +5,22 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const name = searchParams.get("name");
+    const stateId = searchParams.get("stateId");
 
     if (!name) {
       return NextResponse.json({ error: "Nome da cidade é obrigatório" }, { status: 400 });
     }
 
-    const { data: cities, error } = await supabaseAgent
+    let query = supabaseAgent
       .from("city")
-      .select("city_id, city_name, state_name")
-      .ilike("city_name", `%${name}%`)
-      .limit(5);
+      .select("id, name, state_id")
+      .ilike("name", `%${name}%`);
+
+    if (stateId) {
+      query = query.eq("state_id", Number(stateId));
+    }
+
+    const { data: cities, error } = await query.limit(5);
 
     if (error) {
       console.error("Erro ao buscar cidades:", error);

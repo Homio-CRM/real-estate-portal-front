@@ -77,4 +77,10 @@ export type CondominiumDetailsResponse = {
   total_units?: number;
   description?: string;
   usage_type?: string;
+};
+
+export type CityResponse = {
+  id: number;
+  name: string;
+  state_id: number;
 }; 

@@ -78,7 +78,7 @@ export default function ListingDetailPage() {
         
         if (data) {
           const similar = await fetchListings({
-            cityId: data.city_id || 3205309,
+            cityId: data.city_id,
             transactionType: data.transaction_type,
             tipo: data.property_type === "apartment" ? "Apartamento" : "Casa",
             limit: 3,
