@@ -112,14 +112,15 @@ export function useLocationRedirect() {
 
     console.log("🎯 Configurando event listeners com localização:", userLocation);
 
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      console.log("🔄 Beforeunload triggered");
-      if (triggerPopup()) {
-        event.preventDefault();
-        event.returnValue = "";
-        return "";
-      }
-    };
+    // REMOVIDO: handleBeforeUnload que causava mensagem de confirmação
+    // const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+    //   console.log("🔄 Beforeunload triggered");
+    //   if (triggerPopup()) {
+    //     event.preventDefault();
+    //     event.returnValue = "";
+    //     return "";
+    //   }
+    // };
 
     const handleVisibilityChange = () => {
       console.log("👁️ Visibility change:", document.visibilityState);
@@ -142,15 +143,15 @@ export function useLocationRedirect() {
       }
     };
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
+    // REMOVIDO: window.addEventListener("beforeunload", handleBeforeUnload);
     document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("mouseleave", handleMouseLeave);
     document.addEventListener("keydown", handleKeyDown);
 
-    console.log("✅ Event listeners configurados");
+    console.log("✅ Event listeners configurados (sem beforeunload)");
 
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+      // REMOVIDO: window.removeEventListener("beforeunload", handleBeforeUnload);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener("mouseleave", handleMouseLeave);
       document.removeEventListener("keydown", handleKeyDown);
