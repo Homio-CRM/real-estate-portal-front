@@ -1,15 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAgent } from "../../../lib/supabaseAgent";
-import { ListingLocationResponse, ListingResponse, ListingDetailsResponse } from "../../../types/api";
-
-type MediaItemResponse = {
-  id: string;
-  listing_id: string;
-  medium: string;
-  caption?: string;
-  is_primary: boolean;
-  url: string;
-};
+import { ListingLocationResponse, ListingResponse, ListingDetailsResponse, MediaItemResponse } from "../../../types/api";
 
 function translatePropertyTypeToDB(propertyType: string): string {
   const translations: { [key: string]: string } = {
@@ -31,14 +22,12 @@ function translatePropertyTypeToDB(propertyType: string): string {
 
 export async function GET(req: NextRequest) {
   try {
-    // Verificar variáveis de ambiente
     const agencyId = process.env.LOCATION_ID;
     if (!agencyId) {
       console.error("LOCATION_ID not configured");
       return NextResponse.json({ error: "LOCATION_ID environment variable not configured" }, { status: 500 });
     }
 
-    // Verificar Supabase
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
       console.error("Supabase environment variables not configured");
       return NextResponse.json({ error: "Supabase environment variables not configured" }, { status: 500 });
@@ -58,12 +47,12 @@ export async function GET(req: NextRequest) {
 
     const dbTransactionType = transactionType === "rent" ? "rent" : "sale";
 
-    // Buscar localizações
     let query = supabaseAgent
       .from("entity_location")
-      .select("entity_id")
+      .select("listing_id")
       .eq("city_id", Number(cityId))
-      .eq("entity_type", "listing");
+      .eq("entity_type", "listing")
+      .not("listing_id", "is", null);
 
     if (bairro) {
       query = query.eq("neighborhood", bairro);
@@ -75,12 +64,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: locError.message }, { status: 500 });
     }
     
-    const listingIds = (locations || []).map((loc: { entity_id: string }) => loc.entity_id);
+    const listingIds = (locations || []).map((loc: { listing_id: string }) => loc.listing_id);
     if (listingIds.length === 0) {
       return NextResponse.json([]);
     }
 
-    // Buscar listings
     const { data: listings, error } = await supabaseAgent
       .from("listing")
       .select("*")
@@ -99,7 +87,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json([]);
     }
 
-    // Buscar detalhes
     const listingIdsForDetails = listings.map((l: ListingResponse) => l.listing_id);
     
     const { data: details, error: detailsError } = await supabaseAgent
@@ -112,15 +99,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: detailsError.message }, { status: 500 });
     }
 
-    // Verificar se encontramos detalhes
     if (!details || details.length === 0) {
       console.error("No details found for listings:", listingIdsForDetails);
     }
 
-    // Buscar mídia
     const { data: media, error: mediaError } = await supabaseAgent
       .from("media_item")
       .select("*")
+      .eq("entity_type", "listing")
       .in("listing_id", listings.map((l: ListingResponse) => l.listing_id))
       .order("is_primary", { ascending: false });
     
@@ -129,7 +115,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: mediaError.message }, { status: 500 });
     }
 
-    // Processar resultados
     const results = listings.map((listing: ListingResponse) => {
       const detail = (details || []).find((d: ListingDetailsResponse) => d.listing_id === listing.listing_id);
       const listingMedia = (media || []).filter((m: MediaItemResponse) => m.listing_id === listing.listing_id);
@@ -138,7 +123,6 @@ export async function GET(req: NextRequest) {
       const isForRent = listing.transaction_type === "rent";
       let price = "Preço sob consulta";
       
-      // Usar list_price_amount para compra e aluguel
       if (detail && detail.list_price_amount) {
         const listPrice = detail.list_price_amount;
         price = `R$ ${Number(listPrice).toLocaleString("pt-BR")}`;
@@ -157,7 +141,6 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    // Aplicar filtro de tipo de propriedade se especificado
     let filteredResults = results;
     if (tipo) {
       const dbPropertyType = translatePropertyTypeToDB(tipo);

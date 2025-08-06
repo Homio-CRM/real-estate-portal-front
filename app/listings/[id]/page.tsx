@@ -150,7 +150,7 @@ export default function ListingDetailPage() {
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
           >
             <ArrowLeft size={20} />
-            Voltar aos listings
+            Voltar a busca
           </button>
 
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -222,8 +222,7 @@ export default function ListingDetailPage() {
                   Contatar
                 </button>
               </div>
-
-                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                  <div className="lg:col-span-2 space-y-6">
                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">

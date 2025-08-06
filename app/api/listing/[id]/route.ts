@@ -28,20 +28,21 @@ export async function GET(
     const { data: location } = await supabaseAgent
       .from("entity_location")
       .select("*")
-      .eq("entity_id", id)
+      .eq("listing_id", id)
       .eq("entity_type", "listing")
       .single();
 
     const { data: features } = await supabaseAgent
       .from("entity_features")
       .select("*")
-      .eq("entity_id", id)
+      .eq("listing_id", id)
       .eq("entity_type", "listing")
       .single();
 
     const { data: media } = await supabaseAgent
       .from("media_item")
       .select("*")
+      .eq("entity_type", "listing")
       .eq("listing_id", id)
       .order("is_primary", { ascending: false });
 

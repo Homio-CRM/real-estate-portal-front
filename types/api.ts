@@ -8,18 +8,31 @@ export type FetchListingsParams = {
 };
 
 export type EntityLocationResponse = {
-  entity_id: string;
   entity_type: "listing" | "condominium";
+  listing_id?: string;
+  condominium_id?: string;
+  display_address: string;
+  country_code: string;
+  state_id: number;
+  city_id: number;
+  zone?: string;
+  neighborhood?: string;
+  address?: string;
+  street_number?: string;
+  complement?: string;
+  postal_code?: string;
+  latitude?: number;
+  longitude?: number;
 };
 
 export type ListingLocationResponse = EntityLocationResponse & {
   entity_type: "listing";
-  entity_id: string;
+  listing_id: string;
 };
 
 export type CondominiumLocationResponse = EntityLocationResponse & {
   entity_type: "condominium";
-  entity_id: string;
+  condominium_id: string;
 };
 
 export type ListingResponse = {
@@ -77,6 +90,52 @@ export type CondominiumDetailsResponse = {
   total_units?: number;
   description?: string;
   usage_type?: string;
+};
+
+export type MediaItemResponse = {
+  id: string;
+  entity_type: "listing" | "condominium";
+  listing_id?: string;
+  condominium_id?: string;
+  medium: string;
+  caption?: string;
+  is_primary: boolean;
+  url: string;
+};
+
+export type EntityFeaturesResponse = {
+  entity_type: "listing" | "condominium";
+  listing_id?: string;
+  condominium_id?: string;
+  pool?: boolean;
+  gym?: boolean;
+  party_room?: boolean;
+  barbecue_area?: boolean;
+  multipurpose_court?: boolean;
+  tennis_court?: boolean;
+  sauna?: boolean;
+  gourmet_area?: boolean;
+  playground?: boolean;
+  game_room?: boolean;
+  pet_area?: boolean;
+  garden?: boolean;
+  zen_space?: boolean;
+  visitor_parking?: boolean;
+  covered_parking?: boolean;
+  elevator?: boolean;
+  electric_fence?: boolean;
+  security_24h?: boolean;
+  security_guardhouse?: boolean;
+  security_cameras?: boolean;
+  alarm_system?: boolean;
+  cinema_room?: boolean;
+  coworking?: boolean;
+  library?: boolean;
+  restaurant?: boolean;
+  helipad?: boolean;
+  marina?: boolean;
+  hammock_area?: boolean;
+  orchid_garden?: boolean;
 };
 
 export type CityResponse = {

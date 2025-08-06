@@ -82,22 +82,20 @@ export async function GET(req: NextRequest) {
           return NextResponse.json({ neighborhoods: [], cities: [] });
         }
 
-        // Buscar cidades de listings
         const { data: cityLocations, error: cityLocationsError } = await supabaseAgent
           .from("entity_location")
           .select("city_id")
-          .in("entity_id", listingIds)
+          .in("listing_id", listingIds)
           .eq("entity_type", "listing");
 
         if (cityLocationsError) {
           return NextResponse.json({ error: cityLocationsError.message }, { status: 500 });
         }
 
-        // Buscar cidades de condomínios
         const { data: condominiumCityLocations, error: condominiumCityLocationsError } = await supabaseAgent
           .from("entity_location")
           .select("city_id")
-          .in("entity_id", condominiumIds)
+          .in("condominium_id", condominiumIds)
           .eq("entity_type", "condominium");
 
         if (condominiumCityLocationsError) {
@@ -122,11 +120,10 @@ export async function GET(req: NextRequest) {
           return NextResponse.json({ error: citiesError.message }, { status: 500 });
         }
 
-        // Buscar bairros de listings
         const { data: neighborhoodLocations, error: neighborhoodLocationsError } = await supabaseAgent
           .from("entity_location")
           .select("neighborhood, city_id")
-          .in("entity_id", listingIds)
+          .in("listing_id", listingIds)
           .eq("entity_type", "listing")
           .not("neighborhood", "is", null)
           .not("neighborhood", "eq", "");
@@ -135,11 +132,10 @@ export async function GET(req: NextRequest) {
           return NextResponse.json({ error: neighborhoodLocationsError.message }, { status: 500 });
         }
 
-        // Buscar bairros de condomínios
         const { data: condominiumNeighborhoodLocations, error: condominiumNeighborhoodLocationsError } = await supabaseAgent
           .from("entity_location")
           .select("neighborhood, city_id")
-          .in("entity_id", condominiumIds)
+          .in("condominium_id", condominiumIds)
           .eq("entity_type", "condominium")
           .not("neighborhood", "is", null)
           .not("neighborhood", "eq", "");
@@ -168,8 +164,8 @@ export async function GET(req: NextRequest) {
              id: index + 10001,
              name: name,
              type: 'neighborhood',
-             city_name: 'Vitória', // Placeholder - você pode melhorar isso se necessário
-             city_id: 3205309 // ID de Vitória - você pode melhorar isso se necessário
+             city_name: 'Vitória',
+             city_id: 3205309
            }));
 
         const groupedData = {

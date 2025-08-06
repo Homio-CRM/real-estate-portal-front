@@ -56,8 +56,9 @@ export type ListingDetails = {
 };
 
 export type EntityLocation = {
-  entity_id: string;
   entity_type: "listing" | "condominium";
+  listing_id?: string;
+  condominium_id?: string;
   display_address: string;
   country_code: string;
   state_id: number;
@@ -74,17 +75,19 @@ export type EntityLocation = {
 
 export type ListingLocation = EntityLocation & {
   entity_type: "listing";
-  entity_id: string;
+  listing_id: string;
 };
 
 export type CondominiumLocation = EntityLocation & {
   entity_type: "condominium";
-  entity_id: string;
+  condominium_id: string;
 };
 
 export type MediaItem = {
   id: string;
-  listing_id: string;
+  entity_type: "listing" | "condominium";
+  listing_id?: string;
+  condominium_id?: string;
   medium: string;
   caption?: string;
   is_primary: boolean;
@@ -104,8 +107,9 @@ export type State = {
 };
 
 export type EntityFeatures = {
-  entity_id: string;
   entity_type: "listing" | "condominium";
+  listing_id?: string;
+  condominium_id?: string;
   pool?: boolean;
   gym?: boolean;
   party_room?: boolean;
@@ -139,12 +143,12 @@ export type EntityFeatures = {
 
 export type ListingFeatures = EntityFeatures & {
   entity_type: "listing";
-  entity_id: string;
+  listing_id: string;
 };
 
 export type CondominiumFeatures = EntityFeatures & {
   entity_type: "condominium";
-  entity_id: string;
+  condominium_id: string;
 };
 
 export type PropertyCard = Listing & ListingDetails & ListingLocation & ListingFeatures & {
