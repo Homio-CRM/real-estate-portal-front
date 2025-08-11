@@ -10,6 +10,7 @@ import LocationSearchField from "../../components/LocationSearchField";
 import { PropertyCard as PropertyCardType } from "../../types/listings";
 import { parseFiltersFromSearchParams, validateFilters, getTransactionType } from "../../lib/filters";
 import { buildListingsUrl } from "../../lib/navigation";
+import { getStateAbbreviationById } from "../../lib/brazilianStates";
 
 function translatePropertyType(propertyType: string): string {
   const translations: { [key: string]: string } = {
@@ -29,18 +30,38 @@ function translatePropertyType(propertyType: string): string {
   return translations[propertyType.toLowerCase()] || propertyType;
 }
 
+async function getCityName(cityId: number): Promise<{ name: string; stateId: number } | null> {
+  try {
+    const response = await fetch(`/api/cities?id=${cityId}`);
+    if (response.ok) {
+      const city = await response.json();
+      if (city) {
+        return {
+          name: city.name,
+          stateId: city.state_id
+        };
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching city name:", error);
+  }
+  return null;
+}
+
 function ListingsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const initialFilters = useMemo(() => parseFiltersFromSearchParams(searchParams), [searchParams]);
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState<PropertyCardType[]>([]);
+  const [currentLocation, setCurrentLocation] = useState<string>("");
   
   // Filtros que disparam nova busca na API
   const [apiFilters, setApiFilters] = useState({
     tipo: initialFilters.tipo,
     operacao: initialFilters.operacao,
     bairro: initialFilters.bairro,
+    localizacao: initialFilters.localizacao,
   });
   
   // Filtros que apenas filtram os resultados já carregados
@@ -57,36 +78,78 @@ function ListingsContent() {
     caracteristicas: [] as string[],
   });
 
-  const fetchResults = async (currentApiFilters = apiFilters) => {
-    setLoading(true);
-    const validation = validateFilters(initialFilters);
-    if (!validation.isValid) {
-      setResults([]);
-      setLoading(false);
-      return;
-    }
+  // Remover o useEffect duplicado que estava causando loop
+  // useEffect(() => {
+  //   console.log("=== useEffect apiFilters ===");
+  //   console.log("apiFilters changed:", {
+  //     localizacao: apiFilters.localizacao,
+  //     operacao: apiFilters.operacao,
+  //     tipo: apiFilters.tipo,
+  //     bairro: apiFilters.bairro
+  //   });
+  //   fetchResults();
+  // }, [apiFilters.localizacao, apiFilters.operacao, apiFilters.tipo, apiFilters.bairro]);
 
-    const transactionType = getTransactionType(currentApiFilters.operacao || initialFilters.operacao);
-    
-    const listings = await fetchListings({
-      cityId: validation.cityId!,
-      transactionType,
-      tipo: currentApiFilters.tipo ? (currentApiFilters.tipo as "Casa" | "Apartamento") : undefined,
-      bairro: currentApiFilters.bairro,
-      limit: 100,
-      offset: 0,
-    });
-    
-    setResults(listings);
-    setLoading(false);
-  };
+  // Removido useEffect inicial - agora tudo é tratado pelo useEffect que monitora URL
 
+  // Monitorar mudanças na URL e fazer busca
   useEffect(() => {
-    fetchResults();
+    console.log("=== URL CHANGE DETECTED ===");
+    console.log("initialFilters changed:", initialFilters);
+    
+    // Fazer a busca com os filtros da URL
+    const effectiveFilters = {
+      localizacao: initialFilters.localizacao,
+      operacao: initialFilters.operacao,
+      tipo: initialFilters.tipo,
+      bairro: initialFilters.bairro,
+    };
+    
+    console.log("effectiveFilters from URL:", effectiveFilters);
+    
+    const validation = validateFilters(effectiveFilters);
+    if (validation.isValid) {
+      const transactionType = getTransactionType(effectiveFilters.operacao);
+      const fetchParams = {
+        cityId: validation.cityId!,
+        transactionType,
+        tipo: effectiveFilters.tipo ? (effectiveFilters.tipo as "Casa" | "Apartamento") : undefined,
+        bairro: effectiveFilters.bairro,
+        limit: 100,
+        offset: 0,
+      };
+      
+      console.log("fetchParams from URL:", fetchParams);
+      
+      setLoading(true);
+      fetchListings(fetchParams).then(listings => {
+        console.log("fetchListings result count from URL:", listings.length);
+        setResults(listings);
+        setLoading(false);
+        
+        // Atualizar o currentLocation após a busca
+        if (effectiveFilters.localizacao) {
+          getCityName(Number(effectiveFilters.localizacao)).then(cityInfo => {
+            if (cityInfo) {
+              const stateAbbreviation = getStateAbbreviationById(cityInfo.stateId);
+              setCurrentLocation(`${cityInfo.name} - ${stateAbbreviation}`);
+            }
+          });
+        }
+      });
+    }
   }, [initialFilters]);
 
+  // Removido useEffects duplicados - agora o currentLocation é atualizado diretamente no evento
+
   const handleApiFilterChange = (key: string, value: string) => {
+    console.log("=== handleApiFilterChange ===");
+    console.log("key:", key, "value:", value);
+    console.log("current apiFilters:", apiFilters);
+    
     const newApiFilters = { ...apiFilters, [key]: value };
+    console.log("newApiFilters:", newApiFilters);
+    
     setApiFilters(newApiFilters);
     
     // Atualizar a URL com os novos filtros
@@ -106,7 +169,12 @@ function ListingsContent() {
       }
     });
     
+    console.log("urlFilters:", urlFilters);
+    
     const newUrl = buildListingsUrl(urlFilters);
+    console.log("newUrl:", newUrl);
+    
+    // Apenas navegar - o useEffect vai detectar a mudança na URL
     router.push(newUrl);
   };
 
@@ -115,11 +183,14 @@ function ListingsContent() {
   };
 
   const handleClearFilters = () => {
-    setApiFilters({
+    const clearedApiFilters = {
       tipo: "",
       operacao: "",
       bairro: "",
-    });
+      localizacao: "",
+    };
+    
+    setApiFilters(clearedApiFilters);
     setClientFilters({
       quartos: "",
       banheiros: "",
@@ -144,11 +215,9 @@ function ListingsContent() {
     });
     
     const newUrl = buildListingsUrl(urlFilters);
+    
+    // Apenas navegar - o useEffect vai detectar a mudança na URL
     router.push(newUrl);
-  };
-
-  const handleLocationChange = (location: string) => {
-    handleApiFilterChange("bairro", location);
   };
 
   const filteredResults = results.filter(property => {
@@ -266,13 +335,12 @@ function ListingsContent() {
               
               <div className="flex-1">
                 <LocationSearchField
-                  currentLocation={apiFilters.bairro || "Vitória - ES"}
+                  currentLocation={currentLocation ? (initialFilters.bairro ? `${initialFilters.bairro}, ${currentLocation}` : currentLocation) : "Carregando..."}
                   currentFilters={{
-                    operacao: apiFilters.operacao,
-                    tipo: apiFilters.tipo,
-                    bairro: apiFilters.bairro || "",
+                    operacao: initialFilters.operacao,
+                    tipo: initialFilters.tipo,
+                    bairro: initialFilters.bairro || "",
                   }}
-                  onLocationChange={handleLocationChange}
                 />
                 
                 {results.length === 0 ? (

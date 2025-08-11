@@ -156,6 +156,31 @@ export default function AutocompleteField({
         type: 'neighborhood',
         id: item.id
       });
+    } else if (type === "location") {
+      // Verificar se é um bairro (tem propriedade type)
+      if ('type' in item && item.type === "neighborhood") {
+        // Para bairros, usar o city_id e disparar evento para bairro
+        const cityId = 'city_id' in item ? item.city_id : item.id;
+        onChange(String(cityId));
+        
+        // Disparar evento customizado para bairro selecionado
+        const event = new CustomEvent('neighborhoodSelected', {
+          detail: {
+            cityId: cityId,
+            neighborhoodName: item.name
+          }
+        });
+        window.dispatchEvent(event);
+      } else {
+        // Para cidades, usar o id da cidade
+        onChange(String(item.id));
+      }
+      
+      onItemSelect?.({
+        name: item.name,
+        type: 'type' in item ? item.type : 'city',
+        id: 'type' in item && item.type === "neighborhood" && 'city_id' in item ? (item.city_id || item.id) : item.id
+      });
     } else {
       onChange(String(item.id));
       

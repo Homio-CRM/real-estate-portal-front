@@ -48,4 +48,9 @@ export function getStateIdByName(stateName: string): number | null {
 export function getStateNameById(stateId: number): string | null {
   const state = BRAZILIAN_STATES.find(s => s.id === stateId);
   return state?.name || null;
+}
+
+export function getStateAbbreviationById(stateId: number): string | null {
+  const state = BRAZILIAN_STATES.find(s => s.id === stateId);
+  return state?.abbreviation || null;
 } 

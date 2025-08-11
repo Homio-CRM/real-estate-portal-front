@@ -14,7 +14,6 @@ type LocationSearchFieldProps = {
     tipo: string;
     bairro: string;
   };
-  onLocationChange?: (location: string) => void;
   showCurrentLocation?: boolean;
   className?: string;
 };
@@ -22,51 +21,79 @@ type LocationSearchFieldProps = {
 export default function LocationSearchField({ 
   currentLocation, 
   currentFilters, 
-  onLocationChange,
   showCurrentLocation = true,
   className = ""
 }: LocationSearchFieldProps) {
   const [newLocation, setNewLocation] = useState("");
   const [selectedItemType, setSelectedItemType] = useState<"city" | "neighborhood" | null>(null);
+  const [selectedItemData, setSelectedItemData] = useState<{ id: number; name: string } | null>(null);
   const [isLocationValid, setIsLocationValid] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    const handleNeighborhoodSelected = (event: CustomEvent) => {
-      const { neighborhoodName } = event.detail;
-      setNewLocation(neighborhoodName);
-      onLocationChange?.(neighborhoodName);
-    };
-
-    window.addEventListener('neighborhoodSelected', handleNeighborhoodSelected as EventListener);
-    
-    return () => {
-      window.removeEventListener('neighborhoodSelected', handleNeighborhoodSelected as EventListener);
-    };
-  }, [onLocationChange]);
-
   const handleLocationChange = (value: string) => {
     setNewLocation(value);
-    onLocationChange?.(value);
+    // Resetar os estados quando o usuário digitar
+    if (selectedItemType || selectedItemData) {
+      setSelectedItemType(null);
+      setSelectedItemData(null);
+    }
   };
 
   const handleItemSelect = (item: { name: string; type: string; id: number }) => {
+    console.log("=== LocationSearchField handleItemSelect ===");
+    console.log("selected item:", item);
+    
     setSelectedItemType(item.type as "city" | "neighborhood");
+    
+    if (item.type === "city") {
+      setSelectedItemData({ id: item.id, name: item.name });
+      setNewLocation(String(item.id)); // ID da cidade
+      console.log("City selected - ID:", item.id, "Name:", item.name);
+    } else if (item.type === "neighborhood") {
+      // Para bairros, o item.id já é o city_id do bairro
+      setSelectedItemData({ id: item.id, name: item.name });
+      setNewLocation(item.name); // Nome do bairro para exibição
+      console.log("Neighborhood selected - City ID:", item.id, "Name:", item.name);
+    }
   };
 
   const handleSearch = () => {
-    if (!isLocationValid) return;
+    console.log("=== LocationSearchField handleSearch ===");
+    console.log("isLocationValid:", isLocationValid);
+    console.log("selectedItemType:", selectedItemType);
+    console.log("selectedItemData:", selectedItemData);
+    console.log("currentFilters:", currentFilters);
+    
+    if (!isLocationValid || !selectedItemType || !selectedItemData) {
+      console.log("Search blocked - missing required data");
+      return;
+    }
     
     setIsSearching(true);
     
+    // Determinar se é cidade ou bairro baseado no tipo selecionado
     const filters = {
       ...currentFilters,
-      localizacao: newLocation,
-      ...(selectedItemType === "city" ? {} : { bairro: newLocation }),
+      // Se for cidade, usar como localizacao e limpar bairro
+      // Se for bairro, atualizar localizacao com city_id e bairro com nome do bairro
+      ...(selectedItemType === "city" ? {
+        localizacao: String(selectedItemData.id), // ID da cidade
+        bairro: ""
+      } : {
+        // Para bairro, precisamos do city_id do bairro selecionado
+        // O selectedItemData.id neste caso é o city_id do bairro
+        localizacao: String(selectedItemData.id), // ID da cidade do bairro
+        bairro: selectedItemData.name // Nome do bairro
+      })
     };
     
+    console.log("filters to be applied:", filters);
+    
     const url = buildResultsUrl(filters as Record<string, string>);
+    console.log("built URL:", url);
+    
+    // Navegar diretamente para a URL - sem evento
     router.push(url);
   };
 

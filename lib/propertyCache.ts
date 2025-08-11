@@ -14,18 +14,18 @@ class PropertyCache {
     
     // Se já temos cache para esta localização, não carregar novamente
     if (this.cache.has(cacheKey)) {
-      console.log("📦 Usando cache existente para localização:", location);
+      // console.log("📦 Usando cache existente para localização:", location);
       return;
     }
 
-    console.log("🔄 Pré-carregando imóveis para localização:", location);
+    // console.log("🔄 Pré-carregando imóveis para localização:", location);
     this.loading = true;
     this.lastLocation = location;
 
     try {
       const result = await searchPropertiesInCascade(location, 3);
       this.cache.set(cacheKey, result.properties);
-      console.log("✅ Imóveis pré-carregados:", result.properties.length);
+      // console.log("✅ Imóveis pré-carregados:", result.properties.length);
     } catch (error) {
       console.error("❌ Erro ao pré-carregar imóveis:", error);
       this.cache.set(cacheKey, []);
@@ -37,7 +37,7 @@ class PropertyCache {
   getProperties(location: Location): PropertyCard[] {
     const cacheKey = `${location.lat}-${location.lng}`;
     const properties = this.cache.get(cacheKey) || [];
-    console.log("📦 Retornando", properties.length, "imóveis do cache");
+    // console.log("📦 Retornando", properties.length, "imóveis do cache");
     return properties;
   }
 

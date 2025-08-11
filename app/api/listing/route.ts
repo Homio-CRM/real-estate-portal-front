@@ -20,12 +20,37 @@ function translatePropertyTypeToDB(propertyType: string): string {
   return translations[propertyType] || propertyType.toLowerCase();
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(request: Request) {
+  console.log("=== API LISTING ROUTE DEBUG ===");
+  
+  const { searchParams } = new URL(request.url);
+  const cityId = searchParams.get("cityId");
+  const transactionType = searchParams.get("transactionType");
+  const tipo = searchParams.get("tipo");
+  const bairro = searchParams.get("bairro");
+  const limit = Number(searchParams.get("limit") || 30);
+  const offset = Number(searchParams.get("offset") || 0);
+  
+  console.log("API received params:", {
+    cityId,
+    transactionType,
+    tipo,
+    bairro,
+    limit,
+    offset
+  });
+  
+  if (!cityId || !transactionType) {
+    console.log("Missing required params");
+    return NextResponse.json({ error: "cityId e transactionType são obrigatórios" }, { status: 400 });
+  }
+
   try {
     const agencyId = process.env.LOCATION_ID;
+    
     if (!agencyId) {
-      console.error("LOCATION_ID not configured");
-      return NextResponse.json({ error: "LOCATION_ID environment variable not configured" }, { status: 500 });
+      console.log("Agency ID not configured");
+      return NextResponse.json({ error: "Supabase environment variables not configured" }, { status: 500 });
     }
 
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
@@ -33,19 +58,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Supabase environment variables not configured" }, { status: 500 });
     }
 
-    const { searchParams } = new URL(req.url);
-    const transactionType = searchParams.get("transactionType");
-    const cityId = searchParams.get("cityId");
-    const bairro = searchParams.get("bairro");
-    const tipo = searchParams.get("tipo");
-    const limit = Number(searchParams.get("limit") || 30);
-    const offset = Number(searchParams.get("offset") || 0);
-
-    if (!transactionType || !cityId) {
-      return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
-    }
-
     const dbTransactionType = transactionType === "rent" ? "rent" : "sale";
+    console.log("dbTransactionType:", dbTransactionType);
+    console.log("bairro filter:", bairro);
 
     let query = supabaseAgent
       .from("entity_location")
@@ -56,6 +71,7 @@ export async function GET(req: NextRequest) {
 
     if (bairro) {
       query = query.eq("neighborhood", bairro);
+      // console.log("Filtering by neighborhood:", bairro);
     }
 
     const { data: locations, error: locError } = await query;
@@ -65,7 +81,10 @@ export async function GET(req: NextRequest) {
     }
     
     const listingIds = (locations || []).map((loc: { listing_id: string }) => loc.listing_id);
+    // console.log("Listing IDs found:", listingIds.length);
+    
     if (listingIds.length === 0) {
+      // console.log("No listing IDs found, returning empty array");
       return NextResponse.json([]);
     }
 
@@ -82,6 +101,8 @@ export async function GET(req: NextRequest) {
       console.error("Listing query error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // console.log("Listings found:", listings?.length || 0);
 
     if (!listings || listings.length === 0) {
       return NextResponse.json([]);
@@ -149,6 +170,12 @@ export async function GET(req: NextRequest) {
         return propertyType === dbPropertyType.toLowerCase();
       });
     }
+
+    // console.log("Final results count:", filteredResults.length);
+    // console.log("=== END API LISTING DEBUG ===");
+    
+    console.log("Final results count:", filteredResults.length);
+    console.log("=== END API LISTING ROUTE DEBUG ===");
 
     return NextResponse.json(filteredResults);
   } catch (error) {

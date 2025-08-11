@@ -5,16 +5,22 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const name = searchParams.get("name");
+    const id = searchParams.get("id");
     const stateId = searchParams.get("stateId");
 
-    if (!name) {
-      return NextResponse.json({ error: "Nome da cidade é obrigatório" }, { status: 400 });
+    if (!name && !id) {
+      return NextResponse.json({ error: "Nome ou ID da cidade é obrigatório" }, { status: 400 });
     }
 
     let query = supabaseAgent
       .from("city")
-      .select("id, name, state_id")
-      .ilike("name", `%${name}%`);
+      .select("id, name, state_id");
+
+    if (id) {
+      query = query.eq("id", Number(id));
+    } else if (name) {
+      query = query.ilike("name", `%${name}%`);
+    }
 
     if (stateId) {
       query = query.eq("state_id", Number(stateId));
@@ -25,6 +31,10 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error("Erro ao buscar cidades:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    if (id) {
+      return NextResponse.json(cities?.[0] || null);
     }
 
     return NextResponse.json(cities || []);
