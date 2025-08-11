@@ -36,9 +36,6 @@ export function useLocationRedirect() {
       setUserLocation(location);
       localStorage.setItem("userLocation", JSON.stringify(location));
       
-      // Pré-carregar imóveis em background
-      propertyCache.preloadProperties(location);
-      
       return true;
     } catch (error) {
       // console.log("Erro ao obter localização:", error);
@@ -47,9 +44,6 @@ export function useLocationRedirect() {
         lng: -40.2958
       };
       setUserLocation(defaultLocation);
-      
-      // Pré-carregar imóveis com localização padrão
-      propertyCache.preloadProperties(defaultLocation);
       
       return false;
     }
@@ -83,9 +77,6 @@ export function useLocationRedirect() {
         const location = JSON.parse(savedLocation);
         // console.log("📍 Localização carregada do cache:", location);
         setUserLocation(location);
-        
-        // Pré-carregar imóveis com localização do cache
-        propertyCache.preloadProperties(location);
       } catch (error) {
         // console.log("❌ Erro ao carregar localização salva:", error);
         const defaultLocation: Location = {
@@ -93,9 +84,6 @@ export function useLocationRedirect() {
           lng: -40.2958
         };
         setUserLocation(defaultLocation);
-        
-        // Pré-carregar imóveis com localização padrão
-        propertyCache.preloadProperties(defaultLocation);
       }
     } else {
       // console.log("🔍 Solicitando permissão de localização...");

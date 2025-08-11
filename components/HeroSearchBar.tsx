@@ -6,9 +6,58 @@ import AutocompleteField from "./AutocompleteField";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Button } from "./ui/button";
 import { Search } from "lucide-react";
+import { useTransactionType } from "../lib/useTransactionType";
+import { propertyCache } from "../lib/propertyCache";
 
 export default function HeroSearchBar({ filters, onFilterChange, onSearch }: PropertyFiltersProps) {
   const [isLocationValid, setIsLocationValid] = useState(false);
+  
+  // Converter operação para tipo de transação
+  const getTransactionType = (operacao: string): "sale" | "rent" | "all" => {
+    if (operacao === "alugar") return "rent";
+    if (operacao === "comprar") return "sale";
+    if (operacao === "todos") return "all";
+    return "all";
+  };
+  
+  const handleTransactionChange = async (operacao: string) => {
+    onFilterChange("operacao", operacao);
+    
+    // Fazer requisição imediata para o novo tipo de transação
+    const transactionType = getTransactionType(operacao);
+    
+    // Limpar cache anterior e fazer nova requisição
+    propertyCache.clear();
+    
+    // Se temos localização válida, fazer nova busca
+    if (isLocationValid && filters.localizacao) {
+      try {
+        // Extrair coordenadas da localização (formato pode variar)
+        let lat, lng;
+        
+        if (filters.localizacao.includes(',')) {
+          // Formato: "lat,lng"
+          const coords = filters.localizacao.split(',');
+          lat = parseFloat(coords[0]);
+          lng = parseFloat(coords[1]);
+        } else {
+          // Formato: cityId (número)
+          // Usar localização padrão de Vitória
+          lat = -20.2976;
+          lng = -40.2958;
+        }
+        
+        if (!isNaN(lat) && !isNaN(lng)) {
+          await propertyCache.preloadProperties(
+            { lat, lng },
+            transactionType
+          );
+        }
+      } catch (error) {
+        console.error("Erro ao buscar imóveis:", error);
+      }
+    }
+  };
 
   useEffect(() => {
     const handleNeighborhoodSelected = (event: CustomEvent) => {
@@ -37,7 +86,7 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
         <div className="flex flex-wrap gap-1 mb-4">
           <button
             type="button"
-            onClick={() => onFilterChange("operacao", "comprar")}
+            onClick={() => handleTransactionChange("comprar")}
             className={`px-4 md:px-6 py-2 rounded-t-lg font-medium transition-colors text-sm md:text-base ${
               filters.operacao === "comprar"
                 ? "bg-primary text-primary-foreground"
@@ -48,7 +97,7 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
           </button>
           <button
             type="button"
-            onClick={() => onFilterChange("operacao", "alugar")}
+            onClick={() => handleTransactionChange("alugar")}
             className={`px-4 md:px-6 py-2 rounded-t-lg font-medium transition-colors text-sm md:text-base ${
               filters.operacao === "alugar"
                 ? "bg-primary text-primary-foreground"
@@ -56,6 +105,17 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
             }`}
           >
             Alugar
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTransactionChange("todos")}
+            className={`px-4 md:px-6 py-2 rounded-t-lg font-medium transition-colors text-sm md:text-base ${
+              filters.operacao === "todos"
+                ? "bg-primary text-primary-foreground"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            Todos
           </button>
         </div>
         

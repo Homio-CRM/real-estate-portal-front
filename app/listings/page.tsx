@@ -106,37 +106,69 @@ function ListingsContent() {
     };
     
     console.log("effectiveFilters from URL:", effectiveFilters);
+    console.log("operacao from URL:", effectiveFilters.operacao);
     
     const validation = validateFilters(effectiveFilters);
     if (validation.isValid) {
       const transactionType = getTransactionType(effectiveFilters.operacao);
-      const fetchParams = {
-        cityId: validation.cityId!,
-        transactionType,
-        tipo: effectiveFilters.tipo ? (effectiveFilters.tipo as "Casa" | "Apartamento") : undefined,
-        bairro: effectiveFilters.bairro,
-        limit: 100,
-        offset: 0,
-      };
+      console.log("transactionType calculated:", transactionType);
       
-      console.log("fetchParams from URL:", fetchParams);
-      
-      setLoading(true);
-      fetchListings(fetchParams).then(listings => {
-        console.log("fetchListings result count from URL:", listings.length);
-        setResults(listings);
-        setLoading(false);
+      if (transactionType === "all") {
+        // Buscar imóveis de venda e aluguel
+        setLoading(true);
         
-        // Atualizar o currentLocation após a busca
-        if (effectiveFilters.localizacao) {
-          getCityName(Number(effectiveFilters.localizacao)).then(cityInfo => {
-            if (cityInfo) {
-              const stateAbbreviation = getStateAbbreviationById(cityInfo.stateId);
-              setCurrentLocation(`${cityInfo.name} - ${stateAbbreviation}`);
-            }
-          });
-        }
-      });
+        Promise.all([
+          fetchListings({
+            cityId: validation.cityId!,
+            transactionType: "sale",
+            tipo: effectiveFilters.tipo ? (effectiveFilters.tipo as "Casa" | "Apartamento") : undefined,
+            bairro: effectiveFilters.bairro,
+            limit: 50,
+            offset: 0,
+          }),
+          fetchListings({
+            cityId: validation.cityId!,
+            transactionType: "rent",
+            tipo: effectiveFilters.tipo ? (effectiveFilters.tipo as "Casa" | "Apartamento") : undefined,
+            bairro: effectiveFilters.bairro,
+            limit: 50,
+            offset: 0,
+          })
+        ]).then(([saleListings, rentListings]) => {
+          const allListings = [...saleListings, ...rentListings];
+          setResults(allListings);
+          setLoading(false);
+        });
+      } else {
+        // Buscar apenas um tipo de transação
+        const fetchParams = {
+          cityId: validation.cityId!,
+          transactionType,
+          tipo: effectiveFilters.tipo ? (effectiveFilters.tipo as "Casa" | "Apartamento") : undefined,
+          bairro: effectiveFilters.bairro,
+          limit: 100,
+          offset: 0,
+        };
+        
+        console.log("fetchParams from URL:", fetchParams);
+        
+        setLoading(true);
+        fetchListings(fetchParams).then(listings => {
+          console.log("fetchListings result count from URL:", listings.length);
+          setResults(listings);
+          setLoading(false);
+          
+          // Atualizar o currentLocation após a busca
+          if (effectiveFilters.localizacao) {
+            getCityName(Number(effectiveFilters.localizacao)).then(cityInfo => {
+              if (cityInfo) {
+                const stateAbbreviation = getStateAbbreviationById(cityInfo.stateId);
+                setCurrentLocation(`${cityInfo.name} - ${stateAbbreviation}`);
+              }
+            });
+          }
+        });
+      }
     }
   }, [initialFilters]);
 
@@ -155,19 +187,17 @@ function ListingsContent() {
     // Atualizar a URL com os novos filtros
     const urlFilters: Record<string, string> = {};
     
-    // Copiar filtros iniciais
-    Object.entries(initialFilters).forEach(([key, value]) => {
-      if (value && value !== "") {
-        urlFilters[key] = value;
+    // Copiar filtros iniciais (exceto o que está sendo alterado)
+    Object.entries(initialFilters).forEach(([filterKey, filterValue]) => {
+      if (filterValue && filterValue !== "" && filterKey !== key) {
+        urlFilters[filterKey] = filterValue;
       }
     });
     
-    // Copiar novos filtros de API
-    Object.entries(newApiFilters).forEach(([key, value]) => {
-      if (value && value !== "") {
-        urlFilters[key] = value;
-      }
-    });
+    // Adicionar o novo valor do filtro sendo alterado
+    if (value && value !== "") {
+      urlFilters[key] = value;
+    }
     
     console.log("urlFilters:", urlFilters);
     

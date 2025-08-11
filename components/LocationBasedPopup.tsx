@@ -9,12 +9,14 @@ interface LocationBasedPopupProps {
   isVisible: boolean;
   onClose: () => void;
   userLocation: Location | null;
+  transactionType?: "sale" | "rent" | "all";
 }
 
 export default function LocationBasedPopup({ 
   isVisible, 
   onClose, 
-  userLocation 
+  userLocation,
+  transactionType = "sale"
 }: LocationBasedPopupProps) {
   const [properties, setProperties] = useState<PropertyCard[]>([]);
   const [loading, setLoading] = useState(false);
@@ -34,8 +36,8 @@ export default function LocationBasedPopup({
       setLoading(true);
       
       // Usar cache se disponível, senão carregar
-      if (propertyCache.isLoaded(userLocation)) {
-        const cachedProperties = propertyCache.getProperties(userLocation);
+      if (propertyCache.isLoaded(userLocation, transactionType)) {
+        const cachedProperties = propertyCache.getProperties(userLocation, transactionType);
         console.log("📦 Usando propriedades do cache:", cachedProperties.length);
         setProperties(cachedProperties);
         setLoading(false);
@@ -43,8 +45,8 @@ export default function LocationBasedPopup({
         console.log("⏳ Cache não disponível, aguardando carregamento...");
         // Aguardar um pouco para o cache carregar
         const checkCache = () => {
-          if (propertyCache.isLoaded(userLocation)) {
-            const cachedProperties = propertyCache.getProperties(userLocation);
+          if (propertyCache.isLoaded(userLocation, transactionType)) {
+            const cachedProperties = propertyCache.getProperties(userLocation, transactionType);
             console.log("✅ Cache carregado, usando propriedades:", cachedProperties.length);
             setProperties(cachedProperties);
             setLoading(false);
@@ -55,7 +57,7 @@ export default function LocationBasedPopup({
         checkCache();
       }
     }
-  }, [isVisible, userLocation]);
+  }, [isVisible, userLocation, transactionType]);
 
   const getDistance = useCallback((property: PropertyCard) => {
     if (!userLocation || !property.latitude || !property.longitude) return null;

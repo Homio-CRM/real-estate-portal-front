@@ -11,7 +11,7 @@ export function parseFiltersFromSearchParams(searchParams: URLSearchParams): Fil
   return {
     tipo: searchParams.get("tipo") || "",
     localizacao: searchParams.get("localizacao") || "",
-    operacao: searchParams.get("operacao") || "comprar",
+    operacao: searchParams.get("operacao") || "todos",
     bairro: searchParams.get("bairro") || "",
   };
 }
@@ -29,6 +29,8 @@ export function validateFilters(filters: Filters): { isValid: boolean; cityId?: 
   return { isValid: true, cityId };
 }
 
-export function getTransactionType(operacao: string): "sale" | "rent" {
-  return operacao === "alugar" ? "rent" : "sale";
+export function getTransactionType(operacao: string): "sale" | "rent" | "all" {
+  if (operacao === "alugar") return "rent";
+  if (operacao === "comprar") return "sale";
+  return "all";
 } 

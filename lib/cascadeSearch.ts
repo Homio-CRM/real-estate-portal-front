@@ -40,26 +40,59 @@ async function getCityIdFromLocation(location: Location): Promise<number> {
 
 export async function searchPropertiesInCascade(
   userLocation: Location,
-  limit: number = 3
+  limit: number = 3,
+  transactionType: "sale" | "rent" | "all" = "sale",
+  propertyType?: "Casa" | "Apartamento"
 ): Promise<CascadeSearchResult> {
   
   try {
     const cityId = await getCityIdFromLocation(userLocation);
     
-    const properties = await fetchListings({
-      cityId: cityId,
-      limit: limit,
-      offset: 0,
-      transactionType: "sale",
-      tipo: "Apartamento"
-    });
-    
-    if (properties.length > 0) {
-      return {
-        properties: properties,
-        searchLevel: "city",
-        message: "Imóveis em destaque"
-      };
+    if (transactionType === "all") {
+      // Buscar imóveis de venda e aluguel
+      const [saleProperties, rentProperties] = await Promise.all([
+        fetchListings({
+          cityId: cityId,
+          limit: Math.ceil(limit / 2),
+          offset: 0,
+          transactionType: "sale",
+          tipo: propertyType
+        }),
+        fetchListings({
+          cityId: cityId,
+          limit: Math.ceil(limit / 2),
+          offset: 0,
+          transactionType: "rent",
+          tipo: propertyType
+        })
+      ]);
+      
+      const allProperties = [...saleProperties, ...rentProperties];
+      
+      if (allProperties.length > 0) {
+        return {
+          properties: allProperties,
+          searchLevel: "city",
+          message: "Imóveis em destaque"
+        };
+      }
+    } else {
+      // Buscar apenas um tipo de transação
+      const properties = await fetchListings({
+        cityId: cityId,
+        limit: limit,
+        offset: 0,
+        transactionType: transactionType,
+        tipo: propertyType
+      });
+      
+      if (properties.length > 0) {
+        return {
+          properties: properties,
+          searchLevel: "city",
+          message: "Imóveis em destaque"
+        };
+      }
     }
   } catch (error) {
     console.error("Erro na busca:", error);

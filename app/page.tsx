@@ -10,7 +10,7 @@ export default function Home() {
   const [filters, setFilters] = useState({
     tipo: "",
     localizacao: "",
-    operacao: "comprar",
+    operacao: "todos",
     bairro: "",
   });
 
