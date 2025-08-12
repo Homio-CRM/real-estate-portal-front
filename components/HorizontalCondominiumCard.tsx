@@ -1,6 +1,6 @@
-import { Bed, Bath, Car, Ruler, Phone, Camera } from "lucide-react";
+import { Ruler, Phone, Camera, Building } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { PropertyCard as PropertyCardType } from "../types/listings";
+import { CondominiumCard as CondominiumCardType } from "../types/listings";
 
 function translatePropertyType(propertyType: string): string {
   const translations: { [key: string]: string } = {
@@ -21,29 +21,39 @@ function translatePropertyType(propertyType: string): string {
   return translations[propertyType.toLowerCase()] || propertyType;
 }
 
-export default function HorizontalPropertyCard(props: PropertyCardType) {
+export default function HorizontalCondominiumCard(props: CondominiumCardType) {
   const router = useRouter();
   const {
-    title,
-    address,
-    area,
+    name,
+    display_address,
+    min_area,
+    max_area,
     price,
-    iptu,
     image,
-    forRent,
-    bathroom_count,
-    bedroom_count,
-    garage_count,
-    property_type,
-    listing_id,
+    total_units,
+    year_built,
+    description,
+    id,
   } = props;
 
-  const translatedPropertyType = translatePropertyType(property_type);
+  const translatedPropertyType = translatePropertyType("condominium");
 
   const handleCardClick = () => {
-    if (listing_id) {
-      router.push(`/listings/${listing_id}`);
+    if (id) {
+      router.push(`/condominiums/${id}`);
     }
+  };
+
+  const formatArea = () => {
+    if (min_area && max_area) {
+      if (min_area === max_area) {
+        return `${min_area} m²`;
+      }
+      return `${min_area} - ${max_area} m²`;
+    } else if (min_area) {
+      return `A partir de ${min_area} m²`;
+    }
+    return "Área sob consulta";
   };
 
   return (
@@ -56,7 +66,7 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
           {image && image !== "/placeholder-property.jpg" ? (
             <img 
               src={image} 
-              alt={title} 
+              alt={name} 
               className="w-full h-full object-cover" 
             />
           ) : (
@@ -75,56 +85,50 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
           <div>
             <div className="mb-2">
               <span className="text-sm text-gray-600">
-                {translatedPropertyType} para {forRent ? "alugar" : "comprar"} em{" "}
+                {translatedPropertyType} em{" "}
               </span>
               <span className="text-sm font-semibold text-gray-900">
-                {address}
+                {display_address}
               </span>
             </div>
             
-            <p className="text-sm text-gray-600 mb-4">{title}</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{name}</h3>
+            
+            {description && (
+              <p className="text-sm text-gray-600 mb-4 line-clamp-2">{description}</p>
+            )}
             
             <div className="flex gap-6 text-sm text-gray-600 mb-4">
               <span className="flex items-center gap-1">
                 <Ruler size={16} />
-                {area ?? 0} m²
+                {formatArea()}
               </span>
-              <span className="flex items-center gap-1">
-                <Bed size={16} />
-                {bedroom_count ?? 0}
-              </span>
-              <span className="flex items-center gap-1">
-                <Bath size={16} />
-                {bathroom_count ?? 0}
-              </span>
-              <span className="flex items-center gap-1">
-                <Car size={16} />
-                {garage_count ?? 0}
-              </span>
+              {total_units && (
+                <span className="flex items-center gap-1">
+                  <Building size={16} />
+                  {total_units} unidades
+                </span>
+              )}
+              {year_built && (
+                <span className="flex items-center gap-1">
+                  <span className="text-xs">Ano</span>
+                  {year_built}
+                </span>
+              )}
             </div>
           </div>
           
-          <div className="flex items-end justify-between">
-            <div>
-              <div className="text-2xl font-bold text-gray-900 mb-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold text-primary">
                 {price}
-              </div>
-              {iptu && (
-                <div className="text-xs text-gray-500">
-                  IPTU: {iptu}
-                </div>
-              )}
+              </span>
             </div>
             
-            <div className="flex gap-3">
-              <button 
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Phone size={16} />
-                Contatar
-              </button>
-            </div>
+            <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
+              <Phone size={16} />
+              <span className="text-sm font-medium">Contatar</span>
+            </button>
           </div>
         </div>
       </div>

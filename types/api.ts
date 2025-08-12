@@ -1,7 +1,7 @@
 export type FetchListingsParams = {
   cityId: number;
-  transactionType: "sale" | "rent";
-  tipo?: "Casa" | "Apartamento";
+  transactionType: "sale" | "rent" | "all";
+  tipo?: "Casa" | "Apartamento" | "Condomínio";
   bairro?: string;
   limit?: number;
   offset?: number;
@@ -41,12 +41,26 @@ export type ListingResponse = {
   title: string;
   transaction_type: string;
   virtual_tour?: string;
-  owner_name?: string;
-  owner_phone?: string;
-  owner_email?: string;
-  agent_name?: string;
-  agent_phone?: string;
-  agent_email?: string;
+  transaction_status: string;
+  construction_status?: string;
+  occupation_status?: string;
+  is_public: boolean;
+  property_type?: string;
+  usage_type?: string;
+  external_ref?: string;
+  list_price_amount?: number;
+  list_price_currency?: string;
+  rental_period?: string;
+  iptu_amount?: number;
+  iptu_currency?: string;
+  iptu_period?: string;
+  property_administration_fee_amount?: number;
+  property_administration_fee_currency?: string;
+  public_id?: string;
+  condominium_id?: string;
+  key_location?: string;
+  key_location_other?: string;
+  spu?: string;
 };
 
 export type CondominiumResponse = {
@@ -57,16 +71,7 @@ export type CondominiumResponse = {
 
 export type ListingDetailsResponse = {
   listing_id: string;
-  iptu_amount?: number;
-  iptu_currency?: string;
-  iptu_period?: string;
-  list_price_amount?: number;
-  list_price_currency?: string;
-  rental_period?: string;
-  property_administration_fee_amount?: number;
-  property_administration_fee_currency?: string;
   description?: string;
-  property_type: string;
   area?: number;
   bathroom_count?: number;
   bedroom_count?: number;
@@ -75,8 +80,12 @@ export type ListingDetailsResponse = {
   unit_floor?: number;
   buildings_count?: number;
   suite_count?: number;
-  usage_type?: string;
   year_built?: number;
+  total_area?: number;
+  private_area?: number;
+  land_area?: number;
+  built_area?: number;
+  solar_position?: string;
 };
 
 export type CondominiumDetailsResponse = {
@@ -101,6 +110,7 @@ export type MediaItemResponse = {
   caption?: string;
   is_primary: boolean;
   url: string;
+  order?: number;
 };
 
 export type EntityFeaturesResponse = {
@@ -136,6 +146,49 @@ export type EntityFeaturesResponse = {
   marina?: boolean;
   hammock_area?: boolean;
   orchid_garden?: boolean;
+  adult_pool?: boolean;
+  children_pool?: boolean;
+  heated_pool?: boolean;
+  lap_pool?: boolean;
+  spa?: boolean;
+  kids_area?: boolean;
+  laundry?: boolean;
+  ev_charging?: boolean;
+  others?: boolean;
+  others_label?: string;
+};
+
+export type EntityParticipantResponse = {
+  participant_id: string;
+  listing_id?: string;
+  condominium_id?: string;
+  ghl_contact_id: string;
+  role: string;
+  commission_percentage?: number;
+  is_primary: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RoomTypeResponse = {
+  id: number;
+  slug: string;
+  label: string;
+};
+
+export type ListingRoomResponse = {
+  listing_id: string;
+  room_type_id: number;
+  quantity?: number;
+  room_type?: RoomTypeResponse;
+};
+
+export type FloorFinishResponse = {
+  id: number;
+  listing_id: string;
+  finish_type: string;
+  location?: string;
+  other_label?: string;
 };
 
 export type CityResponse = {

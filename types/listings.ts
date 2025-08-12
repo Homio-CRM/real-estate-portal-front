@@ -4,12 +4,26 @@ export type Listing = {
   title: string;
   transaction_type: string;
   virtual_tour?: string;
-  owner_name?: string;
-  owner_phone?: string;
-  owner_email?: string;
-  agent_name?: string;
-  agent_phone?: string;
-  agent_email?: string;
+  transaction_status: string;
+  construction_status?: string;
+  occupation_status?: string;
+  is_public: boolean;
+  property_type?: string;
+  usage_type?: string;
+  external_ref?: string;
+  list_price_amount?: number;
+  list_price_currency?: string;
+  rental_period?: string;
+  iptu_amount?: number;
+  iptu_currency?: string;
+  iptu_period?: string;
+  property_administration_fee_amount?: number;
+  property_administration_fee_currency?: string;
+  public_id?: string;
+  condominium_id?: string;
+  key_location?: string;
+  key_location_other?: string;
+  spu?: string;
 };
 
 export type Condominium = {
@@ -33,16 +47,7 @@ export type CondominiumDetails = {
 
 export type ListingDetails = {
   listing_id: string;
-  iptu_amount?: number;
-  iptu_currency?: string;
-  iptu_period?: string;
-  list_price_amount?: number;
-  list_price_currency?: string;
-  rental_period?: string;
-  property_administration_fee_amount?: number;
-  property_administration_fee_currency?: string;
   description?: string;
-  property_type: string;
   area?: number;
   bathroom_count?: number;
   bedroom_count?: number;
@@ -51,8 +56,12 @@ export type ListingDetails = {
   unit_floor?: number;
   buildings_count?: number;
   suite_count?: number;
-  usage_type?: string;
   year_built?: number;
+  total_area?: number;
+  private_area?: number;
+  land_area?: number;
+  built_area?: number;
+  solar_position?: string;
 };
 
 export type EntityLocation = {
@@ -92,6 +101,7 @@ export type MediaItem = {
   caption?: string;
   is_primary: boolean;
   url: string;
+  order?: number;
 };
 
 export type City = {
@@ -139,6 +149,16 @@ export type EntityFeatures = {
   marina?: boolean;
   hammock_area?: boolean;
   orchid_garden?: boolean;
+  adult_pool?: boolean;
+  children_pool?: boolean;
+  heated_pool?: boolean;
+  lap_pool?: boolean;
+  spa?: boolean;
+  kids_area?: boolean;
+  laundry?: boolean;
+  ev_charging?: boolean;
+  others?: boolean;
+  others_label?: string;
 };
 
 export type ListingFeatures = EntityFeatures & {
@@ -151,16 +171,61 @@ export type CondominiumFeatures = EntityFeatures & {
   condominium_id: string;
 };
 
+export type EntityParticipant = {
+  participant_id: string;
+  listing_id?: string;
+  condominium_id?: string;
+  ghl_contact_id: string;
+  role: string;
+  commission_percentage?: number;
+  is_primary: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ListingParticipant = EntityParticipant & {
+  listing_id: string;
+};
+
+export type CondominiumParticipant = EntityParticipant & {
+  condominium_id: string;
+};
+
+export type RoomType = {
+  id: number;
+  slug: string;
+  label: string;
+};
+
+export type ListingRoom = {
+  listing_id: string;
+  room_type_id: number;
+  quantity?: number;
+  room_type?: RoomType;
+};
+
+export type FloorFinish = {
+  id: number;
+  listing_id: string;
+  finish_type: string;
+  location?: string;
+  other_label?: string;
+};
+
 export type PropertyCard = Listing & ListingDetails & ListingLocation & ListingFeatures & {
   image?: string;
   forRent?: boolean;
   price?: string;
   iptu?: string;
   media?: MediaItem[];
+  participants?: ListingParticipant[];
+  rooms?: ListingRoom[];
+  floor_finishes?: FloorFinish[];
 };
 
 export type CondominiumCard = Condominium & CondominiumDetails & CondominiumLocation & CondominiumFeatures & {
   image?: string;
   price?: string;
   media?: MediaItem[];
+  participants?: CondominiumParticipant[];
 }; 

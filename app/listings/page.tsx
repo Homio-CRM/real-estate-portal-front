@@ -16,6 +16,7 @@ function translatePropertyType(propertyType: string): string {
   const translations: { [key: string]: string } = {
     "apartment": "Apartamento",
     "house": "Casa",
+    "condominium": "Condomínio",
     "studio": "Kitnet",
     "loft": "Loft",
     "penthouse": "Cobertura",
@@ -94,9 +95,6 @@ function ListingsContent() {
 
   // Monitorar mudanças na URL e fazer busca
   useEffect(() => {
-    console.log("=== URL CHANGE DETECTED ===");
-    console.log("initialFilters changed:", initialFilters);
-    
     // Fazer a busca com os filtros da URL
     const effectiveFilters = {
       localizacao: initialFilters.localizacao,
@@ -105,13 +103,9 @@ function ListingsContent() {
       bairro: initialFilters.bairro,
     };
     
-    console.log("effectiveFilters from URL:", effectiveFilters);
-    console.log("operacao from URL:", effectiveFilters.operacao);
-    
     const validation = validateFilters(effectiveFilters);
     if (validation.isValid) {
       const transactionType = getTransactionType(effectiveFilters.operacao);
-      console.log("transactionType calculated:", transactionType);
       
       if (transactionType === "all") {
         // Buscar imóveis de venda e aluguel
@@ -150,11 +144,8 @@ function ListingsContent() {
           offset: 0,
         };
         
-        console.log("fetchParams from URL:", fetchParams);
-        
         setLoading(true);
         fetchListings(fetchParams).then(listings => {
-          console.log("fetchListings result count from URL:", listings.length);
           setResults(listings);
           setLoading(false);
           
@@ -175,12 +166,7 @@ function ListingsContent() {
   // Removido useEffects duplicados - agora o currentLocation é atualizado diretamente no evento
 
   const handleApiFilterChange = (key: string, value: string) => {
-    console.log("=== handleApiFilterChange ===");
-    console.log("key:", key, "value:", value);
-    console.log("current apiFilters:", apiFilters);
-    
     const newApiFilters = { ...apiFilters, [key]: value };
-    console.log("newApiFilters:", newApiFilters);
     
     setApiFilters(newApiFilters);
     
@@ -199,10 +185,7 @@ function ListingsContent() {
       urlFilters[key] = value;
     }
     
-    console.log("urlFilters:", urlFilters);
-    
     const newUrl = buildListingsUrl(urlFilters);
-    console.log("newUrl:", newUrl);
     
     // Apenas navegar - o useEffect vai detectar a mudança na URL
     router.push(newUrl);

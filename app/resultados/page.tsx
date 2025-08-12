@@ -15,6 +15,7 @@ function translatePropertyType(propertyType: string): string {
   const translations: { [key: string]: string } = {
     "apartment": "Apartamento",
     "house": "Casa",
+    "condominium": "Condomínio",
     "studio": "Kitnet",
     "loft": "Loft",
     "penthouse": "Cobertura",
@@ -272,7 +273,6 @@ function ResultadosContent() {
                     tipo: apiFilters.tipo,
                     bairro: apiFilters.bairro || "",
                   }}
-                  onLocationChange={handleLocationChange}
                 />
                 
                 {results.length === 0 ? (

@@ -132,6 +132,7 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
                 <SelectItem value="todos">Todos os imóveis</SelectItem>
                 <SelectItem value="Casa">Casa</SelectItem>
                 <SelectItem value="Apartamento">Apartamento</SelectItem>
+                <SelectItem value="Condomínio">Condomínio</SelectItem>
                 <SelectItem value="Casa de Condominio">Casa de Condominio</SelectItem>
                 <SelectItem value="Cobertura">Cobertura</SelectItem>
                 <SelectItem value="Flat">Flat</SelectItem>
