@@ -22,31 +22,16 @@ import {
   Flame,
   Trophy,
   Camera,
-  ArrowLeft
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import Header from "../../../components/Header";
 import LoadingModal from "../../../components/LoadingModal";
 import { fetchListingById, fetchListings } from "../../../lib/fetchListings";
 import { PropertyCard as PropertyCardType } from "../../../types/listings";
 import HorizontalPropertyCard from "../../../components/HorizontalPropertyCard";
-
-function translatePropertyType(propertyType: string): string {
-  const translations: { [key: string]: string } = {
-    "apartment": "Apartamento",
-    "house": "Casa",
-    "studio": "Kitnet",
-    "loft": "Loft",
-    "penthouse": "Cobertura",
-    "townhouse": "Casa Geminada",
-    "land": "Terreno",
-    "commercial": "Comercial",
-    "office": "Escritório",
-    "store": "Loja",
-    "warehouse": "Galpão",
-  };
-  
-  return translations[propertyType.toLowerCase()] || propertyType;
-}
+import { translatePropertyType } from "../../../lib/propertyTypes";
 
 function getAmenityIcon(amenity: string) {
   const icons: { [key: string]: React.ComponentType<{ size?: number; className?: string }> } = {
@@ -69,25 +54,67 @@ export default function ListingDetailPage() {
   const [property, setProperty] = useState<PropertyCardType | null>(null);
   const [similarProperties, setSimilarProperties] = useState<PropertyCardType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [condominiumInfo, setCondominiumInfo] = useState<{ id: string; name?: string; min_price?: number; max_price?: number; min_area?: number; max_area?: number } | null>(null);
 
   useEffect(() => {
     async function fetchProperty() {
-      if (params.id) {
-        const data = await fetchListingById(params.id as string);
-        setProperty(data);
-        
-        if (data) {
-          const similar = await fetchListings({
+      if (!params.id) return;
+      const data = await fetchListingById(params.id as string);
+      setProperty(data);
+      setLoading(false);
+
+      if (!data) return;
+
+      const txType = data.transaction_type === "rental" ? "rent" : "sale";
+
+      if (data.property_type === "apartment" && data.condominium_id) {
+        try {
+          const res = await fetch(`/api/condominium/${data.condominium_id}`);
+          if (res.ok) {
+            const condo = await res.json();
+            setCondominiumInfo({ id: condo.id || data.condominium_id, name: condo.name, min_price: condo.min_price, max_price: condo.max_price, min_area: condo.min_area, max_area: condo.max_area });
+            const inSameCondo: PropertyCardType[] = (Array.isArray(condo.apartments) ? condo.apartments : [])
+              .filter((p: PropertyCardType) => p.listing_id !== data.listing_id)
+              .slice(0, 3);
+            if (inSameCondo.length > 0) {
+              setSimilarProperties(inSameCondo);
+              return;
+            }
+          }
+        } catch {}
+      }
+
+      if (data.neighborhood) {
+        try {
+          const byNeighborhood = await fetchListings({
             cityId: data.city_id,
-            transactionType: data.transaction_type,
+            transactionType: txType,
             tipo: data.property_type === "apartment" ? "Apartamento" : "Casa",
-            limit: 3,
+            bairro: data.neighborhood,
+            limit: 6,
             offset: 0,
           });
-          setSimilarProperties(similar.filter((p: PropertyCardType) => p.listing_id !== params.id));
-        }
-        
-        setLoading(false);
+          const filtered = byNeighborhood.filter((p: PropertyCardType) => p.listing_id !== data.listing_id).slice(0, 3);
+          if (filtered.length > 0) {
+            setSimilarProperties(filtered);
+            return;
+          }
+        } catch {}
+      }
+
+      try {
+        const byCity = await fetchListings({
+          cityId: data.city_id,
+          transactionType: txType,
+          tipo: data.property_type === "apartment" ? "Apartamento" : "Casa",
+          limit: 6,
+          offset: 0,
+        });
+        const filtered = byCity.filter((p: PropertyCardType) => p.listing_id !== data.listing_id).slice(0, 3);
+        setSimilarProperties(filtered);
+      } catch {
+        setSimilarProperties([]);
       }
     }
     fetchProperty();
@@ -155,15 +182,47 @@ export default function ListingDetailPage() {
 
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             {property.media && property.media.length > 0 ? (
-              <div className="relative h-96">
-                <img 
-                  src={property.image || property.media[0]?.url} 
-                  alt={property.title}
-                  className="w-full h-full object-cover"
-                />
+              <div>
+                <div className="relative h-96 bg-white flex items-center justify-center">
+                  <img
+                    src={property.media[currentMediaIndex]?.url || property.image}
+                    alt={property.title}
+                    className="w-full h-full object-contain bg-white"
+                  />
+                  {property.media.length > 1 && (
+                    <>
+                      <button
+                        aria-label="Imagem anterior"
+                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
+                        onClick={() => setCurrentMediaIndex((prev) => (prev === 0 ? (property.media?.length || 1) - 1 : prev - 1))}
+                      >
+                        <ChevronLeft size={20} />
+                      </button>
+                      <button
+                        aria-label="Próxima imagem"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
+                        onClick={() => setCurrentMediaIndex((prev) => (prev === (property.media?.length || 1) - 1 ? 0 : prev + 1))}
+                      >
+                        <ChevronRight size={20} />
+                      </button>
+                      <div className="absolute bottom-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                        {currentMediaIndex + 1} / {property.media.length}
+                      </div>
+                    </>
+                  )}
+                </div>
                 {property.media.length > 1 && (
-                  <div className="absolute bottom-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-                    {property.media.length} fotos
+                  <div className="px-4 py-3 flex gap-2 overflow-x-auto bg-white border-t border-gray-200">
+                    {property.media.map((m, idx) => (
+                      <button
+                        key={m.id || m.url + idx}
+                        className={`relative w-24 h-16 rounded overflow-hidden border ${idx === currentMediaIndex ? "border-purple-600" : "border-gray-200"}`}
+                        onClick={() => setCurrentMediaIndex(idx)}
+                        aria-label={`Ver imagem ${idx + 1}`}
+                      >
+                        <img src={m.url} alt={property.title} className="w-full h-full object-contain bg-white" />
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
@@ -204,6 +263,16 @@ export default function ListingDetailPage() {
                 </span>
                 <h1 className="text-3xl font-bold text-gray-900">{property.title}</h1>
               </div>
+
+              {property.property_type === "apartment" && property.condominium_id && (
+                <div className="flex items-center gap-2 mb-6 text-gray-700">
+                  <Building size={18} className="text-purple-600" />
+                  <span>Condomínio: </span>
+                  <a href={`/condominiums/${property.condominium_id}`} className="text-primary hover:underline">
+                    {condominiumInfo?.name || "Ver condomínio"}
+                  </a>
+                </div>
+              )}
 
               <div className="flex items-center gap-4 mb-6">
                 <div className="text-2xl font-bold text-green-600">

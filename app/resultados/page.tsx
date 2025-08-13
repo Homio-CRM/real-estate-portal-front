@@ -4,31 +4,14 @@ import { useEffect, useState, useMemo, Suspense } from "react";
 import Header from "../../components/Header";
 import LoadingModal from "../../components/LoadingModal";
 import { fetchListings } from "../../lib/fetchListings";
+import { fetchCondominiums } from "../../lib/fetchCondominiums";
 import HorizontalPropertyCard from "../../components/HorizontalPropertyCard";
+import HorizontalCondominiumCard from "../../components/HorizontalCondominiumCard";
 import ResultsFilters from "../../components/ResultsFilters";
 import LocationSearchField from "../../components/LocationSearchField";
-import { PropertyCard as PropertyCardType } from "../../types/listings";
+import { PropertyCard as PropertyCardType, CondominiumCard as CondominiumCardType } from "../../types/listings";
 import { parseFiltersFromSearchParams, validateFilters, getTransactionType } from "../../lib/filters";
 import { buildResultsUrl } from "../../lib/navigation";
-
-function translatePropertyType(propertyType: string): string {
-  const translations: { [key: string]: string } = {
-    "apartment": "Apartamento",
-    "house": "Casa",
-    "condominium": "Condomínio",
-    "studio": "Kitnet",
-    "loft": "Loft",
-    "penthouse": "Cobertura",
-    "townhouse": "Casa Geminada",
-    "land": "Terreno",
-    "commercial": "Comercial",
-    "office": "Escritório",
-    "store": "Loja",
-    "warehouse": "Galpão",
-  };
-  
-  return translations[propertyType.toLowerCase()] || propertyType;
-}
 
 function ResultadosContent() {
   const searchParams = useSearchParams();
@@ -36,6 +19,7 @@ function ResultadosContent() {
   const initialFilters = useMemo(() => parseFiltersFromSearchParams(searchParams), [searchParams]);
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState<PropertyCardType[]>([]);
+  const [condoResults, setCondoResults] = useState<CondominiumCardType[]>([]);
   
   // Filtros que disparam nova busca na API
   const [apiFilters, setApiFilters] = useState({
@@ -69,6 +53,17 @@ function ResultadosContent() {
 
     const transactionType = getTransactionType(currentApiFilters.operacao || initialFilters.operacao);
     
+    if (currentApiFilters.tipo === "Condomínio") {
+      const cs = await fetchCondominiums({
+        cityId: validation.cityId!,
+        limit: 100,
+        offset: 0,
+      });
+      setCondoResults(cs);
+      setResults([]);
+      setLoading(false);
+      return;
+    }
     const listings = await fetchListings({
       cityId: validation.cityId!,
       transactionType,
@@ -77,7 +72,7 @@ function ResultadosContent() {
       limit: 100,
       offset: 0,
     });
-    
+    setCondoResults([]);
     setResults(listings);
     setLoading(false);
   };
@@ -90,20 +85,11 @@ function ResultadosContent() {
     const newApiFilters = { ...apiFilters, [key]: value };
     setApiFilters(newApiFilters);
     
-    // Atualizar a URL com os novos filtros
+    const mergedFilters = { ...initialFilters, ...newApiFilters };
     const urlFilters: Record<string, string> = {};
-    
-    // Copiar filtros iniciais
-    Object.entries(initialFilters).forEach(([key, value]) => {
-      if (value && value !== "") {
-        urlFilters[key] = value;
-      }
-    });
-    
-    // Copiar novos filtros de API
-    Object.entries(newApiFilters).forEach(([key, value]) => {
-      if (value && value !== "") {
-        urlFilters[key] = value;
+    Object.entries(mergedFilters).forEach(([filterKey, filterValue]) => {
+      if (filterValue && filterValue !== "") {
+        urlFilters[filterKey] = filterValue;
       }
     });
     
@@ -275,7 +261,7 @@ function ResultadosContent() {
                   }}
                 />
                 
-                {results.length === 0 ? (
+                {(apiFilters.tipo === "Condomínio" ? condoResults.length === 0 : results.length === 0) ? (
                   <div className="w-full flex flex-col items-center justify-center py-16 text-lg text-gray-600 font-medium">
                     Nenhum imóvel encontrado para os filtros selecionados.
                   </div>
@@ -283,14 +269,18 @@ function ResultadosContent() {
                   <div>
                     <div className="mb-6">
                       <div className="text-sm text-gray-600">
-                        {filteredResults.length} resultado{filteredResults.length !== 1 ? 's' : ''} encontrado{filteredResults.length !== 1 ? 's' : ''}
+                        {apiFilters.tipo === "Condomínio" ? condoResults.length : filteredResults.length} resultado{(apiFilters.tipo === "Condomínio" ? condoResults.length : filteredResults.length) !== 1 ? 's' : ''} encontrado{(apiFilters.tipo === "Condomínio" ? condoResults.length : filteredResults.length) !== 1 ? 's' : ''}
                       </div>
                     </div>
                     
                     <div className="space-y-4">
-                      {filteredResults.map((property, idx) => (
-                        <HorizontalPropertyCard key={property.listing_id || idx} {...property} />
-                      ))}
+                      {apiFilters.tipo === "Condomínio"
+                        ? condoResults.map((condo) => (
+                            <HorizontalCondominiumCard key={condo.id} {...condo} />
+                          ))
+                        : filteredResults.map((property, idx) => (
+                            <HorizontalPropertyCard key={property.listing_id || idx} {...property} />
+                          ))}
                     </div>
                   </div>
                 )}

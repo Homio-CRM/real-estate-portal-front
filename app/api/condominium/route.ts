@@ -87,7 +87,6 @@ export async function GET(request: Request) {
       image: item.primary_image_url || "/placeholder-property.jpg",
       price: item.price_range_formatted,
       area_range: item.area_range_formatted,
-      property_type: "condominium",
       media_count: item.media_count
     }));
 

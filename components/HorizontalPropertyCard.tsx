@@ -1,25 +1,8 @@
 import { Bed, Bath, Car, Ruler, Phone, Camera } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { PropertyCard as PropertyCardType } from "../types/listings";
-
-function translatePropertyType(propertyType: string): string {
-  const translations: { [key: string]: string } = {
-    "apartment": "Apartamento",
-    "house": "Casa",
-    "condominium": "Condomínio",
-    "kitnet": "Kitnet",
-    "loft": "Loft",
-    "cobertura": "Cobertura",
-    "casa_geminada": "Casa Geminada",
-    "terreno": "Terreno",
-    "comercial": "Comercial",
-    "escritorio": "Escritório",
-    "loja": "Loja",
-    "galpao": "Galpão"
-  };
-  
-  return translations[propertyType.toLowerCase()] || propertyType;
-}
+import { useState, type MouseEvent } from "react";
+import { translatePropertyType } from "../lib/propertyTypes";
 
 export default function HorizontalPropertyCard(props: PropertyCardType) {
   const router = useRouter();
@@ -36,9 +19,43 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
     garage_count,
     property_type,
     listing_id,
+    media,
+    list_price_amount,
+    iptu_amount,
+    condominium_id,
   } = props;
 
-  const translatedPropertyType = translatePropertyType(property_type);
+  const translatedPropertyType = translatePropertyType(String(property_type || ""));
+
+  const images = media && media.length > 0 
+    ? media.map((m) => m.url).filter((url): url is string => url !== undefined && url !== null) 
+    : image ? [image] : [];
+  const [currentImageIdx, setCurrentImageIdx] = useState(0);
+
+  const displayedImage = images[currentImageIdx] ?? "/placeholder-property.jpg";
+
+  const handleImageChange = (e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (images.length > 1) {
+      setCurrentImageIdx((prev) => (prev + 1) % images.length);
+    }
+  };
+
+  const formatCurrency = (value: number | string | undefined) => {
+    if (value === undefined || value === null || value === "" || value === "Preço sob consulta") return "Preço sob consulta";
+    let numberValue: number;
+    if (typeof value === "number") {
+      numberValue = value;
+    } else {
+      const cleaned = value.replace(/[^0-9]/g, "");
+      numberValue = Number(cleaned);
+    }
+    if (!numberValue) return "Preço sob consulta";
+    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(numberValue);
+  };
+
+  const priceFormatted = formatCurrency(list_price_amount ?? price);
+  const iptuFormatted = iptu_amount ? formatCurrency(iptu_amount) : iptu ? formatCurrency(iptu) : undefined;
 
   const handleCardClick = () => {
     if (listing_id) {
@@ -53,18 +70,26 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
     >
       <div className="flex flex-col lg:flex-row">
         <div className="w-full lg:w-80 h-64 relative">
-          {image && image !== "/placeholder-property.jpg" ? (
-            <img 
-              src={image} 
-              alt={title} 
-              className="w-full h-full object-cover" 
+          {displayedImage && displayedImage !== "/placeholder-property.jpg" ? (
+            <img
+              src={displayedImage}
+              alt={title}
+              className="w-full h-full object-cover"
             />
           ) : (
             <div className="w-full h-full bg-gray-200 flex items-center justify-center">
               <Camera size={32} className="text-gray-400" />
             </div>
           )}
-          <button className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
+          {images.length > 0 && (
+            <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded">
+              {currentImageIdx + 1}/{images.length}
+            </div>
+          )}
+          <button
+            className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors"
+            onClick={handleImageChange}
+          >
             <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
@@ -107,12 +132,10 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
           <div className="flex items-end justify-between">
             <div>
               <div className="text-2xl font-bold text-gray-900 mb-1">
-                {price}
+                {priceFormatted}
               </div>
-              {iptu && (
-                <div className="text-xs text-gray-500">
-                  IPTU: {iptu}
-                </div>
+              {iptuFormatted && (
+                <div className="text-xs text-gray-500">IPTU: {iptuFormatted}</div>
               )}
             </div>
             

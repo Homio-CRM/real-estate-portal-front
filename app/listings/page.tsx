@@ -4,32 +4,15 @@ import { useEffect, useState, useMemo, Suspense } from "react";
 import Header from "../../components/Header";
 import LoadingModal from "../../components/LoadingModal";
 import { fetchListings } from "../../lib/fetchListings";
+import { fetchCondominiums } from "../../lib/fetchCondominiums";
 import HorizontalPropertyCard from "../../components/HorizontalPropertyCard";
+import HorizontalCondominiumCard from "../../components/HorizontalCondominiumCard";
 import ResultsFilters from "../../components/ResultsFilters";
 import LocationSearchField from "../../components/LocationSearchField";
-import { PropertyCard as PropertyCardType } from "../../types/listings";
+import { PropertyCard as PropertyCardType, CondominiumCard as CondominiumCardType } from "../../types/listings";
 import { parseFiltersFromSearchParams, validateFilters, getTransactionType } from "../../lib/filters";
 import { buildListingsUrl } from "../../lib/navigation";
 import { getStateAbbreviationById } from "../../lib/brazilianStates";
-
-function translatePropertyType(propertyType: string): string {
-  const translations: { [key: string]: string } = {
-    "apartment": "Apartamento",
-    "house": "Casa",
-    "condominium": "Condomínio",
-    "studio": "Kitnet",
-    "loft": "Loft",
-    "penthouse": "Cobertura",
-    "townhouse": "Casa Geminada",
-    "land": "Terreno",
-    "commercial": "Comercial",
-    "office": "Escritório",
-    "store": "Loja",
-    "warehouse": "Galpão",
-  };
-  
-  return translations[propertyType.toLowerCase()] || propertyType;
-}
 
 async function getCityName(cityId: number): Promise<{ name: string; stateId: number } | null> {
   try {
@@ -55,6 +38,7 @@ function ListingsContent() {
   const initialFilters = useMemo(() => parseFiltersFromSearchParams(searchParams), [searchParams]);
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState<PropertyCardType[]>([]);
+  const [condoResults, setCondoResults] = useState<CondominiumCardType[]>([]);
   const [currentLocation, setCurrentLocation] = useState<string>("");
   
   // Filtros que disparam nova busca na API
@@ -105,9 +89,33 @@ function ListingsContent() {
     
     const validation = validateFilters(effectiveFilters);
     if (validation.isValid) {
+      // Atualizar o currentLocation imediatamente, independente do tipo de busca
+      if (effectiveFilters.localizacao) {
+        getCityName(Number(effectiveFilters.localizacao)).then(cityInfo => {
+          if (cityInfo) {
+            const stateAbbreviation = getStateAbbreviationById(cityInfo.stateId);
+            setCurrentLocation(`${cityInfo.name} - ${stateAbbreviation}`);
+          }
+        });
+      } else {
+        setCurrentLocation("");
+      }
+
       const transactionType = getTransactionType(effectiveFilters.operacao);
+      const isCondo = effectiveFilters.tipo === "Condomínio";
       
-      if (transactionType === "all") {
+      if (isCondo) {
+        setLoading(true);
+        fetchCondominiums({
+          cityId: validation.cityId!,
+          limit: 100,
+          offset: 0,
+        }).then(cs => {
+          setCondoResults(cs);
+          setResults([]);
+          setLoading(false);
+        });
+      } else if (transactionType === "all") {
         // Buscar imóveis de venda e aluguel
         setLoading(true);
         
@@ -130,6 +138,7 @@ function ListingsContent() {
           })
         ]).then(([saleListings, rentListings]) => {
           const allListings = [...saleListings, ...rentListings];
+          setCondoResults([]);
           setResults(allListings);
           setLoading(false);
         });
@@ -146,18 +155,9 @@ function ListingsContent() {
         
         setLoading(true);
         fetchListings(fetchParams).then(listings => {
+          setCondoResults([]);
           setResults(listings);
           setLoading(false);
-          
-          // Atualizar o currentLocation após a busca
-          if (effectiveFilters.localizacao) {
-            getCityName(Number(effectiveFilters.localizacao)).then(cityInfo => {
-              if (cityInfo) {
-                const stateAbbreviation = getStateAbbreviationById(cityInfo.stateId);
-                setCurrentLocation(`${cityInfo.name} - ${stateAbbreviation}`);
-              }
-            });
-          }
         });
       }
     }
@@ -356,7 +356,7 @@ function ListingsContent() {
                   }}
                 />
                 
-                {results.length === 0 ? (
+                {(initialFilters.tipo === "Condomínio" ? condoResults.length === 0 : results.length === 0) ? (
                   <div className="w-full flex flex-col items-center justify-center py-16 text-lg text-gray-600 font-medium">
                     Nenhum imóvel encontrado para os filtros selecionados.
                   </div>
@@ -364,14 +364,18 @@ function ListingsContent() {
                   <div>
                     <div className="mb-6">
                       <div className="text-sm text-gray-600">
-                        {filteredResults.length} resultado{filteredResults.length !== 1 ? 's' : ''} encontrado{filteredResults.length !== 1 ? 's' : ''}
+                        {initialFilters.tipo === "Condomínio" ? condoResults.length : filteredResults.length} resultado{(initialFilters.tipo === "Condomínio" ? condoResults.length : filteredResults.length) !== 1 ? 's' : ''} encontrado{(initialFilters.tipo === "Condomínio" ? condoResults.length : filteredResults.length) !== 1 ? 's' : ''}
                       </div>
                     </div>
                     
                     <div className="space-y-4">
-                      {filteredResults.map((property, idx) => (
-                        <HorizontalPropertyCard key={property.listing_id || idx} {...property} />
-                      ))}
+                      {initialFilters.tipo === "Condomínio"
+                        ? condoResults.map((condo) => (
+                            <HorizontalCondominiumCard key={condo.id} {...condo} />
+                          ))
+                        : filteredResults.map((property, idx) => (
+                            <HorizontalPropertyCard key={property.listing_id || idx} {...property} />
+                          ))}
                     </div>
                   </div>
                 )}

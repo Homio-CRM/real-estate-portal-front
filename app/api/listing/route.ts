@@ -1,23 +1,60 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { supabaseAgent } from "../../../lib/supabaseAgent";
+import { translatePropertyTypeToDB } from "../../../lib/propertyTypes";
 
-function translatePropertyTypeToDB(propertyType: string): string {
-  const translations: { [key: string]: string } = {
-    "Casa": "house",
-    "Apartamento": "apartment",
-    "Condomínio": "condominium",
-    "Kitnet": "studio",
-    "Loft": "loft",
-    "Cobertura": "penthouse",
-    "Casa Geminada": "townhouse",
-    "Terreno": "land",
-    "Comercial": "commercial",
-    "Escritório": "office",
-    "Loja": "store",
-    "Galpão": "warehouse",
-  };
-  
-  return translations[propertyType] || propertyType.toLowerCase();
+interface OptimizedListingRow {
+  listing_id: string;
+  title: string;
+  transaction_type: string;
+  virtual_tour?: string | null;
+  agency_id: string;
+  transaction_status: string;
+  construction_status?: string | null;
+  occupation_status?: string | null;
+  is_public: boolean;
+  property_type: string;
+  usage_type?: string | null;
+  external_ref?: string | null;
+  list_price_amount?: number | null;
+  list_price_currency?: string | null;
+  rental_period?: string | null;
+  iptu_amount?: number | null;
+  iptu_currency?: string | null;
+  iptu_period?: string | null;
+  property_administration_fee_amount?: number | null;
+  property_administration_fee_currency?: string | null;
+  public_id?: string | null;
+  condominium_id?: string | null;
+  key_location?: string | null;
+  key_location_other?: string | null;
+  spu?: string | null;
+  description?: string | null;
+  area?: number | null;
+  bathroom_count?: number | null;
+  bedroom_count?: number | null;
+  garage_count?: number | null;
+  floors_count?: number | null;
+  unit_floor?: number | null;
+  buildings_count?: number | null;
+  suite_count?: number | null;
+  year_built?: number | null;
+  total_area?: number | null;
+  private_area?: number | null;
+  land_area?: number | null;
+  built_area?: number | null;
+  solar_position?: string | null;
+  display_address: string;
+  neighborhood?: string | null;
+  street_number?: string | null;
+  postal_code?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  primary_image_url?: string | null;
+  for_rent: boolean;
+  price_formatted: string;
+  iptu_formatted?: string | null;
+  media_count?: number | null;
+  media?: Array<{ id?: string; url?: string; caption?: string | null; is_primary?: boolean; order?: number }>; 
 }
 
 export async function GET(request: Request) {
@@ -58,27 +95,20 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Supabase environment variables not configured" }, { status: 500 });
     }
 
-    const dbTransactionType = transactionType === "rent" ? "rent" : "sale";
-    const dbPropertyType = tipo ? translatePropertyTypeToDB(tipo) : null;
-    
-    console.log("Using optimized query with params:", {
-      cityId: Number(cityId),
-      transactionType: dbTransactionType,
-      agencyId,
-      neighborhood: bairro,
-      propertyType: dbPropertyType,
-      limit,
-      offset
-    });
-    
-    console.log("Debug - property type translation:", {
-      original: tipo,
-      translated: dbPropertyType
-    });
+    const fetchFromDb = async (dbTransactionType: "sale" | "rent") => {
+      const dbPropertyType = tipo ? translatePropertyTypeToDB(tipo) : null;
 
-    // Usando a função otimizada do Supabase
-    const { data: results, error } = await supabaseAgent
-      .rpc('get_listings_optimized', {
+      console.log("Using optimized query with params:", {
+        cityId: Number(cityId),
+        transactionType: dbTransactionType,
+        agencyId,
+        neighborhood: bairro,
+        propertyType: dbPropertyType,
+        limit,
+        offset
+      });
+
+      const { data, error } = await supabaseAgent.rpc('get_listings_optimized', {
         p_city_id: Number(cityId),
         p_transaction_type: dbTransactionType,
         p_agency_id: agencyId,
@@ -88,13 +118,32 @@ export async function GET(request: Request) {
         p_offset: offset
       });
 
-    if (error) {
-      console.error("Optimized query error:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) {
+        throw error;
+      }
+
+      return data || [];
+    };
+
+    let results: OptimizedListingRow[] = []; // Changed type to any[] as OptimizedListingRow is removed
+    try {
+      if (transactionType === "all") {
+        const [saleResults, rentResults] = await Promise.all([
+          fetchFromDb("sale"),
+          fetchFromDb("rent")
+        ]);
+        results = [...saleResults, ...rentResults];
+      } else {
+        const singleResults = await fetchFromDb(transactionType === "rent" ? "rent" : "sale");
+        results = singleResults;
+      }
+    } catch (dbError) {
+      console.error("Optimized query error:", dbError);
+      return NextResponse.json({ error: (dbError as Error).message }, { status: 500 });
     }
 
     // Transformando os resultados para o formato esperado pelo frontend
-    const transformedResults = (results || []).map((item: any) => ({
+    const transformedResults = (results || []).map((item: OptimizedListingRow) => ({
       listing_id: item.listing_id,
       title: item.title,
       transaction_type: item.transaction_type,
@@ -141,7 +190,7 @@ export async function GET(request: Request) {
       // Localização
       display_address: item.display_address,
       neighborhood: item.neighborhood,
-      address: item.address,
+      address: item.display_address,
       street_number: item.street_number,
       postal_code: item.postal_code,
       latitude: item.latitude,
@@ -152,10 +201,16 @@ export async function GET(request: Request) {
       forRent: item.for_rent,
       price: item.price_formatted,
       iptu: item.iptu_formatted,
-      media_count: item.media_count
+      media_count: item.media_count,
+      media: item.media || []
     }));
 
     console.log("Optimized query results count:", transformedResults.length);
+    console.log("Sample result with media:", transformedResults[0] ? {
+      listing_id: transformedResults[0].listing_id,
+      media_count: transformedResults[0].media_count,
+      media: transformedResults[0].media
+    } : "No results");
     console.log("=== END API LISTING ROUTE OPTIMIZED ===");
 
     return NextResponse.json(transformedResults);

@@ -1,25 +1,7 @@
 import { Ruler, Phone, Camera, Building } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { CondominiumCard as CondominiumCardType } from "../types/listings";
-
-function translatePropertyType(propertyType: string): string {
-  const translations: { [key: string]: string } = {
-    "apartment": "Apartamento",
-    "house": "Casa",
-    "condominium": "Condomínio",
-    "kitnet": "Kitnet",
-    "loft": "Loft",
-    "cobertura": "Cobertura",
-    "casa_geminada": "Casa Geminada",
-    "terreno": "Terreno",
-    "comercial": "Comercial",
-    "escritorio": "Escritório",
-    "loja": "Loja",
-    "galpao": "Galpão"
-  };
-  
-  return translations[propertyType.toLowerCase()] || propertyType;
-}
+import { translatePropertyType } from "../lib/propertyTypes";
 
 export default function HorizontalCondominiumCard(props: CondominiumCardType) {
   const router = useRouter();
@@ -28,7 +10,8 @@ export default function HorizontalCondominiumCard(props: CondominiumCardType) {
     display_address,
     min_area,
     max_area,
-    price,
+    min_price,
+    max_price,
     image,
     total_units,
     year_built,
@@ -54,6 +37,19 @@ export default function HorizontalCondominiumCard(props: CondominiumCardType) {
       return `A partir de ${min_area} m²`;
     }
     return "Área sob consulta";
+  };
+
+  const formatPrice = () => {
+    const formatCurrency = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+    if (min_price && max_price) {
+      if (min_price === max_price) {
+        return formatCurrency(min_price);
+      }
+      return `${formatCurrency(min_price)} - ${formatCurrency(max_price)}`;
+    } else if (min_price) {
+      return `A partir de ${formatCurrency(min_price)}`;
+    }
+    return "Preço sob consulta";
   };
 
   return (
@@ -121,7 +117,7 @@ export default function HorizontalCondominiumCard(props: CondominiumCardType) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold text-primary">
-                {price}
+                {formatPrice()}
               </span>
             </div>
             
