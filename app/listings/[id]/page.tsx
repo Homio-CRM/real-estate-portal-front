@@ -31,6 +31,7 @@ import LoadingModal from "../../../components/LoadingModal";
 import { fetchListingById, fetchListings } from "../../../lib/fetchListings";
 import { PropertyCard as PropertyCardType } from "../../../types/listings";
 import HorizontalPropertyCard from "../../../components/HorizontalPropertyCard";
+import ContactForm from "../../../components/ContactForm";
 import { translatePropertyType } from "../../../lib/propertyTypes";
 
 function getAmenityIcon(amenity: string) {
@@ -454,29 +455,34 @@ export default function ListingDetailPage() {
                      </div>
                    </div>
 
-                   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                     <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
-                       <span className="text-green-600">$</span>
-                       Resumo Financeiro
-                     </h3>
-                     <div className="space-y-2 text-gray-700">
-                       <div>
-                         <span className="font-medium">
-                           {property.forRent ? "Aluguel mensal:" : "Valor do imóvel:"}
-                         </span> {property.price}
-                       </div>
-                       {property.property_administration_fee_amount && (
-                         <div>
-                           <span className="font-medium">Condomínio:</span> R$ {property.property_administration_fee_amount.toLocaleString("pt-BR")}
-                         </div>
-                       )}
-                       {property.iptu_amount && (
-                         <div>
-                           <span className="font-medium">IPTU:</span> R$ {property.iptu_amount.toLocaleString("pt-BR")}
-                         </div>
-                       )}
-                     </div>
-                   </div>
+                                       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                      <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
+                        <span className="text-green-600">$</span>
+                        Resumo Financeiro
+                      </h3>
+                      <div className="space-y-2 text-gray-700">
+                        <div>
+                          <span className="font-medium">
+                            {property.forRent ? "Aluguel mensal:" : "Valor do imóvel:"}
+                          </span> {property.price}
+                        </div>
+                        {property.property_administration_fee_amount && (
+                          <div>
+                            <span className="font-medium">Condomínio:</span> R$ {property.property_administration_fee_amount.toLocaleString("pt-BR")}
+                          </div>
+                        )}
+                        {property.iptu_amount && (
+                          <div>
+                            <span className="font-medium">IPTU:</span> R$ {property.iptu_amount.toLocaleString("pt-BR")}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <ContactForm
+                      propertyId={property.public_id || property.listing_id || ""}
+                      propertyTitle={property.title}
+                    />
                                  </div>
                </div>
              </div>
