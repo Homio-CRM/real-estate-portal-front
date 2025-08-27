@@ -32,5 +32,6 @@ export function validateFilters(filters: Filters): { isValid: boolean; cityId?: 
 export function getTransactionType(operacao: string): "sale" | "rent" | "all" {
   if (operacao === "alugar") return "rent";
   if (operacao === "comprar") return "sale";
+  if (operacao === "lancamento") return "sale";
   return "all";
 } 

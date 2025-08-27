@@ -5,6 +5,7 @@ export type FetchListingsParams = {
   bairro?: string;
   limit?: number;
   offset?: number;
+  isLaunch?: boolean;
 };
 
 export type EntityLocationResponse = {

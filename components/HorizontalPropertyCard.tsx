@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { PropertyCard as PropertyCardType } from "../types/listings";
 import { useState, type MouseEvent } from "react";
 import { translatePropertyType } from "../lib/propertyTypes";
+import { formatCurrency } from "../lib/formatCurrency";
 
 export default function HorizontalPropertyCard(props: PropertyCardType) {
   const router = useRouter();
@@ -39,19 +40,6 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
     if (images.length > 1) {
       setCurrentImageIdx((prev) => (prev + 1) % images.length);
     }
-  };
-
-  const formatCurrency = (value: number | string | undefined) => {
-    if (value === undefined || value === null || value === "" || value === "Preço sob consulta") return "Preço sob consulta";
-    let numberValue: number;
-    if (typeof value === "number") {
-      numberValue = value;
-    } else {
-      const cleaned = value.replace(/[^0-9]/g, "");
-      numberValue = Number(cleaned);
-    }
-    if (!numberValue) return "Preço sob consulta";
-    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(numberValue);
   };
 
   const priceFormatted = formatCurrency(list_price_amount ?? price);

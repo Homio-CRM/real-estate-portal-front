@@ -114,6 +114,7 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
             <SelectItem value="todos">Todos</SelectItem>
             <SelectItem value="comprar">Comprar</SelectItem>
             <SelectItem value="alugar">Alugar</SelectItem>
+            <SelectItem value="lancamento">Lançamento</SelectItem>
           </SelectContent>
         </Select>
       </div>

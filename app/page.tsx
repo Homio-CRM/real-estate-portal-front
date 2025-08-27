@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Header from "../components/Header";
 import HeroSearchBar from "../components/HeroSearchBar";
+import FeaturedProperties from "../components/FeaturedProperties";
 import FeaturedCondominiums from "../components/FeaturedCondominiums";
 import { buildListingsUrl } from "../lib/navigation";
 
@@ -11,7 +12,7 @@ export default function Home() {
   const [filters, setFilters] = useState({
     tipo: "",
     localizacao: "",
-    operacao: "todos",
+    operacao: "comprar",
     bairro: "",
   });
 
@@ -61,11 +62,13 @@ export default function Home() {
               href="#" 
               className="text-white underline text-lg hover:text-white/80 transition-colors"
             >
-              Anuncie seu imóvel gratuitamente
+              Anuncie seu imóvel conosco
             </a>
           </div>
         </div>
       </div>
+      
+      <FeaturedProperties />
       
       <FeaturedCondominiums />
     </>

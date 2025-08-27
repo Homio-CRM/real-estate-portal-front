@@ -3,7 +3,7 @@ import { PropertyCard } from "../types/listings";
 
 export async function fetchListings(params: FetchListingsParams): Promise<PropertyCard[]> {
   console.log("=== FETCH LISTINGS DEBUG ===");
-  console.log("FetchListings params:", params);
+  console.log("Params received:", params);
   
   const searchParams = new URLSearchParams();
   
@@ -31,12 +31,15 @@ export async function fetchListings(params: FetchListingsParams): Promise<Proper
     searchParams.append("offset", params.offset.toString());
   }
   
-  console.log("URL params:", searchParams.toString());
+  if (params.isLaunch !== undefined) {
+    searchParams.append("isLaunch", params.isLaunch.toString());
+  }
   
   const fullUrl = `/api/listing?${searchParams.toString()}`;
   console.log("Full URL:", fullUrl);
   
   try {
+    console.log("Making fetch request...");
     const response = await fetch(fullUrl);
     console.log("Response status:", response.status);
     
@@ -47,12 +50,11 @@ export async function fetchListings(params: FetchListingsParams): Promise<Proper
     
     const data = await response.json();
     console.log("Response data length:", data.length);
+    console.log("First item sample:", data[0]);
     console.log("=== END FETCH LISTINGS DEBUG ===");
-    
     return data;
   } catch (error) {
     console.error("Error fetching listings:", error);
-    console.log("=== END FETCH LISTINGS DEBUG ===");
     throw error;
   }
 }

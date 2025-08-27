@@ -16,8 +16,8 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
   const getTransactionType = (operacao: string): "sale" | "rent" | "all" => {
     if (operacao === "alugar") return "rent";
     if (operacao === "comprar") return "sale";
-    if (operacao === "todos") return "all";
-    return "all";
+    if (operacao === "lancamento") return "sale";
+    return "sale"; // Padrão para compra
   };
   
   const handleTransactionChange = async (operacao: string) => {
@@ -106,16 +106,17 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
           >
             Alugar
           </button>
+
           <button
             type="button"
-            onClick={() => handleTransactionChange("todos")}
+            onClick={() => handleTransactionChange("lancamento")}
             className={`px-4 md:px-6 py-2 rounded-t-lg font-medium transition-colors text-sm md:text-base ${
-              filters.operacao === "todos"
+              filters.operacao === "lancamento"
                 ? "bg-primary text-primary-foreground"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            Todos
+            Lançamento
           </button>
         </div>
         

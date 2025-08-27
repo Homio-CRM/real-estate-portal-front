@@ -71,24 +71,26 @@ export default function FeaturedCondominiumCard(props: FeaturedCondominiumCardPr
         </div>
       </div>
       
-      <div className="p-6">
-        <div className="mb-3">
-          <div className="flex items-center gap-1 text-sm text-gray-600 mb-1">
-            <MapPin size={14} />
-            <span>{display_address}</span>
+      <div className="p-6 flex flex-col min-h-[200px]">
+        <div className="flex-1">
+          <div className="mb-3">
+            <div className="flex items-center gap-1 text-sm text-gray-600 mb-1">
+              <MapPin size={14} />
+              <span>{display_address}</span>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors">
+              {name}
+            </h3>
           </div>
-          <h3 className="text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors">
-            {name}
-          </h3>
+          
+          {description && (
+            <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
+              {description}
+            </p>
+          )}
         </div>
         
-        {description && (
-          <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
-            {description}
-          </p>
-        )}
-        
-        <div className="flex flex-wrap gap-4 text-xs text-gray-500 mb-4">
+        <div className="flex flex-wrap gap-4 text-xs text-gray-500 mt-4">
           <div className="flex items-center gap-1">
             <Ruler size={14} />
             <span>{formatArea()}</span>
@@ -105,14 +107,6 @@ export default function FeaturedCondominiumCard(props: FeaturedCondominiumCardPr
               <span>{year_built}</span>
             </div>
           )}
-        </div>
-        
-        <div className="border-t pt-4">
-          <div className="flex items-center justify-end">
-            <button className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-              Ver Detalhes
-            </button>
-          </div>
         </div>
       </div>
     </div>

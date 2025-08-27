@@ -64,6 +64,8 @@ function ResultadosContent() {
       setLoading(false);
       return;
     }
+    
+    const isLaunch = currentApiFilters.operacao === "lancamento";
     const listings = await fetchListings({
       cityId: validation.cityId!,
       transactionType,
@@ -71,6 +73,7 @@ function ResultadosContent() {
       bairro: currentApiFilters.bairro,
       limit: 100,
       offset: 0,
+      isLaunch: isLaunch,
     });
     setCondoResults([]);
     setResults(listings);

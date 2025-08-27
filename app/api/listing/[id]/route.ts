@@ -7,64 +7,117 @@ export async function GET(
 ) {
   const { id } = await params;
   
+  console.log("=== API LISTING DETAIL ROUTE CALLED ===");
+  console.log("Listing ID:", id);
+  
   try {
-
+    // Query direta que funciona (baseada na homepage)
     const { data: listing, error: listingError } = await supabaseAgent
       .from("listing")
-      .select("*")
+      .select(`
+        listing_id,
+        title,
+        transaction_type,
+        agency_id,
+        transaction_status,
+        is_public,
+        property_type,
+        list_price_amount,
+        list_price_currency,
+        iptu_amount,
+        iptu_currency,
+        public_id,
+        condominium_id,
+        virtual_tour,
+        construction_status,
+        occupation_status,
+        usage_type,
+        external_ref,
+        rental_period,
+        iptu_period,
+        property_administration_fee_amount,
+        property_administration_fee_currency,
+        key_location,
+        key_location_other,
+        spu,
+        media_item(
+          id,
+          url,
+          caption,
+          is_primary,
+          order
+        )
+      `)
       .eq("listing_id", id)
       .single();
 
     if (listingError || !listing) {
+      console.error("Listing not found:", listingError);
       return NextResponse.json({ error: "Listing not found" }, { status: 404 });
     }
 
-    const { data: details } = await supabaseAgent
-      .from("listing_details")
-      .select("*")
-      .eq("listing_id", id)
-      .single();
+    console.log("=== LISTING DETAIL DEBUG ===");
+    console.log("Listing found:", {
+      listing_id: listing.listing_id,
+      title: listing.title,
+      media_count: listing.media_item?.length || 0
+    });
 
-    const { data: location } = await supabaseAgent
-      .from("entity_location")
-      .select("*")
-      .eq("listing_id", id)
-      .eq("entity_type", "listing")
-      .single();
+    // Buscar detalhes adicionais
+    const [{ data: details }, { data: location }, { data: features }] = await Promise.all([
+      supabaseAgent
+        .from("listing_details")
+        .select("*")
+        .eq("listing_id", id)
+        .single(),
+      supabaseAgent
+        .from("entity_location")
+        .select("*")
+        .eq("listing_id", id)
+        .eq("entity_type", "listing")
+        .single(),
+      supabaseAgent
+        .from("entity_features")
+        .select("*")
+        .eq("listing_id", id)
+        .eq("entity_type", "listing")
+        .single()
+    ]);
 
-    const { data: features } = await supabaseAgent
-      .from("entity_features")
-      .select("*")
-      .eq("listing_id", id)
-      .eq("entity_type", "listing")
-      .single();
-
-    const { data: media } = await supabaseAgent
-      .from("media_item")
-      .select("*")
-      .eq("entity_type", "listing")
-      .eq("listing_id", id)
-      .order("is_primary", { ascending: false });
+    const media = listing.media_item || [];
+    const primaryImage = media.find((m: any) => m.is_primary)?.url || media[0]?.url;
 
     const property = {
       ...listing,
       ...(details || {}),
       ...(location || {}),
       ...(features || {}),
-      media: media || [],
-      forRent: listing.transaction_type === "rental",
-      price: listing.transaction_type === "rental" 
-        ? details?.rental_price_amount 
-          ? `R$ ${details.rental_price_amount.toLocaleString("pt-BR")}`
-          : "Preço sob consulta"
-        : details?.list_price_amount
-          ? `R$ ${details.list_price_amount.toLocaleString("pt-BR")}`
-          : "Preço sob consulta",
-      iptu: details?.iptu_amount 
-        ? `R$ ${details.iptu_amount.toLocaleString("pt-BR")}`
+      media: media.map((m: any) => ({
+        id: m.id,
+        url: m.url,
+        caption: m.caption,
+        is_primary: m.is_primary,
+        order: m.order
+      })),
+      media_count: media.length,
+      primary_image_url: primaryImage,
+      forRent: listing.transaction_type === "rent",
+      price: listing.list_price_amount 
+        ? `R$ ${listing.list_price_amount.toLocaleString("pt-BR")}`
+        : "Preço sob consulta",
+      iptu: listing.iptu_amount 
+        ? `R$ ${listing.iptu_amount.toLocaleString("pt-BR")}`
         : undefined,
-      image: media?.find(m => m.is_primary)?.url || "/placeholder-property.jpg",
+      image: primaryImage || "/placeholder-property.jpg",
     };
+
+    console.log("=== FINAL PROPERTY DEBUG ===");
+    console.log("Property media info:", {
+      media_count: property.media_count,
+      has_media: !!property.media,
+      media_length: property.media?.length || 0,
+      primary_image_url: property.primary_image_url
+    });
 
     return NextResponse.json(property);
   } catch (error) {
