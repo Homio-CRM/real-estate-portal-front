@@ -9,6 +9,7 @@ import HorizontalPropertyCard from "../../components/HorizontalPropertyCard";
 import HorizontalCondominiumCard from "../../components/HorizontalCondominiumCard";
 import ResultsFilters from "../../components/ResultsFilters";
 import LocationSearchField from "../../components/LocationSearchField";
+import Footer from "../../components/Footer";
 import { PropertyCard as PropertyCardType, CondominiumCard as CondominiumCardType } from "../../types/listings";
 import { parseFiltersFromSearchParams, validateFilters, getTransactionType } from "../../lib/filters";
 import { buildListingsUrl } from "../../lib/navigation";
@@ -384,6 +385,8 @@ function ListingsContent() {
           )}
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 }

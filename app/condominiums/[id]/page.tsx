@@ -30,6 +30,7 @@ import Header from "../../../components/Header";
 import LoadingModal from "../../../components/LoadingModal";
 import { CondominiumCard, PropertyCard } from "../../../types/listings";
 import HorizontalPropertyCard from "../../../components/HorizontalPropertyCard";
+import Footer from "../../../components/Footer";
 
 type CondominiumDetail = CondominiumCard & {
   apartments?: PropertyCard[];
@@ -476,6 +477,8 @@ export default function CondominiumDetailPage() {
 
          </div>
        </div>
+       
+       <Footer />
      </div>
    );
  }

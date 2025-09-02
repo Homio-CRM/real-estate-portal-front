@@ -5,6 +5,7 @@ import Header from "../components/Header";
 import HeroSearchBar from "../components/HeroSearchBar";
 import FeaturedProperties from "../components/FeaturedProperties";
 import FeaturedCondominiums from "../components/FeaturedCondominiums";
+import Footer from "../components/Footer";
 import { buildListingsUrl } from "../lib/navigation";
 
 export default function Home() {
@@ -71,6 +72,8 @@ export default function Home() {
       <FeaturedProperties />
       
       <FeaturedCondominiums />
+      
+      <Footer />
     </>
   );
 } // first commit

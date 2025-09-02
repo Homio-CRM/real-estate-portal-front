@@ -32,6 +32,7 @@ import { fetchListingById, fetchListings } from "../../../lib/fetchListings";
 import { PropertyCard as PropertyCardType } from "../../../types/listings";
 import HorizontalPropertyCard from "../../../components/HorizontalPropertyCard";
 import ContactForm from "../../../components/ContactForm";
+import Footer from "../../../components/Footer";
 import { translatePropertyType } from "../../../lib/propertyTypes";
 
 function getAmenityIcon(amenity: string) {
@@ -505,6 +506,8 @@ export default function ListingDetailPage() {
            )}
          </div>
        </div>
+       
+       <Footer />
      </div>
    );
  } 
