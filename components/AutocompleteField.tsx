@@ -140,7 +140,7 @@ export default function AutocompleteField({
         clearTimeout(debounceRef.current);
       }
     };
-  }, [input, type, cityId]);
+  }, [input, type, cityId, onValidityChange]);
 
   function handleSelect(item: CityAutocomplete | NeighborhoodAutocomplete) {
     setInput(item.name);
@@ -282,7 +282,7 @@ export default function AutocompleteField({
           <div className="absolute right-3 top-3 w-4 h-4 animate-spin border-2 border-primary border-t-transparent rounded-full"></div>
         )}
         {error && showOptions && (
-          <div className="absolute z-10 w-full bg-white border border-red-500 rounded-lg mt-1 p-3 text-red-600 text-sm">
+          <div className="absolute z-10 w-full bg-white border border-destructive rounded-lg mt-1 p-3 text-destructive text-sm">
             {error}
           </div>
         )}

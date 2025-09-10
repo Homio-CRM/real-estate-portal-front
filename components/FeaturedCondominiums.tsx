@@ -50,7 +50,7 @@ export default function FeaturedCondominiums({ cityId }: FeaturedCondominiumsPro
           </div>
           
           <div className="flex justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         </div>
       </section>
@@ -112,7 +112,7 @@ export default function FeaturedCondominiums({ cityId }: FeaturedCondominiumsPro
         <div className="text-center">
           <Link 
             href="/resultados?tipo=Condomínio&operacao=venda"
-            className="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-secondary transition-colors"
           >
             Ver Todos os Condomínios
             <ArrowRight size={20} />

@@ -153,42 +153,27 @@ export default function LocationBasedPopup({
 
                       {/* Características */}
                       <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
-                        <div className="flex items-center gap-1">
-                          <Ruler size={14} className="text-purple-600" />
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Ruler size={14} className="text-primary" />
                           <span>{property.area || 0} m²</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Bed size={14} className="text-purple-600" />
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Bed size={14} className="text-primary" />
                           <span>{property.bedroom_count || 0}</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Bath size={14} className="text-purple-600" />
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Bath size={14} className="text-primary" />
                           <span>{property.bathroom_count || 0}</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Car size={14} className="text-purple-600" />
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Car size={14} className="text-primary" />
                           <span>{property.garage_count || 0}</span>
                         </div>
                       </div>
 
-                      {/* Preço e Botão */}
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-green-600 text-lg">
-                          {property.price}
-                        </span>
-                        <button
-                          className="flex items-center gap-1 px-3 py-2 bg-primary text-white text-sm rounded hover:bg-primary/90 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const phone = property.owner_phone || property.agent_phone;
-                            if (phone) {
-                              window.open(`tel:${phone}`, '_self');
-                            }
-                          }}
-                        >
-                          <Phone size={14} />
-                          Contatar
-                        </button>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Phone size={14} className="text-primary" />
+                        <span>Contato: {property.key_location || 'Não informado'}</span>
                       </div>
                     </div>
                   </div>

@@ -78,7 +78,7 @@ export default function FeaturedCondominiumCard(props: FeaturedCondominiumCardPr
               <MapPin size={14} />
               <span>{display_address}</span>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors">
+            <h3 className="text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-primary transition-colors">
               {name}
             </h3>
           </div>

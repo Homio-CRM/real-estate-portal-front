@@ -31,6 +31,7 @@ import LoadingModal from "../../../components/LoadingModal";
 import { CondominiumCard, PropertyCard } from "../../../types/listings";
 import HorizontalPropertyCard from "../../../components/HorizontalPropertyCard";
 import Footer from "../../../components/Footer";
+import ContactForm from "../../../components/ContactForm";
 
 type CondominiumDetail = CondominiumCard & {
   apartments?: PropertyCard[];
@@ -340,18 +341,10 @@ export default function CondominiumDetailPage() {
                     )}
 
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                      <button 
-                        className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors text-lg"
-                        onClick={() => {
-                          const phone = condo.owner_phone || condo.agent_phone;
-                          if (phone) {
-                            window.open(`tel:${phone}`, '_self');
-                          }
-                        }}
-                      >
-                        <Phone size={24} />
-                        Contatar Agora
-                      </button>
+                      <ContactForm
+                        propertyId={condo.id || ""}
+                        propertyTitle={condo.name}
+                      />
                       <p className="text-center text-sm text-gray-600 mt-2">
                         Entre em contato para mais informações
                       </p>

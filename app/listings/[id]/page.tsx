@@ -34,6 +34,7 @@ import HorizontalPropertyCard from "../../../components/HorizontalPropertyCard";
 import ContactForm from "../../../components/ContactForm";
 import Footer from "../../../components/Footer";
 import { translatePropertyType } from "../../../lib/propertyTypes";
+import { ImageGallery } from "../../../components/ImageGallery";
 
 function getAmenityIcon(amenity: string) {
   const icons: { [key: string]: React.ComponentType<{ size?: number; className?: string }> } = {
@@ -58,6 +59,7 @@ export default function ListingDetailPage() {
   const [loading, setLoading] = useState(true);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [condominiumInfo, setCondominiumInfo] = useState<{ id: string; name?: string; min_price?: number; max_price?: number; min_area?: number; max_area?: number } | null>(null);
+  const [showGallery, setShowGallery] = useState(false);
 
   useEffect(() => {
     async function fetchProperty() {
@@ -164,7 +166,7 @@ export default function ListingDetailPage() {
   const breadcrumbs = [
     property.forRent ? "Aluguel" : "Venda",
     "ES",
-    `${translatePropertyType(property.property_type)} ${property.forRent ? "à aluguel" : "à venda"}`,
+    `${translatePropertyType(property.property_type || "")} ${property.forRent ? "à aluguel" : "à venda"}`,
     property.neighborhood || "Vitória",
     property.address || "Endereço não informado"
   ];
@@ -189,7 +191,8 @@ export default function ListingDetailPage() {
                   <img
                     src={property.media[currentMediaIndex]?.url || property.image}
                     alt={property.title}
-                    className="w-full h-full object-contain bg-white"
+                    className="w-full h-full object-contain bg-white cursor-pointer"
+                    onClick={() => setShowGallery(true)}
                   />
                   {property.media.length > 1 && (
                     <>
@@ -283,10 +286,8 @@ export default function ListingDetailPage() {
                 <button 
                   className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
                   onClick={() => {
-                    const phone = property.owner_phone || property.agent_phone;
-                    if (phone) {
-                      window.open(`tel:${phone}`, '_self');
-                    }
+                    // TODO: Implementar contato
+                    alert('Funcionalidade de contato será implementada em breve');
                   }}
                 >
                   <Phone size={20} />
@@ -373,10 +374,8 @@ export default function ListingDetailPage() {
                      <button 
                        className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors text-lg"
                        onClick={() => {
-                         const phone = property.owner_phone || property.agent_phone;
-                         if (phone) {
-                           window.open(`tel:${phone}`, '_self');
-                         }
+                         // TODO: Implementar contato
+                         alert('Funcionalidade de contato será implementada em breve');
                        }}
                      >
                        <Phone size={24} />
@@ -406,53 +405,9 @@ export default function ListingDetailPage() {
                        Contatos
                      </h3>
                      <div className="space-y-4">
-                       {property.owner_name && (
-                         <div>
-                           <h4 className="font-medium text-gray-900 mb-2">Proprietário</h4>
-                           <div className="space-y-1 text-sm text-gray-700">
-                             <div className="flex items-center gap-2">
-                               <User size={14} />
-                               <span>{property.owner_name}</span>
-                             </div>
-                             {property.owner_phone && (
-                               <div className="flex items-center gap-2">
-                                 <Phone size={14} />
-                                 <span>{property.owner_phone}</span>
-                               </div>
-                             )}
-                             {property.owner_email && (
-                               <div className="flex items-center gap-2">
-                                 <Mail size={14} />
-                                 <span>{property.owner_email}</span>
-                               </div>
-                             )}
-                           </div>
-                         </div>
-                       )}
-
-                       {property.agent_name && (
-                         <div>
-                           <h4 className="font-medium text-gray-900 mb-2">Corretor</h4>
-                           <div className="space-y-1 text-sm text-gray-700">
-                             <div className="flex items-center gap-2">
-                               <User size={14} />
-                               <span>{property.agent_name}</span>
-                             </div>
-                             {property.agent_phone && (
-                               <div className="flex items-center gap-2">
-                                 <Phone size={14} />
-                                 <span>{property.agent_phone}</span>
-                               </div>
-                             )}
-                             {property.agent_email && (
-                               <div className="flex items-center gap-2">
-                                 <Mail size={14} />
-                                 <span>{property.agent_email}</span>
-                               </div>
-                             )}
-                           </div>
-                         </div>
-                       )}
+                       <p className="text-gray-600">
+                         Para mais informações sobre este imóvel, entre em contato através do formulário abaixo.
+                       </p>
                      </div>
                    </div>
 
@@ -482,7 +437,7 @@ export default function ListingDetailPage() {
 
                     <ContactForm
                       propertyId={property.public_id || property.listing_id || ""}
-                      propertyTitle={property.title}
+                      propertyTitle={property.title || ""}
                     />
                                  </div>
                </div>
@@ -507,7 +462,19 @@ export default function ListingDetailPage() {
          </div>
        </div>
        
-       <Footer />
-     </div>
-   );
- } 
+             <Footer />
+      
+      {showGallery && property?.media && (
+        <ImageGallery
+          mediaItems={property.media.map(item => ({
+            id: item.id || '',
+            url: item.url,
+            caption: item.caption,
+            is_primary: item.is_primary
+          }))}
+          onClose={() => setShowGallery(false)}
+        />
+      )}
+    </div>
+  );
+} 

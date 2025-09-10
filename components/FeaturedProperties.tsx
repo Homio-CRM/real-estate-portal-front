@@ -190,14 +190,6 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
               const idx = currentIdx[id] ?? 0;
               const curr = slides[idx];
 
-              console.log("=== FRONTEND DEBUG - RENDERING PROPERTY ===");
-              console.log("Property being rendered:", {
-                listing_id: property.listing_id,
-                title: property.title,
-                slides_count: slides.length,
-                current_slide: curr,
-                current_idx: idx
-              });
 
               return (
                 <div
