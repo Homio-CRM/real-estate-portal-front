@@ -21,13 +21,13 @@ export default function AdminPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <Link 
               href="/admin/debug-media"
-              className="block p-6 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
+              className="block p-6 bg-secondary/10 border border-secondary/30 rounded-lg hover:bg-secondary/20 transition-colors"
             >
               <div className="flex items-center mb-3">
-                <Image className="h-8 w-8 text-purple-600 mr-3" />
-                <h3 className="text-lg font-semibold text-purple-900">Debug Mídia</h3>
+                <Image className="h-8 w-8 text-secondary mr-3" />
+                <h3 className="text-lg font-semibold text-secondary">Debug Mídia</h3>
               </div>
-              <p className="text-purple-800 text-sm">
+              <p className="text-secondary text-sm">
                 Verificar dados de mídia existentes e diagnosticar problemas de imagens.
               </p>
             </Link>

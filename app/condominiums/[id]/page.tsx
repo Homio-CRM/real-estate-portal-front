@@ -32,6 +32,7 @@ import { CondominiumCard, PropertyCard } from "../../../types/listings";
 import HorizontalPropertyCard from "../../../components/HorizontalPropertyCard";
 import Footer from "../../../components/Footer";
 import ContactForm from "../../../components/ContactForm";
+import { ImageGallery } from "../../../components/ImageGallery";
 
 type CondominiumDetail = CondominiumCard & {
   apartments?: PropertyCard[];
@@ -69,6 +70,7 @@ export default function CondominiumDetailPage() {
   const [stats, setStats] = useState<CondominiumStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [showGallery, setShowGallery] = useState(false);
 
   useEffect(() => {
     async function fetchCondo() {
@@ -163,7 +165,7 @@ export default function CondominiumDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="pt-24">
+      <div className="pt-24 pb-28 md:pb-0">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6">
             <ArrowLeft size={20} />
@@ -173,8 +175,8 @@ export default function CondominiumDetailPage() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             {media.length > 0 ? (
               <div>
-                <div className="relative h-96 bg-white flex items-center justify-center">
-                  <img src={displayedImage} alt={condo.name} className="w-full h-full object-contain bg-white" />
+                <div className="relative h-64 sm:h-80 md:h-96 bg-white flex items-center justify-center">
+                  <img src={displayedImage} alt={condo.name} className="w-full h-full object-cover bg-white cursor-pointer" onClick={() => setShowGallery(true)} />
                   {media.length > 1 && (
                     <>
                       <button aria-label="Imagem anterior" className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70" onClick={() => setCurrentMediaIndex((prev) => (prev === 0 ? (media.length || 1) - 1 : prev - 1))}>
@@ -194,7 +196,7 @@ export default function CondominiumDetailPage() {
                     {media.map((m, idx) => (
                       <button
                         key={m.id || m.url + idx}
-                        className={`relative w-24 h-16 rounded overflow-hidden border ${idx === currentMediaIndex ? "border-purple-600" : "border-gray-200"}`}
+                        className={`relative w-24 h-16 rounded overflow-hidden border ${idx === currentMediaIndex ? "border-secondary" : "border-gray-200"}`}
                         onClick={() => setCurrentMediaIndex(idx)}
                         aria-label={`Ver imagem ${idx + 1}`}
                       >
@@ -215,14 +217,14 @@ export default function CondominiumDetailPage() {
             )}
 
             <div className="p-6">
-              <div className="flex gap-3 mb-4">
-                <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+              <div className="flex gap-3 mb-4 flex-wrap">
+                <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors w-full sm:w-auto justify-center" onClick={() => setShowGallery(true)}>
                   <Camera size={16} />
                   {media.length} fotos
                 </button>
                 {condo.latitude && condo.longitude && (
                   <button 
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors w-full sm:w-auto justify-center"
                     onClick={() => window.open(`https://www.google.com/maps?q=${condo.latitude},${condo.longitude}`, '_blank')}
                   >
                     <MapPin size={16} />
@@ -235,24 +237,22 @@ export default function CondominiumDetailPage() {
                 {breadcrumbs.join(" / ")}
               </div>
 
-              <div className="flex items-start gap-4 mb-6">
-                <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+              <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-4 mb-6">
+                <span className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm font-medium">
                   Venda
                 </span>
-                <h1 className="text-3xl font-bold text-gray-900">{condo.name}</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{condo.name}</h1>
               </div>
 
-              <div className="flex items-center gap-4 mb-6">
-                <div className="text-2xl font-bold text-green-600">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6">
+                <div className="text-2xl sm:text-3xl font-bold text-green-600">
                   {formatPriceRange()}
                 </div>
                 <button 
-                  className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors w-full sm:w-auto justify-center"
                   onClick={() => {
-                    const phone = condo.owner_phone || condo.agent_phone;
-                    if (phone) {
-                      window.open(`tel:${phone}`, '_self');
-                    }
+                    const el = document.getElementById('contact-form');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
                   }}
                 >
                   <Phone size={20} />
@@ -265,14 +265,14 @@ export default function CondominiumDetailPage() {
                   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                       <div className="flex items-center gap-3 text-gray-700">
-                        <Ruler size={24} className="text-purple-600" />
+                        <Ruler size={24} className="text-secondary" />
                         <div>
                           <div className="font-bold text-lg">{formatAreaRange()}</div>
                           <div className="text-sm text-gray-500">Área</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 text-gray-700">
-                        <Bed size={24} className="text-purple-600" />
+                        <Bed size={24} className="text-secondary" />
                         <div>
                           <div className="font-bold text-lg">
                             {stats ? `${stats.min_bedrooms} - ${stats.max_bedrooms} quartos` : "N/A"}
@@ -281,21 +281,21 @@ export default function CondominiumDetailPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-3 text-gray-700">
-                        <Bath size={24} className="text-purple-600" />
+                        <Bath size={24} className="text-secondary" />
                         <div>
                           <div className="font-bold text-lg">N/A</div>
                           <div className="text-sm text-gray-500">Banheiros</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 text-gray-700">
-                        <Car size={24} className="text-purple-600" />
+                        <Car size={24} className="text-secondary" />
                         <div>
                           <div className="font-bold text-lg">N/A</div>
                           <div className="text-sm text-gray-500">Garagem</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 text-gray-700">
-                        <Home size={24} className="text-purple-600" />
+                        <Home size={24} className="text-secondary" />
                         <div>
                           <div className="font-bold text-lg">
                             {stats ? `${stats.min_suites} - ${stats.max_suites} suítes` : "N/A"}
@@ -304,7 +304,7 @@ export default function CondominiumDetailPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-3 text-gray-700">
-                        <Calendar size={24} className="text-purple-600" />
+                        <Calendar size={24} className="text-secondary" />
                         <div>
                           <div className="font-bold text-lg">{condo.year_built || "N/A"}</div>
                           <div className="text-sm text-gray-500">Ano</div>
@@ -316,7 +316,7 @@ export default function CondominiumDetailPage() {
                   {amenities.length > 0 && (
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                       <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
-                        <Building size={20} className="text-purple-600" />
+                        <Building size={20} className="text-secondary" />
                         Características
                       </h3>
                       <div className="grid grid-cols-2 gap-3">
@@ -324,7 +324,7 @@ export default function CondominiumDetailPage() {
                           const IconComponent = getAmenityIcon(amenity.key);
                           return (
                             <div key={amenity.key} className="flex items-center gap-2 text-gray-700">
-                              <IconComponent size={16} className="text-purple-600" />
+                              <IconComponent size={16} className="text-secondary" />
                               <span>{amenity.label}</span>
                             </div>
                           );
@@ -340,21 +340,18 @@ export default function CondominiumDetailPage() {
                       </div>
                     )}
 
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div id="contact-form">
                       <ContactForm
                         propertyId={condo.id || ""}
                         propertyTitle={condo.name}
                       />
-                      <p className="text-center text-sm text-gray-600 mt-2">
-                        Entre em contato para mais informações
-                      </p>
                     </div>
                 </div>
 
                 <div className="space-y-6">
                   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
-                      <MapPin size={20} className="text-purple-600" />
+                      <MapPin size={20} className="text-secondary" />
                       Localização
                     </h3>
                     <div className="space-y-2 text-gray-700">
@@ -365,57 +362,13 @@ export default function CondominiumDetailPage() {
 
                   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
-                      <Phone size={20} className="text-purple-600" />
+                      <Phone size={20} className="text-secondary" />
                       Contatos
                     </h3>
                     <div className="space-y-4">
-                      {condo.owner_name && (
-                        <div>
-                          <h4 className="font-medium text-gray-900 mb-2">Proprietário</h4>
-                          <div className="space-y-1 text-sm text-gray-700">
-                            <div className="flex items-center gap-2">
-                              <User size={14} />
-                              <span>{condo.owner_name}</span>
-                            </div>
-                            {condo.owner_phone && (
-                              <div className="flex items-center gap-2">
-                                <Phone size={14} />
-                                <span>{condo.owner_phone}</span>
-                              </div>
-                            )}
-                            {condo.owner_email && (
-                              <div className="flex items-center gap-2">
-                                <Mail size={14} />
-                                <span>{condo.owner_email}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {condo.agent_name && (
-                        <div>
-                          <h4 className="font-medium text-gray-900 mb-2">Corretor</h4>
-                          <div className="space-y-1 text-sm text-gray-700">
-                            <div className="flex items-center gap-2">
-                              <User size={14} />
-                              <span>{condo.agent_name}</span>
-                            </div>
-                            {condo.agent_phone && (
-                              <div className="flex items-center gap-2">
-                                <Phone size={14} />
-                                <span>{condo.agent_phone}</span>
-                              </div>
-                            )}
-                            {condo.agent_email && (
-                              <div className="flex items-center gap-2">
-                                <Mail size={14} />
-                                <span>{condo.agent_email}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                      <p className="text-gray-600">
+                        Para mais informações sobre este condomínio, entre em contato através do formulário abaixo.
+                      </p>
                     </div>
                   </div>
 
@@ -472,9 +425,31 @@ export default function CondominiumDetailPage() {
        </div>
        
        <Footer />
-     </div>
-   );
- }
+
+      {showGallery && media.length > 0 && (
+        <ImageGallery
+          mediaItems={media.map((item) => ({ id: item.id || '', url: item.url, caption: item.caption, is_primary: item.is_primary }))}
+          onClose={() => setShowGallery(false)}
+        />
+      )}
+
+      {condo && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white p-4 flex items-center justify-between gap-3">
+          <div className="text-lg font-semibold text-gray-900">{formatPriceRange()}</div>
+          <button
+            className="flex-1 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            onClick={() => {
+              const el = document.getElementById('contact-form');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            Contatar
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 
 

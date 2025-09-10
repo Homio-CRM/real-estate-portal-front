@@ -14,6 +14,7 @@ import { PropertyCard as PropertyCardType, CondominiumCard as CondominiumCardTyp
 import { parseFiltersFromSearchParams, validateFilters, getTransactionType } from "../../lib/filters";
 import { buildListingsUrl } from "../../lib/navigation";
 import { getStateAbbreviationById } from "../../lib/brazilianStates";
+import { Button } from "../../components/ui/button";
 
 async function getCityName(cityId: number): Promise<{ name: string; stateId: number } | null> {
   try {
@@ -41,6 +42,7 @@ function ListingsContent() {
   const [results, setResults] = useState<PropertyCardType[]>([]);
   const [condoResults, setCondoResults] = useState<CondominiumCardType[]>([]);
   const [currentLocation, setCurrentLocation] = useState<string>("");
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   
   // Filtros que disparam nova busca na API
   const [apiFilters, setApiFilters] = useState({
@@ -330,8 +332,8 @@ function ListingsContent() {
           {loading && <LoadingModal />}
           
           {!loading && (
-            <div className="flex gap-6">
-              <div className="flex-shrink-0">
+            <div className="flex flex-col lg:flex-row gap-6">
+              <div className="hidden lg:block flex-shrink-0">
                 <ResultsFilters
                   filters={combinedFilters}
                   onFilterChange={(key: string, value: string | string[]) => {
@@ -348,6 +350,12 @@ function ListingsContent() {
               </div>
               
               <div className="flex-1">
+                <div className="mb-4 flex items-center justify-between lg:hidden">
+                  <div className="text-sm text-gray-600">
+                    {(initialFilters.tipo === "Condomínio" ? condoResults.length : filteredResults.length)} resultado{(initialFilters.tipo === "Condomínio" ? condoResults.length : filteredResults.length) !== 1 ? "s" : ""}
+                  </div>
+                  <Button variant="outline" onClick={() => setIsFiltersOpen(true)}>Filtros</Button>
+                </div>
                 <LocationSearchField
                   currentLocation={currentLocation ? (initialFilters.bairro ? `${initialFilters.bairro}, ${currentLocation}` : currentLocation) : "Carregando..."}
                   currentFilters={{
@@ -355,6 +363,7 @@ function ListingsContent() {
                     tipo: initialFilters.tipo,
                     bairro: initialFilters.bairro || "",
                   }}
+                  className="mb-4 sm:mb-6"
                 />
                 
                 {(initialFilters.tipo === "Condomínio" ? condoResults.length === 0 : results.length === 0) ? (
@@ -363,7 +372,7 @@ function ListingsContent() {
                   </div>
                 ) : (
                   <div>
-                    <div className="mb-6">
+                    <div className="mb-6 hidden lg:block">
                       <div className="text-sm text-gray-600">
                         {initialFilters.tipo === "Condomínio" ? condoResults.length : filteredResults.length} resultado{(initialFilters.tipo === "Condomínio" ? condoResults.length : filteredResults.length) !== 1 ? 's' : ''} encontrado{(initialFilters.tipo === "Condomínio" ? condoResults.length : filteredResults.length) !== 1 ? 's' : ''}
                       </div>
@@ -386,6 +395,33 @@ function ListingsContent() {
         </div>
       </div>
       
+      {isFiltersOpen && (
+        <div className="fixed inset-0 z-40 flex lg:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setIsFiltersOpen(false)} />
+          <div className="relative ml-auto h-full w-full max-w-md bg-white p-4 overflow-y-auto shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="text-base font-semibold text-gray-900">Filtros</div>
+              <Button variant="outline" onClick={() => setIsFiltersOpen(false)}>Fechar</Button>
+            </div>
+            <ResultsFilters
+              filters={combinedFilters}
+              onFilterChange={(key: string, value: string | string[]) => {
+                if (key === "operacao" || key === "tipo") {
+                  handleApiFilterChange(key, value as string);
+                } else {
+                  handleClientFilterChange(key, value);
+                }
+              }}
+              onClearFilters={() => {
+                handleClearFilters();
+                setIsFiltersOpen(false);
+              }}
+              onSearch={() => {}}
+            />
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );

@@ -103,7 +103,7 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
   };
 
   return (
-    <div className="space-y-4 w-80">
+    <div className="space-y-4 w-full lg:w-80">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <h4 className="text-sm font-semibold text-gray-900 mb-3">Tipo de Transação</h4>
         <Select value={filters.operacao || "todos"} onValueChange={(value: string) => onFilterChange("operacao", value === "todos" ? "" : value)}>

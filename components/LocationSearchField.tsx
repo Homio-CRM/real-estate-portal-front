@@ -104,7 +104,7 @@ export default function LocationSearchField({
           <h4 className="text-sm font-semibold text-gray-900 mb-3">
             Buscar em outra localização
           </h4>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
               <AutocompleteField
                 value={newLocation}
@@ -119,11 +119,11 @@ export default function LocationSearchField({
               />
             </div>
             
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 sm:w-auto">
               <Button
                 onClick={handleSearch}
                 disabled={!isLocationValid || isSearching}
-                className="px-6"
+                className="w-full sm:w-auto px-6"
               >
                 <Search className="mr-2 h-4 w-4" />
                 {isSearching ? "Buscando..." : "Buscar"}

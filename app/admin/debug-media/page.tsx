@@ -39,7 +39,7 @@ export default function DebugMediaPage() {
       <div className="max-w-6xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-6">
-            <Image className="w-8 h-8 text-purple-600" />
+            <Image className="w-8 h-8 text-secondary" />
             <h1 className="text-2xl font-bold text-gray-900">Debug - Dados de Mídia</h1>
           </div>
 
@@ -131,8 +131,8 @@ export default function DebugMediaPage() {
                 </div>
 
                 {/* Resultado da Query JOIN */}
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-purple-900 mb-2">Resultado da Query JOIN ({debugData.join_query_results})</h4>
+                <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-4">
+                  <h4 className="font-semibold text-secondary mb-2">Resultado da Query JOIN ({debugData.join_query_results})</h4>
                   {debugData.sample_join_data.length > 0 ? (
                     <div className="space-y-2">
                       {debugData.sample_join_data.map((item: any, idx: number) => (
@@ -162,7 +162,7 @@ export default function DebugMediaPage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-purple-800">Nenhum resultado da query JOIN</p>
+                    <p className="text-secondary">Nenhum resultado da query JOIN</p>
                   )}
                 </div>
 

@@ -152,9 +152,9 @@ export default function DebugCondosPage() {
                     </div>
                   </div>
 
-                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-purple-900 mb-2">Mídia</h4>
-                    <div className="text-sm text-purple-800">
+                  <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-4">
+                    <h4 className="font-semibold text-secondary mb-2">Mídia</h4>
+                    <div className="text-sm text-secondary">
                       <p><strong>Total:</strong> {debugData.media.count}</p>
                       <p><strong>Condomínios:</strong> {debugData.media.condominiumMedia}</p>
                       {debugData.media.error && (

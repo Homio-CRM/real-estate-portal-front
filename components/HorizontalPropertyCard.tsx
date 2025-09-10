@@ -57,7 +57,7 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
       onClick={handleCardClick}
     >
       <div className="flex flex-col lg:flex-row">
-        <div className="w-full lg:w-80 h-64 relative">
+        <div className="w-full lg:w-80 h-48 sm:h-56 lg:h-64 relative">
           {displayedImage && displayedImage !== "/placeholder-property.jpg" ? (
             <img
               src={displayedImage}
@@ -84,7 +84,7 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
           </button>
         </div>
         
-        <div className="flex-1 p-6 flex flex-col justify-between">
+        <div className="flex-1 p-4 sm:p-6 flex flex-col justify-between">
           <div>
             <div className="mb-2">
               <span className="text-sm text-gray-600">
@@ -97,7 +97,7 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
             
             <p className="text-sm text-gray-600 mb-4">{title}</p>
             
-            <div className="flex gap-6 text-sm text-gray-600 mb-4">
+            <div className="flex flex-wrap gap-4 sm:gap-6 text-sm text-gray-600 mb-4">
               <span className="flex items-center gap-1">
                 <Ruler size={16} />
                 {area ?? 0} m²
@@ -117,9 +117,9 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
             </div>
           </div>
           
-          <div className="flex items-end justify-between">
+          <div className="flex items-end justify-between gap-3 flex-wrap">
             <div>
-              <div className="text-2xl font-bold text-gray-900 mb-1">
+              <div className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
                 {priceFormatted}
               </div>
               {iptuFormatted && (
@@ -129,7 +129,7 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
             
             <div className="flex gap-3">
               <button 
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors w-full sm:w-auto justify-center"
                 onClick={(e) => e.stopPropagation()}
               >
                 <Phone size={16} />

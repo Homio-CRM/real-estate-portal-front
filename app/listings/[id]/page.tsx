@@ -174,7 +174,7 @@ export default function ListingDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="pt-24">
+      <div className="pt-24 pb-28 md:pb-0">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <button
             onClick={() => router.back()}
@@ -187,11 +187,11 @@ export default function ListingDetailPage() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             {property.media && property.media.length > 0 ? (
               <div>
-                <div className="relative h-96 bg-white flex items-center justify-center">
+                <div className="relative h-64 sm:h-80 md:h-96 bg-white flex items-center justify-center">
                   <img
                     src={property.media[currentMediaIndex]?.url || property.image}
                     alt={property.title}
-                    className="w-full h-full object-contain bg-white cursor-pointer"
+                    className="w-full h-full object-cover bg-white cursor-pointer"
                     onClick={() => setShowGallery(true)}
                   />
                   {property.media.length > 1 && (
@@ -221,7 +221,7 @@ export default function ListingDetailPage() {
                     {property.media.map((m, idx) => (
                       <button
                         key={m.id || m.url + idx}
-                        className={`relative w-24 h-16 rounded overflow-hidden border ${idx === currentMediaIndex ? "border-purple-600" : "border-gray-200"}`}
+                        className={`relative w-24 h-16 rounded overflow-hidden border ${idx === currentMediaIndex ? "border-secondary" : "border-gray-200"}`}
                         onClick={() => setCurrentMediaIndex(idx)}
                         aria-label={`Ver imagem ${idx + 1}`}
                       >
@@ -242,14 +242,14 @@ export default function ListingDetailPage() {
             )}
 
             <div className="p-6">
-              <div className="flex gap-3 mb-4">
-                <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+              <div className="flex gap-3 mb-4 flex-wrap">
+                <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors w-full sm:w-auto justify-center" onClick={() => setShowGallery(true)}>
                   <Camera size={16} />
                   {property.media?.length || 0} fotos
                 </button>
                 {property.latitude && property.longitude && (
                   <button 
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors w-full sm:w-auto justify-center"
                     onClick={() => window.open(`https://www.google.com/maps?q=${property.latitude},${property.longitude}`, '_blank')}
                   >
                     <MapPin size={16} />
@@ -262,16 +262,16 @@ export default function ListingDetailPage() {
                 {breadcrumbs.join(" / ")}
               </div>
 
-              <div className="flex items-start gap-4 mb-6">
-                <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+              <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-4 mb-6">
+                <span className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm font-medium">
                   {property.forRent ? "Aluguel" : "Venda"}
                 </span>
-                <h1 className="text-3xl font-bold text-gray-900">{property.title}</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{property.title}</h1>
               </div>
 
               {property.property_type === "apartment" && property.condominium_id && (
                 <div className="flex items-center gap-2 mb-6 text-gray-700">
-                  <Building size={18} className="text-purple-600" />
+                  <Building size={18} className="text-secondary" />
                   <span>Condomínio: </span>
                   <a href={`/condominiums/${property.condominium_id}`} className="text-primary hover:underline">
                     {condominiumInfo?.name || "Ver condomínio"}
@@ -279,12 +279,12 @@ export default function ListingDetailPage() {
                 </div>
               )}
 
-              <div className="flex items-center gap-4 mb-6">
-                <div className="text-2xl font-bold text-green-600">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6">
+                <div className="text-2xl sm:text-3xl font-bold text-green-600">
                   {property.price}
                 </div>
                 <button 
-                  className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors w-full sm:w-auto justify-center"
                   onClick={() => {
                     // TODO: Implementar contato
                     alert('Funcionalidade de contato será implementada em breve');
@@ -299,45 +299,57 @@ export default function ListingDetailPage() {
                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                        <div className="flex items-center gap-3 text-gray-700">
-                         <Ruler size={24} className="text-purple-600" />
+                         <span className="inline-flex w-7 h-7 items-center justify-center text-secondary shrink-0">
+                           <Ruler size={22} />
+                         </span>
                          <div>
-                           <div className="font-bold text-lg">{property.area || 0} m²</div>
-                           <div className="text-sm text-gray-500">Área</div>
+                           <div className="font-bold text-base md:text-lg">{property.area || 0} m²</div>
+                           <div className="text-xs md:text-sm text-gray-500">Área</div>
                          </div>
                        </div>
                        <div className="flex items-center gap-3 text-gray-700">
-                         <Bed size={24} className="text-purple-600" />
+                         <span className="inline-flex w-7 h-7 items-center justify-center text-secondary shrink-0">
+                           <Bed size={22} />
+                         </span>
                          <div>
-                           <div className="font-bold text-lg">{property.bedroom_count || 0} quartos</div>
-                           <div className="text-sm text-gray-500">Dormitórios</div>
+                           <div className="font-bold text-base md:text-lg">{property.bedroom_count || 0} quartos</div>
+                           <div className="text-xs md:text-sm text-gray-500">Dormitórios</div>
                          </div>
                        </div>
                        <div className="flex items-center gap-3 text-gray-700">
-                         <Bath size={24} className="text-purple-600" />
+                         <span className="inline-flex w-7 h-7 items-center justify-center text-secondary shrink-0">
+                           <Bath size={22} />
+                         </span>
                          <div>
-                           <div className="font-bold text-lg">{property.bathroom_count || 0} banheiros</div>
-                           <div className="text-sm text-gray-500">Banheiros</div>
+                           <div className="font-bold text-base md:text-lg">{property.bathroom_count || 0} banheiros</div>
+                           <div className="text-xs md:text-sm text-gray-500">Banheiros</div>
                          </div>
                        </div>
                        <div className="flex items-center gap-3 text-gray-700">
-                         <Car size={24} className="text-purple-600" />
+                         <span className="inline-flex w-7 h-7 items-center justify-center text-secondary shrink-0">
+                           <Car size={22} />
+                         </span>
                          <div>
-                           <div className="font-bold text-lg">{property.garage_count || 0} vagas</div>
-                           <div className="text-sm text-gray-500">Garagem</div>
+                           <div className="font-bold text-base md:text-lg">{property.garage_count || 0} vagas</div>
+                           <div className="text-xs md:text-sm text-gray-500">Garagem</div>
                          </div>
                        </div>
                        <div className="flex items-center gap-3 text-gray-700">
-                         <Home size={24} className="text-purple-600" />
+                         <span className="inline-flex w-7 h-7 items-center justify-center text-secondary shrink-0">
+                           <Home size={22} />
+                         </span>
                          <div>
-                           <div className="font-bold text-lg">{property.suite_count || 0} suítes</div>
-                           <div className="text-sm text-gray-500">Suítes</div>
+                           <div className="font-bold text-base md:text-lg">{property.suite_count || 0} suítes</div>
+                           <div className="text-xs md:text-sm text-gray-500">Suítes</div>
                          </div>
                        </div>
                        <div className="flex items-center gap-3 text-gray-700">
-                         <Calendar size={24} className="text-purple-600" />
+                         <span className="inline-flex w-7 h-7 items-center justify-center text-secondary shrink-0">
+                           <Calendar size={22} />
+                         </span>
                          <div>
-                           <div className="font-bold text-lg">{property.year_built || "N/A"}</div>
-                           <div className="text-sm text-gray-500">Ano</div>
+                           <div className="font-bold text-base md:text-lg">{property.year_built || "N/A"}</div>
+                           <div className="text-xs md:text-sm text-gray-500">Ano</div>
                          </div>
                        </div>
                      </div>
@@ -346,7 +358,7 @@ export default function ListingDetailPage() {
                                      {amenities.length > 0 && (
                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                        <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
-                         <Building size={20} className="text-purple-600" />
+                         <Building size={20} className="text-secondary" />
                          Características
                        </h3>
                        <div className="grid grid-cols-2 gap-3">
@@ -354,7 +366,7 @@ export default function ListingDetailPage() {
                            const IconComponent = getAmenityIcon(amenity.key);
                            return (
                              <div key={amenity.key} className="flex items-center gap-2 text-gray-700">
-                               <IconComponent size={16} className="text-purple-600" />
+                               <IconComponent size={20} className="text-secondary" />
                                <span>{amenity.label}</span>
                              </div>
                            );
@@ -390,7 +402,7 @@ export default function ListingDetailPage() {
                                  <div className="space-y-6">
                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                      <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
-                       <MapPin size={20} className="text-purple-600" />
+                       <MapPin size={20} className="text-secondary" />
                        Localização
                      </h3>
                      <div className="space-y-2 text-gray-700">
@@ -401,7 +413,7 @@ export default function ListingDetailPage() {
 
                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                      <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
-                       <Phone size={20} className="text-purple-600" />
+                       <Phone size={20} className="text-secondary" />
                        Contatos
                      </h3>
                      <div className="space-y-4">
@@ -435,10 +447,12 @@ export default function ListingDetailPage() {
                       </div>
                     </div>
 
-                    <ContactForm
-                      propertyId={property.public_id || property.listing_id || ""}
-                      propertyTitle={property.title || ""}
-                    />
+                    <div id="contact-form">
+                      <ContactForm
+                        propertyId={property.public_id || property.listing_id || ""}
+                        propertyTitle={property.title || ""}
+                      />
+                    </div>
                                  </div>
                </div>
              </div>
@@ -474,6 +488,21 @@ export default function ListingDetailPage() {
           }))}
           onClose={() => setShowGallery(false)}
         />
+      )}
+
+      {property && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white p-4 flex items-center justify-between gap-3">
+          <div className="text-lg font-semibold text-gray-900">{property.price}</div>
+          <button
+            className="flex-1 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            onClick={() => {
+              const el = document.getElementById('contact-form');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            Contatar
+          </button>
+        </div>
       )}
     </div>
   );

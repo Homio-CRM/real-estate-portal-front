@@ -26,7 +26,7 @@ export default function Home() {
     router.push(url);
   }
 
-  const DEFAULT_CITY_ID = 3205309; // Vitória - ES
+  
 
   return (
     <>
@@ -42,12 +42,12 @@ export default function Home() {
         
         <Header />
         
-        <div className="relative z-20 flex flex-col items-center justify-center min-h-screen px-4">
+        <div className="relative z-20 flex flex-col items-center justify-center min-h-screen px-4 pt-28 md:pt-0">
           <div className="text-center mb-12">
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
               Para você morar bem
             </h1>
-            <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto">
+            <p className="text-lg md:text-2xl text-white/90 max-w-2xl mx-auto">
               Compre ou alugue com agilidade, segurança e sem burocracia
             </p>
           </div>

@@ -6,7 +6,6 @@ import AutocompleteField from "./AutocompleteField";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Button } from "./ui/button";
 import { Search } from "lucide-react";
-import { useTransactionType } from "../lib/useTransactionType";
 import { propertyCache } from "../lib/propertyCache";
 
 export default function HeroSearchBar({ filters, onFilterChange, onSearch }: PropertyFiltersProps) {
@@ -82,15 +81,15 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4">
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <div className="flex flex-wrap gap-1 mb-4">
+      <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6">
+        <div className="mb-4 grid grid-cols-3 gap-1 md:flex md:justify-start md:gap-1">
           <button
             type="button"
             onClick={() => handleTransactionChange("comprar")}
-            className={`px-4 md:px-6 py-2 rounded-t-lg font-medium transition-colors text-sm md:text-base ${
+            className={`h-9 w-full md:h-10 md:w-auto px-2 md:px-4 rounded-t-md font-medium transition-colors text-xs md:text-sm text-center ${
               filters.operacao === "comprar"
                 ? "bg-primary text-primary-foreground"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             Comprar
@@ -98,35 +97,32 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
           <button
             type="button"
             onClick={() => handleTransactionChange("alugar")}
-            className={`px-4 md:px-6 py-2 rounded-t-lg font-medium transition-colors text-sm md:text-base ${
+            className={`h-9 w-full md:h-10 md:w-auto px-2 md:px-4 rounded-t-md font-medium transition-colors text-xs md:text-sm text-center ${
               filters.operacao === "alugar"
                 ? "bg-primary text-primary-foreground"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             Alugar
           </button>
-
           <button
             type="button"
             onClick={() => handleTransactionChange("lancamento")}
-            className={`px-4 md:px-6 py-2 rounded-t-lg font-medium transition-colors text-sm md:text-base ${
+            className={`h-9 w-full md:h-10 md:w-auto px-2 md:px-4 rounded-t-md font-medium transition-colors text-xs md:text-sm text-center ${
               filters.operacao === "lancamento"
                 ? "bg-primary text-primary-foreground"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             Lançamento
           </button>
         </div>
-        
-        <form onSubmit={handleSubmit} className="flex flex-col md:flex-row items-end gap-4">
-          <div className="w-48">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tipo de imóvel
-            </label>
+
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-[240px,1fr,auto] items-end gap-3 md:gap-4">
+          <div className="w-full">
+            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Tipo de imóvel</label>
             <Select value={filters.tipo || "todos"} onValueChange={(value) => onFilterChange("tipo", value === "todos" ? "" : value)}>
-              <SelectTrigger>
+              <SelectTrigger className="h-11">
                 <SelectValue placeholder="Todos os imóveis" />
               </SelectTrigger>
               <SelectContent>
@@ -153,8 +149,8 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
               </SelectContent>
             </Select>
           </div>
-          
-          <div className="flex-1">
+
+          <div className="w-full">
             <AutocompleteField
               value={filters.localizacao}
               onChange={value => onFilterChange("localizacao", value)}
@@ -162,14 +158,15 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
               placeholder="Digite o nome do bairro ou cidade"
               label="Onde deseja morar?"
               type="location"
+              inputClassName="h-11"
             />
           </div>
-          
-          <div className="flex-shrink-0">
+
+          <div className="w-full md:w-auto">
             <Button
               type="submit"
               disabled={!isLocationValid}
-              className="w-full md:w-auto px-8"
+              className="w-full md:w-auto h-11 px-6"
             >
               <Search className="mr-2 h-4 w-4" />
               Buscar
