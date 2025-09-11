@@ -2,7 +2,6 @@ import { FetchListingsParams } from "../types/api";
 import { PropertyCard } from "../types/listings";
 
 export async function fetchListings(params: FetchListingsParams): Promise<PropertyCard[]> {
-  console.log("🚀 [FETCH LISTINGS] Starting fetch with params:", params);
   
   const searchParams = new URLSearchParams();
   
@@ -43,7 +42,6 @@ export async function fetchListings(params: FetchListingsParams): Promise<Proper
   }
   
   const fullUrl = `/api/listing?${searchParams.toString()}`;
-  console.log("🌐 [FETCH LISTINGS] Making request to:", fullUrl);
   
   try {
     const response = await fetch(fullUrl);
@@ -54,7 +52,6 @@ export async function fetchListings(params: FetchListingsParams): Promise<Proper
     }
     
     const data = await response.json();
-    console.log(`✅ [FETCH LISTINGS] Successfully received ${data.length} listings`);
     return data;
   } catch (error) {
     console.error("❌ [FETCH LISTINGS] Error fetching listings:", error);

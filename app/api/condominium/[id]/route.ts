@@ -127,6 +127,9 @@ export async function GET(
       .eq("condominium_id", id)
       .eq("agency_id", condominium.agency_id);
 
+    if (apartmentIdsError) {
+      console.error("Error fetching apartment listing IDs:", apartmentIdsError);
+    }
 
     const apartments: ApartmentData[] = [];
     if (apartmentListingIds && apartmentListingIds.length > 0) {
@@ -156,6 +159,10 @@ export async function GET(
           land_area
         `)
         .in("listing_id", listingIds);
+
+      if (apartmentError) {
+        console.error("Error fetching apartment listings:", apartmentError);
+      }
 
 
       if (apartmentListings && apartmentListings.length > 0) {

@@ -25,9 +25,6 @@ export async function GET(request: Request) {
     const offset = Number(searchParams.get("offset") || 0);
     const useLocationPriority = searchParams.get("useLocationPriority") === "true";
     
-    console.log("🏠 [LISTINGS API] Request params:", {
-      cityId, stateId, transactionType, tipo, bairro, limit, offset, useLocationPriority
-    });
     
     if (!transactionType) {
       return NextResponse.json({ error: "transactionType é obrigatório" }, { status: 400 });
@@ -130,7 +127,6 @@ export async function GET(request: Request) {
 
       // Buscar mais resultados para garantir que temos imóveis de alta prioridade
       const searchLimit = Math.max(filters.limit * 3, 30); // Buscar pelo menos 30 ou 3x o limite solicitado
-      console.log(`🔍 [LISTINGS API] Searching ${searchLimit} results to ensure high-priority listings are found`);
       
       const { data, error } = await query
         .order('listing_id', { ascending: true })
@@ -150,10 +146,8 @@ export async function GET(request: Request) {
 
     // Estratégia de busca com priorização
     if (useLocationPriority) {
-      console.log("🎯 [LISTINGS API] Using location priority strategy");
       // 1. Buscar por cidade específica
       if (cityId) {
-        console.log("📍 [LISTINGS API] STEP 1: Searching by city ID:", cityId);
         try {
           const cityResults = await fetchListingsWithPriority({ 
             cityId: Number(cityId), 
@@ -162,11 +156,9 @@ export async function GET(request: Request) {
           });
           
           if (cityResults.length > 0) {
-            console.log(`✅ [LISTINGS API] Found ${cityResults.length} listings in city ${cityId}`);
             results = cityResults;
             hasResults = true;
           } else {
-            console.log("❌ [LISTINGS API] No listings found in city, trying state...");
           }
         } catch (error) {
           console.error("❌ [LISTINGS API] Error searching by city:", error);
@@ -175,7 +167,6 @@ export async function GET(request: Request) {
 
       // 2. Se não encontrou na cidade, buscar por estado
       if (!hasResults && stateId) {
-        console.log("🏛️ [LISTINGS API] STEP 2: Searching by state ID:", stateId);
         try {
           const stateResults = await fetchListingsWithPriority({ 
             stateId: Number(stateId), 
@@ -184,11 +175,9 @@ export async function GET(request: Request) {
           });
           
           if (stateResults.length > 0) {
-            console.log(`✅ [LISTINGS API] Found ${stateResults.length} listings in state ${stateId}`);
             results = stateResults;
             hasResults = true;
           } else {
-            console.log("❌ [LISTINGS API] No listings found in state, trying any location...");
           }
         } catch (error) {
           console.error("❌ [LISTINGS API] Error searching by state:", error);
@@ -197,7 +186,6 @@ export async function GET(request: Request) {
 
       // 3. Se não encontrou nem na cidade nem no estado, buscar qualquer imóvel
       if (!hasResults) {
-        console.log("🌍 [LISTINGS API] STEP 3: Searching any location");
         try {
           const anyResults = await fetchListingsWithPriority({ 
             limit, 
@@ -205,7 +193,6 @@ export async function GET(request: Request) {
           });
           
           if (anyResults.length > 0) {
-            console.log(`✅ [LISTINGS API] Found ${anyResults.length} listings in any location`);
             results = anyResults;
             hasResults = true;
           }
@@ -215,7 +202,6 @@ export async function GET(request: Request) {
       }
     } else {
       // Busca tradicional (sem priorização de localização)
-      console.log("📋 [LISTINGS API] Using traditional search strategy");
       const cityIdNumber = cityId ? Number(cityId) : undefined;
       results = await fetchListingsWithPriority({ 
         cityId: cityIdNumber, 
@@ -223,23 +209,13 @@ export async function GET(request: Request) {
         offset 
       });
       hasResults = results.length > 0;
-      console.log(`📋 [LISTINGS API] Traditional search found ${results.length} listings`);
     }
 
     if (!hasResults) {
-      console.log("❌ [LISTINGS API] No listings found with any strategy");
       return NextResponse.json([]);
     }
 
-    console.log(`📊 [LISTINGS API] Total results before sorting: ${results.length}`);
 
-    // Mostrar distribuição dos ad_types antes da ordenação
-    const adTypeDistribution = results.reduce((acc: Record<string, number>, item) => {
-      const adType = (item.ad_type as string) || 'null';
-      acc[adType] = (acc[adType] || 0) + 1;
-      return acc;
-    }, {});
-    console.log("📈 [LISTINGS API] Ad_type distribution before sorting:", adTypeDistribution);
 
     // Ordenar por prioridade do ad_type PRIMEIRO
     results.sort((a, b) => {
@@ -250,23 +226,8 @@ export async function GET(request: Request) {
 
     // Agora limitar aos resultados solicitados APÓS a ordenação
     const finalResults = results.slice(0, limit);
-    console.log(`🎯 [LISTINGS API] Limited to ${limit} results after sorting by priority`);
 
-    // Mostrar distribuição dos ad_types nos resultados finais
-    const adTypeDistributionAfter = finalResults.reduce((acc: Record<string, number>, item) => {
-      const adType = (item.ad_type as string) || 'null';
-      acc[adType] = (acc[adType] || 0) + 1;
-      return acc;
-    }, {});
-    console.log("🏆 [LISTINGS API] Final ad_type distribution:", adTypeDistributionAfter);
 
-    console.log("✅ [LISTINGS API] Final results sorted by ad_type priority:", 
-      finalResults.slice(0, 5).map(r => ({ 
-        id: r.listing_id, 
-        ad_type: r.ad_type, 
-        priority: getAdTypePriority((r.ad_type as string) || 'standard')
-      }))
-    );
 
     
     // Debug: mostrar alguns exemplos dos resultados
@@ -363,7 +324,6 @@ export async function GET(request: Request) {
       return result;
     }));
 
-    console.log(`🎉 [LISTINGS API] Returning ${processedResults.length} processed items`);
     return NextResponse.json(processedResults);
   } catch (error) {
     console.error("API Error:", error);

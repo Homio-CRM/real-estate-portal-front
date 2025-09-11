@@ -3,12 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     const forwarded = request.headers.get("x-forwarded-for");
-    const ip = forwarded ? forwarded.split(",")[0] : request.ip || "127.0.0.1";
+    const realIp = request.headers.get("x-real-ip");
+    const ip = forwarded ? forwarded.split(",")[0] : realIp || "127.0.0.1";
     
-    console.log("🌍 [GEOLOCATION] Detecting user location for IP:", ip);
     
     if (ip === "127.0.0.1" || ip === "::1" || ip.startsWith("192.168.") || ip.startsWith("10.")) {
-      console.log("🏠 [GEOLOCATION] Local IP detected, returning default location (Vitória - ES)");
       return NextResponse.json({
         city: "Vitória",
         state: "ES", 
@@ -30,10 +29,8 @@ export async function GET(request: NextRequest) {
       }
 
       const data = await response.json();
-      console.log("🌐 [GEOLOCATION] IP-API response:", { city: data.city, region: data.region, country: data.country });
 
       if (data.status === "fail") {
-        console.log("❌ [GEOLOCATION] IP-API failed:", data.message);
         return NextResponse.json({
           city: "Vitória",
           state: "ES",
@@ -58,7 +55,6 @@ export async function GET(request: NextRequest) {
       const country = data.country;
 
       if (country !== "Brazil") {
-        console.log("🌎 [GEOLOCATION] User not in Brazil, returning default location");
         return NextResponse.json({
           city: "Vitória",
           state: "ES",
@@ -71,7 +67,6 @@ export async function GET(request: NextRequest) {
       const cityInfo = cityMapping[cityName];
       
       if (cityInfo) {
-        console.log("✅ [GEOLOCATION] Found exact city match:", { city: cityName, city_id: cityInfo.city_id, state: stateName });
         return NextResponse.json({
           city: cityName,
           state: stateName,
@@ -97,7 +92,6 @@ export async function GET(request: NextRequest) {
       const stateId = stateMapping[stateName];
       
       if (stateId) {
-        console.log("🔍 [GEOLOCATION] City not found, but state found:", { city: cityName, state: stateName, state_id: stateId });
         return NextResponse.json({
           city: cityName,
           state: stateName,
@@ -107,7 +101,6 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      console.log("⚠️ [GEOLOCATION] No state match found, returning default location");
       return NextResponse.json({
         city: "Vitória",
         state: "ES",

@@ -38,10 +38,11 @@ export async function GET() {
 
 
     // Teste 3: Verificar media_items para os listings da agência
+    let agencyMedia = null;
     if (listings && listings.length > 0) {
       const listingIds = listings.map(l => l.listing_id);
       
-      const { data: agencyMedia, error: agencyMediaError } = await supabase
+      const { data: mediaData, error: agencyMediaError } = await supabase
         .from('media_item')
         .select('*')
         .in('listing_id', listingIds);
@@ -49,6 +50,7 @@ export async function GET() {
       if (agencyMediaError) {
         console.error("Agency media error:", agencyMediaError);
       } else {
+        agencyMedia = mediaData;
       }
     }
 
@@ -81,6 +83,8 @@ export async function GET() {
       sample_media_items: allMedia || [],
       agency_listings: listings?.length || 0,
       sample_listings: listings || [],
+      agency_media_items: agencyMedia?.length || 0,
+      sample_agency_media: agencyMedia || [],
       join_query_results: joinData?.length || 0,
       sample_join_data: joinData || []
     };

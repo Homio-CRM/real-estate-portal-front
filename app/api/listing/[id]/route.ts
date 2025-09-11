@@ -61,6 +61,10 @@ export async function GET(
       .eq("listing_id", id)
       .single();
 
+    if (listingDetailsError) {
+      console.error("Error fetching listing details:", listingDetailsError);
+    }
+
     const condominium_id = listingDetails?.condominium_id || null;
 
 

@@ -8,7 +8,6 @@ export function useLocationRedirect() {
 
   const requestLocationPermission = useCallback(async () => {
     if (!navigator.geolocation) {
-      // console.log("Geolocalização não é suportada pelo navegador");
       const defaultLocation: Location = {
         lat: -20.2976,
         lng: -40.2958
@@ -31,13 +30,11 @@ export function useLocationRedirect() {
         lng: position.coords.longitude
       };
 
-      // console.log("Localização obtida:", location);
       setUserLocation(location);
       localStorage.setItem("userLocation", JSON.stringify(location));
       
       return true;
     } catch {
-      // console.log("Erro ao obter localização:", error);
       const defaultLocation: Location = {
         lat: -20.2976,
         lng: -40.2958
@@ -49,15 +46,11 @@ export function useLocationRedirect() {
   }, []);
 
   const triggerPopup = useCallback(() => {
-    // console.log("=== TRIGGER POPUP ===");
-    // console.log("userLocation:", userLocation);
     
     if (userLocation) {
-      // console.log("✅ MOSTRANDO POPUP!");
       setShowPopup(true);
       return true;
     } else {
-      // console.log("❌ Não pode mostrar popup - userLocation não existe");
     }
     return false;
   }, [userLocation]);
@@ -67,17 +60,14 @@ export function useLocationRedirect() {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
-    // console.log("🚀 Inicializando sistema de localização...");
 
     const savedLocation = localStorage.getItem("userLocation");
     
     if (savedLocation) {
       try {
         const location = JSON.parse(savedLocation);
-        // console.log("📍 Localização carregada do cache:", location);
         setUserLocation(location);
       } catch {
-        // console.log("❌ Erro ao carregar localização salva:", error);
         const defaultLocation: Location = {
           lat: -20.2976,
           lng: -40.2958
@@ -85,7 +75,6 @@ export function useLocationRedirect() {
         setUserLocation(defaultLocation);
       }
     } else {
-      // console.log("🔍 Solicitando permissão de localização...");
       requestLocationPermission();
     }
   }, [requestLocationPermission]);
@@ -93,15 +82,12 @@ export function useLocationRedirect() {
   // Configurar event listeners após localização estar pronta
   useEffect(() => {
     if (!userLocation) {
-      // console.log("⏳ Aguardando localização para configurar listeners...");
       return;
     }
 
-    // console.log("🎯 Configurando event listeners com localização:", userLocation);
 
     // REMOVIDO: handleBeforeUnload que causava mensagem de confirmação
     // const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-    //   console.log("🔄 Beforeunload triggered");
     //   if (triggerPopup()) {
     //     event.preventDefault();
     //     event.returnValue = "";
@@ -110,14 +96,12 @@ export function useLocationRedirect() {
     // };
 
     // const handleVisibilityChange = () => {
-    //   console.log("👁️ Visibility change:", document.visibilityState);
     //   if (document.visibilityState === "hidden") {
     //     triggerPopup();
     //   }
     // };
 
     // const handleMouseLeave = (event: MouseEvent) => {
-    //   console.log("🖱️ Mouse leave:", event.clientY);
     //   if (event.clientY <= 0) {
     //     triggerPopup();
     //   }
@@ -125,7 +109,6 @@ export function useLocationRedirect() {
 
     // const handleKeyDown = (event: KeyboardEvent) => {
     //   if (event.key === "Escape") {
-    //     console.log("⌨️ ESC pressed");
     //     triggerPopup();
     //   }
     // };
@@ -135,7 +118,6 @@ export function useLocationRedirect() {
     // document.addEventListener("mouseleave", handleMouseLeave);
     // document.addEventListener("keydown", handleKeyDown);
 
-    // console.log("✅ Event listeners configurados (sem beforeunload)");
 
     return () => {
       // REMOVIDO: window.removeEventListener("beforeunload", handleBeforeUnload);
@@ -146,17 +128,11 @@ export function useLocationRedirect() {
   }, [userLocation, triggerPopup]);
 
   const closePopup = useCallback(() => {
-    // console.log("❌ Fechando popup");
     setShowPopup(false);
   }, []);
 
   // Debug: mostrar estado atual
   useEffect(() => {
-    // console.log("📊 Estado atual:", {
-    //   userLocation,
-    //   showPopup,
-    //   hasInitialized: hasInitialized.current
-    // });
   }, [userLocation, showPopup]);
 
   return {

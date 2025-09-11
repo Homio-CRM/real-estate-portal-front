@@ -5,9 +5,24 @@ import Link from "next/link";
 import { Button } from "../../../components/ui/button";
 import { Loader2, Database } from "lucide-react";
 
+interface SampleListing {
+  listing_id: string;
+  title: string;
+  property_type: string;
+  transaction_type: string;
+}
+
+interface DebugData {
+  agency_id: string;
+  unique_property_types_from_listing: string[];
+  unique_property_types_from_search_view: string[];
+  sample_listings: SampleListing[];
+  total_listings_with_property_type: number;
+}
+
 export default function DebugPropertyTypesPage() {
   const [loading, setLoading] = useState(false);
-  const [debugData, setDebugData] = useState<any>(null);
+  const [debugData, setDebugData] = useState<DebugData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchDebugData = async () => {
@@ -125,7 +140,7 @@ export default function DebugPropertyTypesPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {debugData.sample_listings.map((listing: any, idx: number) => (
+                            {debugData.sample_listings.map((listing: SampleListing, idx: number) => (
                               <tr key={idx} className="border-b">
                                 <td className="p-2 font-mono">{listing.listing_id.substring(0, 8)}...</td>
                                 <td className="p-2">{listing.title}</td>

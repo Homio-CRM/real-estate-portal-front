@@ -4,7 +4,6 @@ import { supabaseAgent } from "../../../lib/supabaseAgent";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const cityId = searchParams.get("cityId");
-  const transactionType = searchParams.get("transactionType");
   const bairro = searchParams.get("bairro");
   const limit = Number(searchParams.get("limit") || 30);
   const offset = Number(searchParams.get("offset") || 0);
