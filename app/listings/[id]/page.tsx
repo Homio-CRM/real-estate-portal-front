@@ -83,6 +83,7 @@ export default function ListingDetailPage() {
 
       const txType = data.transaction_type === "rental" ? "rent" : "sale";
 
+      // Estratégia 1: Buscar no mesmo condomínio (apartamentos)
       if (data.property_type === "apartment" && data.condominium_id) {
         try {
           const res = await fetch(`/api/condominium/${data.condominium_id}`);
@@ -100,6 +101,7 @@ export default function ListingDetailPage() {
         } catch {}
       }
 
+      // Estratégia 2: Buscar no mesmo bairro
       if (data.neighborhood) {
         try {
           const byNeighborhood = await fetchListings({
@@ -118,6 +120,7 @@ export default function ListingDetailPage() {
         } catch {}
       }
 
+      // Estratégia 3: Buscar na mesma cidade
       try {
         const byCity = await fetchListings({
           cityId: data.city_id,

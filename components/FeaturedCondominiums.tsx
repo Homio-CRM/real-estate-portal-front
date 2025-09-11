@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowRight } from "lucide-react";
-import Link from "next/link";
 import FeaturedCondominiumCard from "./FeaturedCondominiumCard";
 import { CondominiumCard } from "../types/listings";
 import { fetchFeaturedCondominiums } from "../lib/fetchFeaturedCondominiums";
@@ -50,7 +48,7 @@ export default function FeaturedCondominiums({ cityId }: FeaturedCondominiumsPro
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Condomínios em Destaque - Venda</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Condomínios em Lançamento</h2>
             <p className="text-gray-600 mb-12">Descubra os lançamentos mais exclusivos da região</p>
           </div>
           
@@ -67,7 +65,7 @@ export default function FeaturedCondominiums({ cityId }: FeaturedCondominiumsPro
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Condomínios em Destaque - Venda</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Condomínios em Lançamento</h2>
             <p className="text-gray-600 mb-12">Descubra os lançamentos mais exclusivos da região</p>
           </div>
           
@@ -83,7 +81,7 @@ export default function FeaturedCondominiums({ cityId }: FeaturedCondominiumsPro
     <section className="py-16 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Condomínios em Destaque - Venda</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Condomínios em Lançamento</h2>
           <p className="text-gray-600 mb-8">Descubra os lançamentos mais exclusivos da região</p>
         </div>
         
@@ -97,15 +95,6 @@ export default function FeaturedCondominiums({ cityId }: FeaturedCondominiumsPro
           ))}
         </div>
         
-        <div className="text-center">
-          <Link 
-            href="/listings?tipo=Condomínio&operacao=venda"
-            className="inline-flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-secondary transition-colors"
-          >
-            Ver Todos os Condomínios
-            <ArrowRight size={20} />
-          </Link>
-        </div>
       </div>
     </section>
   );

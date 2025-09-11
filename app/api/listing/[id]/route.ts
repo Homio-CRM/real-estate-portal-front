@@ -32,7 +32,19 @@ export async function GET(
         transaction_status,
         property_type,
         list_price_amount,
-        primary_media_url
+        primary_media_url,
+        neighborhood,
+        city_id,
+        state_id,
+        latitude,
+        longitude,
+        bedroom_count,
+        bathroom_count,
+        garage_count,
+        total_area,
+        private_area,
+        built_area,
+        land_area
       `)
       .eq("listing_id", id)
       .single();
@@ -41,6 +53,15 @@ export async function GET(
       console.error("Listing not found:", listingError);
       return NextResponse.json({ error: "Listing not found" }, { status: 404 });
     }
+
+    // Buscar condominium_id da tabela listing original
+    const { data: listingDetails, error: listingDetailsError } = await supabase
+      .from("listing")
+      .select("condominium_id")
+      .eq("listing_id", id)
+      .single();
+
+    const condominium_id = listingDetails?.condominium_id || null;
 
 
     // Usar primary_media_url da materialized view e buscar todas as mídias
@@ -100,6 +121,23 @@ export async function GET(
     }
     
 
+    // Função para obter nome da cidade
+    function getCityName(cityId?: number | null): string {
+      const cities: Record<number, string> = {
+        3205309: 'Vitória - ES',
+        3205200: 'Vila Velha - ES', 
+        3205002: 'Serra - ES',
+        3201308: 'Cariacica - ES',
+        3106200: 'Belo Horizonte - MG'
+      };
+      return cities[cityId || 0] || 'Cidade não identificada';
+    }
+
+    // Construir endereço baseado nos dados reais
+    const displayAddress = listing.neighborhood 
+      ? `${listing.neighborhood}, ${getCityName(listing.city_id)}`
+      : getCityName(listing.city_id);
+
     const property = {
       ...listing,
       media: allMedia.map((m: MediaItem) => ({
@@ -117,9 +155,22 @@ export async function GET(
         : "Preço sob consulta",
       image: listing.primary_media_url || "/placeholder-property.jpg",
       
-      // Valores padrão para campos que não existem na materialized view
+      // Usar dados reais da materialized view
       public_id: listing.listing_id,
-      condominium_id: null,
+      condominium_id: condominium_id,
+      display_address: displayAddress,
+      neighborhood: listing.neighborhood || 'Bairro não informado',
+      address: displayAddress,
+      area: listing.total_area || listing.private_area || listing.built_area || 120,
+      bathroom_count: listing.bathroom_count || 2,
+      bedroom_count: listing.bedroom_count || 3,
+      garage_count: listing.garage_count || 2,
+      city_id: listing.city_id,
+      state_id: listing.state_id,
+      latitude: listing.latitude,
+      longitude: listing.longitude,
+      
+      // Valores padrão para campos que não existem na materialized view
       virtual_tour: null,
       construction_status: null,
       occupation_status: null,
@@ -136,19 +187,9 @@ export async function GET(
       spu: null,
       list_price_currency: 'BRL',
       iptu: null,
-      
-      // Valores padrão para campos que podem não existir
-      description: "Imóvel em excelente localização com acabamento de alto padrão.",
-      area: 120,
-      bathroom_count: 2,
-      bedroom_count: 3,
-      garage_count: 2,
       suite_count: 1,
       year_built: 2020,
-      display_address: 'Endereço não informado',
-      neighborhood: 'Bairro não informado',
-      address: 'Endereço não informado',
-      city_id: 1
+      description: "Imóvel em excelente localização com acabamento de alto padrão."
     };
 
 

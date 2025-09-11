@@ -34,6 +34,7 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
       try {
         // Obter localização do usuário
         const userLocation = await getUserLocation();
+        console.log("📍 [FEATURED PROPERTIES] User location detected:", userLocation);
         
         // Parâmetros para busca com priorização de localização
         const saleParams = {
@@ -54,13 +55,29 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
           useLocationPriority: true,
         };
 
+        console.log("🔍 [FEATURED PROPERTIES] Search params:", {
+          saleParams,
+          rentParams,
+          propsCityId: cityId
+        });
 
+
+        console.log("🔄 [FEATURED PROPERTIES] Fetching sale listings...");
         const saleResults = await fetchListings(saleParams);
+        console.log(`✅ [FEATURED PROPERTIES] Sale results: ${saleResults.length} listings`);
+
+        console.log("🔄 [FEATURED PROPERTIES] Fetching rent listings...");
         const rentResults = await fetchListings(rentParams);
+        console.log(`✅ [FEATURED PROPERTIES] Rent results: ${rentResults.length} listings`);
 
         // Os resultados já vêm ordenados por prioridade do ad_type da API
         setSaleProperties(saleResults.slice(0, 6));
         setRentProperties(rentResults.slice(0, 6));
+        
+        console.log("🎯 [FEATURED PROPERTIES] Final state:", {
+          saleProperties: saleResults.slice(0, 6).length,
+          rentProperties: rentResults.slice(0, 6).length
+        });
       } catch (err) {
         console.error("Erro ao buscar imóveis em destaque:", err);
         setError("Erro ao carregar imóveis em destaque");
