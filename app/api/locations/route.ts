@@ -32,13 +32,12 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Buscar cidades
+    // Buscar cidades que têm imóveis cadastrados
     const { data: cities, error: citiesError } = await supabaseAgent
-      .from("city")
-      .select("id, name")
-      .ilike("name", `${query}%`)
-      .order("name")
-      .limit(10);
+      .from("entity_location")
+      .select("city_id, city!inner(id, name)")
+      .not("city_id", "is", null)
+      .limit(100);
 
     if (citiesError) {
       return NextResponse.json({ error: citiesError.message }, { status: 500 });
@@ -103,14 +102,31 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
       .slice(0, 10);
 
-    // Formatar cidades com tipo
-    const formattedCities = cities.map(city => ({
-      id: city.id,
-      name: city.name,
-      type: 'city',
-      city_name: city.name,
-      city_id: city.id
-    }));
+    // Processar cidades: remover duplicatas e filtrar por nome
+    const uniqueCities = new Map<number, {
+      id: number;
+      name: string;
+      type: string;
+      city_name: string;
+      city_id: number;
+    }>();
+    
+    cities.forEach((item: { city_id: number; city: { id: number; name: string } | { id: number; name: string }[] }) => {
+      const city = Array.isArray(item.city) ? item.city[0] : item.city;
+      if (city && !uniqueCities.has(city.id) && query && city.name.toLowerCase().startsWith(query.toLowerCase())) {
+        uniqueCities.set(city.id, {
+          id: city.id,
+          name: city.name,
+          type: 'city',
+          city_name: city.name,
+          city_id: city.id
+        });
+      }
+    });
+
+    const formattedCities = Array.from(uniqueCities.values())
+      .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+      .slice(0, 10);
 
     const result = {
       neighborhoods: neighborhoods,

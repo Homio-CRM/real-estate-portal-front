@@ -103,6 +103,7 @@ export default function AutocompleteField({
       };
       
       setLocationData(filteredData);
+      setLoading(false);
       setShowOptions(true);
       
       // Se encontramos resultados no cache, não fazer nova requisição
@@ -199,7 +200,7 @@ export default function AutocompleteField({
     setSelectedItem(null);
     setUserSelected(false);
     onChange("");
-    setShowOptions(true);
+    setShowOptions(false);
     onValidityChange?.(false);
   }
 
@@ -221,7 +222,7 @@ export default function AutocompleteField({
           value={input}
           onChange={handleInputChange}
           onFocus={() => {
-            if (!isSelected) {
+            if (!isSelected && input.trim()) {
               setShowOptions(true);
             }
           }}
@@ -236,50 +237,59 @@ export default function AutocompleteField({
           autoComplete="off"
           required
         />
-        {showOptions && hasOptions && (
+        {showOptions && input.trim() && (
           <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-auto shadow-lg">
-            {locationData.neighborhoods.length > 0 && (
-              <div>
-                <div className="px-3 py-2 text-sm font-semibold text-primary bg-primary/5 border-b border-gray-200 flex items-center gap-2">
-                  <Home className="w-4 h-4 text-primary" />
-                  Bairros
-                </div>
-                <ul>
-                  {locationData.neighborhoods.map((item) => (
-                    <li
-                      key={item.id}
-                      className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-gray-900"
-                      onMouseDown={() => handleSelect(item)}
-                    >
-                      {item.name}, {item.city_name}
-                    </li>
-                  ))}
-                </ul>
+            {loading ? (
+              <div className="px-3 py-4 text-center text-gray-500 text-sm">
+                Buscando...
               </div>
-            )}
-            {locationData.cities.length > 0 && (
-              <div>
-                <div className="px-3 py-2 text-sm font-semibold text-primary bg-primary/5 border-b border-gray-200 flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-primary" />
-                  Cidades
-                </div>
-                <ul>
-                  {locationData.cities.map((item) => (
-                    <li
-                      key={item.id}
-                      className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-gray-900"
-                      onMouseDown={() => handleSelect(item)}
-                    >
-                      {item.name}
-                    </li>
-                  ))}
-                </ul>
+            ) : hasOptions ? (
+              <>
+                {locationData.neighborhoods.length > 0 && (
+                  <div>
+                    <div className="px-3 py-2 text-sm font-semibold text-primary bg-primary/5 border-b border-gray-200 flex items-center gap-2">
+                      <Home className="w-4 h-4 text-primary" />
+                      Bairros
+                    </div>
+                    <ul>
+                      {locationData.neighborhoods.map((item) => (
+                        <li
+                          key={item.id}
+                          className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-gray-900"
+                          onMouseDown={() => handleSelect(item)}
+                        >
+                          {item.name}, {item.city_name}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {locationData.cities.length > 0 && (
+                  <div>
+                    <div className="px-3 py-2 text-sm font-semibold text-primary bg-primary/5 border-b border-gray-200 flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-primary" />
+                      Cidades
+                    </div>
+                    <ul>
+                      {locationData.cities.map((item) => (
+                        <li
+                          key={item.id}
+                          className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-gray-900"
+                          onMouseDown={() => handleSelect(item)}
+                        >
+                          {item.name}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="px-3 py-4 text-center text-gray-500 text-sm">
+                Nenhum imóvel encontrado para &quot;{input}&quot;
               </div>
             )}
           </div>
-        )}
-        {loading && (
-          <div className="absolute right-3 top-3 w-4 h-4 animate-spin border-2 border-primary border-t-transparent rounded-full"></div>
         )}
         {error && showOptions && (
           <div className="absolute z-10 w-full bg-white border border-destructive rounded-lg mt-1 p-3 text-destructive text-sm">
