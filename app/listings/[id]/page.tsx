@@ -27,11 +27,10 @@ import {
   ChevronRight
 } from "lucide-react";
 import Header from "../../../components/Header";
-import LoadingModal from "../../../components/LoadingModal";
+import ListingDetailSkeleton from "../../../components/ListingDetailSkeleton";
 import { fetchListingById, fetchListings } from "../../../lib/fetchListings";
 import { PropertyCard as PropertyCardType } from "../../../types/listings";
 import HorizontalPropertyCard from "../../../components/HorizontalPropertyCard";
-import ContactForm from "../../../components/ContactForm";
 import Footer from "../../../components/Footer";
 import { translatePropertyType } from "../../../lib/propertyTypes";
 import { ImageGallery } from "../../../components/ImageGallery";
@@ -60,10 +59,23 @@ export default function ListingDetailPage() {
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [condominiumInfo, setCondominiumInfo] = useState<{ id: string; name?: string; min_price?: number; max_price?: number; min_area?: number; max_area?: number } | null>(null);
   const [showGallery, setShowGallery] = useState(false);
+  const [agencyPhone, setAgencyPhone] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchProperty() {
       if (!params.id) return;
+      
+      // Buscar telefone da agência
+      try {
+        const phoneResponse = await fetch('/api/agency/phone');
+        if (phoneResponse.ok) {
+          const phoneData = await phoneResponse.json();
+          setAgencyPhone(phoneData.phone);
+        }
+      } catch (error) {
+        console.error('Error fetching agency phone:', error);
+      }
+      
       const data = await fetchListingById(params.id as string);
       setProperty(data);
       setLoading(false);
@@ -125,7 +137,12 @@ export default function ListingDetailPage() {
   }, [params.id]);
 
   if (loading) {
-    return <LoadingModal />;
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <ListingDetailSkeleton />
+      </div>
+    );
   }
 
   if (!property) {
@@ -170,6 +187,13 @@ export default function ListingDetailPage() {
     property.neighborhood || "Vitória",
     property.address || "Endereço não informado"
   ];
+
+  const generateWhatsAppLink = () => {
+    if (!agencyPhone) return '#';
+    const message = `Olá! Tenho interesse no imóvel: ${property.title}. Poderia me passar mais informações?`;
+    const cleanPhone = agencyPhone.replace(/\D/g, '');
+    return `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -283,16 +307,17 @@ export default function ListingDetailPage() {
                 <div className="text-2xl sm:text-3xl font-bold text-green-600">
                   {property.price}
                 </div>
-                <button 
-                  className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors w-full sm:w-auto justify-center"
-                  onClick={() => {
-                    // TODO: Implementar contato
-                    alert('Funcionalidade de contato será implementada em breve');
-                  }}
-                >
-                  <Phone size={20} />
-                  Contatar
-                </button>
+                {agencyPhone && (
+                  <a 
+                    href={generateWhatsAppLink()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors w-full sm:w-auto justify-center"
+                  >
+                    <Phone size={20} />
+                    WhatsApp
+                  </a>
+                )}
               </div>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                  <div className="lg:col-span-2 space-y-6">
@@ -382,21 +407,6 @@ export default function ListingDetailPage() {
                      </div>
                    )}
 
-                   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                     <button 
-                       className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors text-lg"
-                       onClick={() => {
-                         // TODO: Implementar contato
-                         alert('Funcionalidade de contato será implementada em breve');
-                       }}
-                     >
-                       <Phone size={24} />
-                       Contatar Agora
-                     </button>
-                     <p className="text-center text-sm text-gray-600 mt-2">
-                       Entre em contato para mais informações
-                     </p>
-                   </div>
                 </div>
 
                                  <div className="space-y-6">
@@ -413,46 +423,55 @@ export default function ListingDetailPage() {
 
                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                      <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
-                       <Phone size={20} className="text-secondary" />
-                       Contatos
+                       <span className="text-green-600">$</span>
+                       Resumo Financeiro
                      </h3>
-                     <div className="space-y-4">
-                       <p className="text-gray-600">
-                         Para mais informações sobre este imóvel, entre em contato através do formulário abaixo.
-                       </p>
+                     <div className="space-y-2 text-gray-700">
+                       <div>
+                         <span className="font-medium">
+                           {property.forRent ? "Aluguel mensal:" : "Valor do imóvel:"}
+                         </span> {property.price}
+                       </div>
+                       {property.property_administration_fee_amount && (
+                         <div>
+                           <span className="font-medium">Condomínio:</span> R$ {property.property_administration_fee_amount.toLocaleString("pt-BR")}
+                         </div>
+                       )}
+                       {property.iptu_amount && (
+                         <div>
+                           <span className="font-medium">IPTU:</span> R$ {property.iptu_amount.toLocaleString("pt-BR")}
+                         </div>
+                       )}
                      </div>
                    </div>
 
-                                       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                      <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
-                        <span className="text-green-600">$</span>
-                        Resumo Financeiro
-                      </h3>
-                      <div className="space-y-2 text-gray-700">
-                        <div>
-                          <span className="font-medium">
-                            {property.forRent ? "Aluguel mensal:" : "Valor do imóvel:"}
-                          </span> {property.price}
-                        </div>
-                        {property.property_administration_fee_amount && (
-                          <div>
-                            <span className="font-medium">Condomínio:</span> R$ {property.property_administration_fee_amount.toLocaleString("pt-BR")}
-                          </div>
-                        )}
-                        {property.iptu_amount && (
-                          <div>
-                            <span className="font-medium">IPTU:</span> R$ {property.iptu_amount.toLocaleString("pt-BR")}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                   {agencyPhone && (
+                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                       <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
+                         <Phone size={20} className="text-secondary" />
+                         Contato
+                       </h3>
+                       <div className="space-y-4">
+                         <p className="text-gray-600">
+                           Entre em contato via WhatsApp para mais informações sobre este imóvel.
+                         </p>
+                         <div className="flex items-center gap-2 text-gray-700">
+                           <Phone size={16} />
+                           <span>{agencyPhone}</span>
+                         </div>
+                         <a 
+                           href={generateWhatsAppLink()}
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+                         >
+                           <Phone size={16} />
+                           Falar no WhatsApp
+                         </a>
+                       </div>
+                     </div>
+                   )}
 
-                    <div id="contact-form">
-                      <ContactForm
-                        propertyId={property.public_id || property.listing_id || ""}
-                        propertyTitle={property.title || ""}
-                      />
-                    </div>
                                  </div>
                </div>
              </div>
@@ -490,18 +509,17 @@ export default function ListingDetailPage() {
         />
       )}
 
-      {property && (
+      {property && agencyPhone && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white p-4 flex items-center justify-between gap-3">
           <div className="text-lg font-semibold text-gray-900">{property.price}</div>
-          <button
-            className="flex-1 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
-            onClick={() => {
-              const el = document.getElementById('contact-form');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }}
+          <a
+            href={generateWhatsAppLink()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors text-center"
           >
-            Contatar
-          </button>
+            WhatsApp
+          </a>
         </div>
       )}
     </div>

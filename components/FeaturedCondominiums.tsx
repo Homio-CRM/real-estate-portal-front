@@ -6,6 +6,7 @@ import Link from "next/link";
 import FeaturedCondominiumCard from "./FeaturedCondominiumCard";
 import { CondominiumCard } from "../types/listings";
 import { fetchFeaturedCondominiums } from "../lib/fetchFeaturedCondominiums";
+import FeaturedCondominiumsSkeleton from "./FeaturedCondominiumsSkeleton";
 
 interface FeaturedCondominiumsProps {
   cityId?: number;
@@ -41,20 +42,7 @@ export default function FeaturedCondominiums({ cityId }: FeaturedCondominiumsPro
   }, [cityId]);
 
   if (loading) {
-    return (
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Condomínios em Destaque - Venda</h2>
-            <p className="text-gray-600 mb-12">Descubra os lançamentos mais exclusivos da região</p>
-          </div>
-          
-          <div className="flex justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        </div>
-      </section>
-    );
+    return <FeaturedCondominiumsSkeleton />;
   }
 
   if (error) {

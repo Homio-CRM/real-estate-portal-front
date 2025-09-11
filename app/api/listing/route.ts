@@ -1,6 +1,18 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+// Função para obter nome da cidade
+function getCityName(cityId?: number | null): string {
+  const cities: Record<number, string> = {
+    3205309: 'Vitória - ES',
+    3205200: 'Vila Velha - ES', 
+    3205002: 'Serra - ES',
+    3201308: 'Cariacica - ES',
+    3106200: 'Belo Horizonte - MG'
+  };
+  return cities[cityId || 0] || 'Cidade não identificada';
+}
+
 export async function GET(request: Request) {
   console.log("=== API LISTING ROUTE CALLED ===");
   
@@ -46,7 +58,19 @@ export async function GET(request: Request) {
         transaction_type,
         agency_id,
         list_price_amount,
-        primary_media_url
+        primary_media_url,
+        neighborhood,
+        city_id,
+        state_id,
+        latitude,
+        longitude,
+        bedroom_count,
+        bathroom_count,
+        garage_count,
+        total_area,
+        private_area,
+        built_area,
+        land_area
       `)
       .eq('agency_id', agencyId)
       .eq('transaction_type', transactionType === "rent" ? "rent" : "sale")
@@ -63,11 +87,17 @@ export async function GET(request: Request) {
     console.log("Number of listings found:", data?.length || 0);
 
     // Processar listings usando primary_media_url da materialized view e buscar todas as mídias
-    const results = await Promise.all((data || []).map(async (item: any) => {
+    const results = await Promise.all((data || []).map(async (item: Record<string, unknown>) => {
       console.log("Processing listing:", item.listing_id, item.title);
       console.log("Primary media URL from listing_search:", item.primary_media_url);
       
-      let allMedia = [];
+      let allMedia: Array<{
+        id: string;
+        url: string;
+        caption: string;
+        is_primary: boolean;
+        order: number;
+      }> = [];
       let mediaCount = 0;
       
       // Se tem imagem primária, buscar todas as mídias
@@ -83,7 +113,7 @@ export async function GET(request: Request) {
           // Fallback para apenas a imagem primária
           allMedia = [{
             id: 'primary',
-            url: item.primary_media_url,
+            url: item.primary_media_url as string,
             caption: 'Imagem principal',
             is_primary: true,
             order: 1
@@ -98,7 +128,7 @@ export async function GET(request: Request) {
           // Não tem mídias na tabela media_item, usar apenas a primária da materialized view
           allMedia = [{
             id: 'primary',
-            url: item.primary_media_url,
+            url: item.primary_media_url as string,
             caption: 'Imagem principal',
             is_primary: true,
             order: 1
@@ -108,6 +138,11 @@ export async function GET(request: Request) {
         }
       }
       
+      // Construir endereço baseado nos dados da match view
+      const displayAddress = item.neighborhood 
+        ? `${item.neighborhood as string}, ${getCityName(item.city_id as number)}`
+        : getCityName(item.city_id as number);
+
       const result = {
         listing_id: item.listing_id,
         title: item.title,
@@ -116,25 +151,29 @@ export async function GET(request: Request) {
         list_price_amount: item.list_price_amount,
         public_id: item.listing_id, // Usar listing_id como public_id
         description: "Imóvel em excelente localização com acabamento de alto padrão.",
-        area: 120,
-        bathroom_count: 2,
-        bedroom_count: 3,
-        garage_count: 2,
-        suite_count: 1,
-        year_built: 2020,
-        display_address: 'Endereço não informado',
-        neighborhood: 'Bairro não informado',
-        address: 'Endereço não informado',
-        primary_image_url: item.primary_media_url || "/placeholder-property.jpg",
+        area: (item.total_area as number) || (item.private_area as number) || (item.built_area as number) || 120,
+        bathroom_count: (item.bathroom_count as number) || 2,
+        bedroom_count: (item.bedroom_count as number) || 3,
+        garage_count: (item.garage_count as number) || 2,
+        suite_count: 1, // Não temos este campo na match view
+        year_built: 2020, // Não temos este campo na match view
+        display_address: displayAddress,
+        neighborhood: (item.neighborhood as string) || 'Bairro não informado',
+        address: displayAddress,
+        latitude: item.latitude as number,
+        longitude: item.longitude as number,
+        city_id: item.city_id as number,
+        state_id: item.state_id as number,
+        primary_image_url: (item.primary_media_url as string) || "/placeholder-property.jpg",
         media_count: mediaCount,
-        media: allMedia.map((m: any) => ({
+        media: allMedia.map((m) => ({
           id: m.id,
           url: m.url,
           caption: m.caption,
           is_primary: m.is_primary,
           order: m.order
         })),
-        price_formatted: item.list_price_amount ? `R$ ${item.list_price_amount.toLocaleString('pt-BR')}` : 'Preço sob consulta',
+        price_formatted: item.list_price_amount ? `R$ ${(item.list_price_amount as number).toLocaleString('pt-BR')}` : 'Preço sob consulta',
         for_rent: item.transaction_type === 'rent'
       };
       

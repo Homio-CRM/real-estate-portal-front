@@ -6,6 +6,7 @@ import { fetchListings } from "../lib/fetchListings";
 import { PropertyCard } from "../types/listings";
 import { Building, Home, ChevronLeft, ChevronRight, Camera, Ruler, Bed, Bath, Car } from "lucide-react";
 import { formatCurrency } from "../lib/formatCurrency";
+import FeaturedPropertiesSkeleton from "./FeaturedPropertiesSkeleton";
 
 interface FeaturedPropertiesProps {
   cityId?: number;
@@ -123,16 +124,7 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
   };
 
   if (loading) {
-    return (
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
-            <p className="mt-4 text-gray-600">Carregando imóveis em destaque...</p>
-          </div>
-        </div>
-      </section>
-    );
+    return <FeaturedPropertiesSkeleton />;
   }
 
   if (error) {

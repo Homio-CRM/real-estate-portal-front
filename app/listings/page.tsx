@@ -2,7 +2,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, useMemo, Suspense } from "react";
 import Header from "../../components/Header";
-import LoadingModal from "../../components/LoadingModal";
+import ListingsSkeleton from "../../components/ListingsSkeleton";
 import { fetchListings } from "../../lib/fetchListings";
 import { fetchCondominiums } from "../../lib/fetchCondominiums";
 import HorizontalPropertyCard from "../../components/HorizontalPropertyCard";
@@ -329,9 +329,26 @@ function ListingsContent() {
       <Header />
       <div className="pt-24">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          {loading && <LoadingModal />}
-          
-          {!loading && (
+          {loading ? (
+            <div className="flex flex-col lg:flex-row gap-6">
+              <div className="hidden lg:block flex-shrink-0">
+                <div className="w-64 h-96 bg-gray-100 rounded-lg animate-pulse"></div>
+              </div>
+              
+              <div className="flex-1">
+                <div className="mb-4 flex items-center justify-between lg:hidden">
+                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-10 w-20 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div className="h-12 w-full bg-gray-200 rounded-lg animate-pulse mb-4 sm:mb-6"></div>
+                
+                <ListingsSkeleton 
+                  isCondominium={initialFilters.tipo === "Condomínio"} 
+                  count={6} 
+                />
+              </div>
+            </div>
+          ) : (
             <div className="flex flex-col lg:flex-row gap-6">
               <div className="hidden lg:block flex-shrink-0">
                 <ResultsFilters
@@ -429,7 +446,30 @@ function ListingsContent() {
 
 export default function Listings() {
   return (
-    <Suspense fallback={<LoadingModal />}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="pt-24">
+          <div className="max-w-7xl mx-auto px-4 py-6">
+            <div className="flex flex-col lg:flex-row gap-6">
+              <div className="hidden lg:block flex-shrink-0">
+                <div className="w-64 h-96 bg-gray-100 rounded-lg animate-pulse"></div>
+              </div>
+              
+              <div className="flex-1">
+                <div className="mb-4 flex items-center justify-between lg:hidden">
+                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-10 w-20 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div className="h-12 w-full bg-gray-200 rounded-lg animate-pulse mb-4 sm:mb-6"></div>
+                
+                <ListingsSkeleton count={6} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
       <ListingsContent />
     </Suspense>
   );

@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAgent } from "../../../../lib/supabaseAgent";
 
+// Função para obter nome da cidade
+function getCityName(cityId?: number | null): string {
+  const cities: Record<number, string> = {
+    3205309: 'Vitória - ES',
+    3205200: 'Vila Velha - ES', 
+    3205002: 'Serra - ES',
+    3201308: 'Cariacica - ES',
+    3106200: 'Belo Horizonte - MG'
+  };
+  return cities[cityId || 0] || 'Cidade não identificada';
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -47,55 +59,142 @@ export async function GET(
       image: media?.find(m => m.is_primary)?.url || "/placeholder-property.jpg",
     } as const;
 
-    const { data: apartmentListings } = await supabaseAgent
+    // Primeiro, buscar os listing_ids dos apartamentos deste condomínio
+    const { data: apartmentListingIds, error: apartmentIdsError } = await supabaseAgent
       .from("listing")
-      .select("*")
+      .select("listing_id")
       .eq("condominium_id", id)
-      .eq("property_type", "apartment");
+      .eq("agency_id", condominium.agency_id);
+
+    console.log("=== CONDOMINIUM APARTMENTS DEBUG ===");
+    console.log("Condominium ID:", id);
+    console.log("Agency ID:", condominium.agency_id);
+    console.log("Apartment IDs error:", apartmentIdsError);
+    console.log("Apartment listing IDs:", apartmentListingIds);
 
     const apartments = [] as any[];
-    if (apartmentListings && apartmentListings.length > 0) {
-      const listingIds = apartmentListings.map(l => l.listing_id);
+    if (apartmentListingIds && apartmentListingIds.length > 0) {
+      const listingIds = apartmentListingIds.map(l => l.listing_id);
+      console.log("Listing IDs to search:", listingIds);
 
-      const [{ data: detailsList }, { data: locationsList }, { data: featuresList }, { data: mediaList }] = await Promise.all([
-        supabaseAgent.from("listing_details").select("*").in("listing_id", listingIds),
-        supabaseAgent.from("entity_location").select("*").eq("entity_type", "listing").in("listing_id", listingIds),
-        supabaseAgent.from("entity_features").select("*").eq("entity_type", "listing").in("listing_id", listingIds),
-        supabaseAgent.from("media_item").select("*").eq("entity_type", "listing").in("listing_id", listingIds).order("is_primary", { ascending: false }),
-      ]);
+      // Agora buscar os dados otimizados usando a listing_search
+      const { data: apartmentListings, error: apartmentError } = await supabaseAgent
+        .from("listing_search")
+        .select(`
+          listing_id,
+          title,
+          transaction_type,
+          agency_id,
+          list_price_amount,
+          primary_media_url,
+          neighborhood,
+          city_id,
+          state_id,
+          latitude,
+          longitude,
+          bedroom_count,
+          bathroom_count,
+          garage_count,
+          total_area,
+          private_area,
+          built_area,
+          land_area
+        `)
+        .in("listing_id", listingIds);
 
-      const detailsById = new Map((detailsList || []).map(d => [d.listing_id, d]));
-      const locationById = new Map((locationsList || []).map(l => [l.listing_id, l]));
-      const featuresById = new Map((featuresList || []).map(f => [f.listing_id, f]));
-      const mediaById = new Map<string, any[]>([]);
-      (mediaList || []).forEach(m => {
-        const key = m.listing_id as string;
-        const arr = mediaById.get(key) || [];
-        arr.push(m);
-        mediaById.set(key, arr);
-      });
+      console.log("Apartment search error:", apartmentError);
+      console.log("Raw apartment listings from search:", apartmentListings);
+      console.log("Number of listings found:", apartmentListings?.length || 0);
 
-      for (const listing of apartmentListings) {
-        const details = detailsById.get(listing.listing_id) as any;
-        const loc = locationById.get(listing.listing_id) as any;
-        const feat = featuresById.get(listing.listing_id) as any;
-        const listingMedia = mediaById.get(listing.listing_id) || [];
+      if (apartmentListings && apartmentListings.length > 0) {
+        // Processar listings usando a mesma lógica da API /api/listing
+        const results = await Promise.all((apartmentListings || []).map(async (item: any) => {
+          let allMedia = [];
+          let mediaCount = 0;
+          
+          // Se tem imagem primária, buscar todas as mídias
+          if (item.primary_media_url) {
+            const { data: mediaData, error: mediaError } = await supabaseAgent
+              .from('media_item')
+              .select('id, url, caption, is_primary, order')
+              .eq('listing_id', item.listing_id)
+              .order('order', { ascending: true });
 
-        const price = listing.transaction_type === "rental"
-          ? (details?.rental_price_amount ? `R$ ${Number(details.rental_price_amount).toLocaleString("pt-BR")}` : "Preço sob consulta")
-          : (listing.list_price_amount ? `R$ ${Number(listing.list_price_amount).toLocaleString("pt-BR")}` : "Preço sob consulta");
+            if (mediaError) {
+              console.error(`Media error for listing ${item.listing_id}:`, mediaError);
+              // Fallback para apenas a imagem primária
+              allMedia = [{
+                id: 'primary',
+                url: item.primary_media_url,
+                caption: 'Imagem principal',
+                is_primary: true,
+                order: 1
+              }];
+              mediaCount = 1;
+            } else if (mediaData && mediaData.length > 0) {
+              // Tem mídias na tabela media_item
+              allMedia = mediaData;
+              mediaCount = allMedia.length;
+            } else {
+              // Não tem mídias na tabela media_item, usar apenas a primária da materialized view
+              allMedia = [{
+                id: 'primary',
+                url: item.primary_media_url,
+                caption: 'Imagem principal',
+                is_primary: true,
+                order: 1
+              }];
+              mediaCount = 1;
+            }
+          }
+          
+          // Construir endereço baseado nos dados da match view
+          const displayAddress = item.neighborhood 
+            ? `${item.neighborhood}, ${getCityName(item.city_id)}`
+            : getCityName(item.city_id);
 
-        apartments.push({
-          ...listing,
-          ...(details || {}),
-          ...(loc || {}),
-          ...(feat || {}),
-          media: listingMedia,
-          forRent: listing.transaction_type === "rental",
-          price,
-          iptu: details?.iptu_amount ? `R$ ${Number(details.iptu_amount).toLocaleString("pt-BR")}` : undefined,
-          image: (listingMedia.find(m => m.is_primary)?.url) || "/placeholder-property.jpg",
-        });
+          const result = {
+            listing_id: item.listing_id,
+            title: item.title,
+            transaction_type: item.transaction_type,
+            agency_id: item.agency_id,
+            list_price_amount: item.list_price_amount,
+            condominium_id: id, // Usar o id do condomínio atual
+            public_id: item.listing_id,
+            description: "Imóvel em excelente localização com acabamento de alto padrão.",
+            area: item.total_area || item.private_area || item.built_area || 120,
+            bathroom_count: item.bathroom_count || 2,
+            bedroom_count: item.bedroom_count || 3,
+            garage_count: item.garage_count || 2,
+            suite_count: 1, // Não temos este campo na match view
+            year_built: 2020, // Não temos este campo na match view
+            display_address: displayAddress,
+            neighborhood: item.neighborhood || 'Bairro não informado',
+            address: displayAddress,
+            latitude: item.latitude,
+            longitude: item.longitude,
+            city_id: item.city_id,
+            state_id: item.state_id,
+            primary_image_url: item.primary_media_url || "/placeholder-property.jpg",
+            media_count: mediaCount,
+            media: allMedia.map((m: any) => ({
+              id: m.id,
+              url: m.url,
+              caption: m.caption,
+              is_primary: m.is_primary,
+              order: m.order
+            })),
+            price_formatted: item.list_price_amount ? `R$ ${item.list_price_amount.toLocaleString('pt-BR')}` : 'Preço sob consulta',
+            for_rent: item.transaction_type === 'rent',
+            price: item.list_price_amount ? `R$ ${item.list_price_amount.toLocaleString('pt-BR')}` : 'Preço sob consulta',
+            forRent: item.transaction_type === 'rent',
+            image: item.primary_media_url || "/placeholder-property.jpg",
+          };
+          
+          return result;
+        }));
+
+        apartments.push(...results);
       }
     }
 

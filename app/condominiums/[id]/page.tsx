@@ -27,11 +27,10 @@ import {
   ChevronRight
 } from "lucide-react";
 import Header from "../../../components/Header";
-import LoadingModal from "../../../components/LoadingModal";
+import CondominiumDetailSkeleton from "../../../components/CondominiumDetailSkeleton";
 import { CondominiumCard, PropertyCard } from "../../../types/listings";
 import HorizontalPropertyCard from "../../../components/HorizontalPropertyCard";
 import Footer from "../../../components/Footer";
-import ContactForm from "../../../components/ContactForm";
 import { ImageGallery } from "../../../components/ImageGallery";
 
 type CondominiumDetail = CondominiumCard & {
@@ -71,10 +70,22 @@ export default function CondominiumDetailPage() {
   const [loading, setLoading] = useState(true);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [showGallery, setShowGallery] = useState(false);
+  const [agencyPhone, setAgencyPhone] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchCondo() {
       if (params.id) {
+        // Buscar telefone da agência
+        try {
+          const phoneResponse = await fetch('/api/agency/phone');
+          if (phoneResponse.ok) {
+            const phoneData = await phoneResponse.json();
+            setAgencyPhone(phoneData.phone);
+          }
+        } catch (error) {
+          console.error('Error fetching agency phone:', error);
+        }
+        
         try {
           const [condoRes, statsRes] = await Promise.all([
             fetch(`/api/condominium/${params.id}`),
@@ -102,7 +113,12 @@ export default function CondominiumDetailPage() {
   }, [params.id]);
 
   if (loading) {
-    return <LoadingModal />;
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <CondominiumDetailSkeleton />
+      </div>
+    );
   }
 
   if (!condo) {
@@ -140,6 +156,13 @@ export default function CondominiumDetailPage() {
     }
     if (condo.min_price) return `A partir de ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(condo.min_price)}`;
     return "Preço sob consulta";
+  };
+
+  const generateWhatsAppLink = () => {
+    if (!agencyPhone) return '#';
+    const message = `Olá! Tenho interesse no condomínio: ${condo.name}. Poderia me passar mais informações?`;
+    const cleanPhone = agencyPhone.replace(/\D/g, '');
+    return `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`;
   };
 
   const amenities = [
@@ -248,16 +271,17 @@ export default function CondominiumDetailPage() {
                 <div className="text-2xl sm:text-3xl font-bold text-green-600">
                   {formatPriceRange()}
                 </div>
-                <button 
-                  className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors w-full sm:w-auto justify-center"
-                  onClick={() => {
-                    const el = document.getElementById('contact-form');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                >
-                  <Phone size={20} />
-                  Contatar
-                </button>
+                {agencyPhone && (
+                  <a 
+                    href={generateWhatsAppLink()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors w-full sm:w-auto justify-center"
+                  >
+                    <Phone size={20} />
+                    WhatsApp
+                  </a>
+                )}
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -340,12 +364,6 @@ export default function CondominiumDetailPage() {
                       </div>
                     )}
 
-                    <div id="contact-form">
-                      <ContactForm
-                        propertyId={condo.id || ""}
-                        propertyTitle={condo.name}
-                      />
-                    </div>
                 </div>
 
                 <div className="space-y-6">
@@ -357,18 +375,6 @@ export default function CondominiumDetailPage() {
                     <div className="space-y-2 text-gray-700">
                       <p>{condo.neighborhood}, {condo.display_address}</p>
                       {condo.postal_code && <p>CEP: {condo.postal_code}</p>}
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
-                      <Phone size={20} className="text-secondary" />
-                      Contatos
-                    </h3>
-                    <div className="space-y-4">
-                      <p className="text-gray-600">
-                        Para mais informações sobre este condomínio, entre em contato através do formulário abaixo.
-                      </p>
                     </div>
                   </div>
 
@@ -393,6 +399,33 @@ export default function CondominiumDetailPage() {
                       )}
                     </div>
                   </div>
+
+                  {agencyPhone && (
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                      <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
+                        <Phone size={20} className="text-secondary" />
+                        Contato
+                      </h3>
+                      <div className="space-y-4">
+                        <p className="text-gray-600">
+                          Entre em contato via WhatsApp para mais informações sobre este condomínio.
+                        </p>
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <Phone size={16} />
+                          <span>{agencyPhone}</span>
+                        </div>
+                        <a 
+                          href={generateWhatsAppLink()}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+                        >
+                          <Phone size={16} />
+                          Falar no WhatsApp
+                        </a>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -433,18 +466,17 @@ export default function CondominiumDetailPage() {
         />
       )}
 
-      {condo && (
+      {condo && agencyPhone && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white p-4 flex items-center justify-between gap-3">
           <div className="text-lg font-semibold text-gray-900">{formatPriceRange()}</div>
-          <button
-            className="flex-1 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
-            onClick={() => {
-              const el = document.getElementById('contact-form');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }}
+          <a
+            href={generateWhatsAppLink()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors text-center"
           >
-            Contatar
-          </button>
+            WhatsApp
+          </a>
         </div>
       )}
     </div>
