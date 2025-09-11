@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Location } from "./locationUtils";
+import { getUserLocation } from "./userLocation";
 
 export function useLocationRedirect() {
   const [userLocation, setUserLocation] = useState<Location | null>(null);
@@ -60,24 +61,45 @@ export function useLocationRedirect() {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
-
-    const savedLocation = localStorage.getItem("userLocation");
-    
-    if (savedLocation) {
-      try {
-        const location = JSON.parse(savedLocation);
-        setUserLocation(location);
-      } catch {
-        const defaultLocation: Location = {
-          lat: -20.2976,
-          lng: -40.2958
-        };
-        setUserLocation(defaultLocation);
+    const initializeLocation = async () => {
+      const savedLocation = localStorage.getItem("userLocation");
+      
+      if (savedLocation) {
+        try {
+          const location = JSON.parse(savedLocation);
+          setUserLocation(location);
+          return;
+        } catch {
+          // Se o localStorage estiver corrompido, continuar com IP
+        }
       }
-    } else {
-      requestLocationPermission();
-    }
-  }, [requestLocationPermission]);
+
+      // Primeiro tentar obter localização por IP (sem permissão)
+      try {
+        const ipLocation = await getUserLocation();
+        if (ipLocation.lat && ipLocation.lng) {
+          const location: Location = {
+            lat: ipLocation.lat,
+            lng: ipLocation.lng
+          };
+          setUserLocation(location);
+          localStorage.setItem("userLocation", JSON.stringify(location));
+          return;
+        }
+      } catch (error) {
+        console.error("Erro ao obter localização por IP:", error);
+      }
+
+      // Se falhar, usar localização padrão (Vitória)
+      const defaultLocation: Location = {
+        lat: -20.2976,
+        lng: -40.2958
+      };
+      setUserLocation(defaultLocation);
+    };
+
+    initializeLocation();
+  }, []);
 
   // Configurar event listeners após localização estar pronta
   useEffect(() => {
@@ -131,6 +153,15 @@ export function useLocationRedirect() {
     setShowPopup(false);
   }, []);
 
+  const requestPreciseLocation = useCallback(async () => {
+    const success = await requestLocationPermission();
+    if (success) {
+      // Localização precisa obtida com sucesso
+      return true;
+    }
+    return false;
+  }, [requestLocationPermission]);
+
   // Debug: mostrar estado atual
   useEffect(() => {
   }, [userLocation, showPopup]);
@@ -140,6 +171,7 @@ export function useLocationRedirect() {
     showPopup,
     closePopup,
     requestLocationPermission,
+    requestPreciseLocation,
     triggerPopup
   };
 }

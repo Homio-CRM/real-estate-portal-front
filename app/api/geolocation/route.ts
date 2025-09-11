@@ -13,7 +13,9 @@ export async function GET(request: NextRequest) {
         state: "ES", 
         city_id: 3205309,
         state_id: 32,
-        country: "BR"
+        country: "BR",
+        lat: -20.2976,
+        lng: -40.2958
       });
     }
 
@@ -36,18 +38,20 @@ export async function GET(request: NextRequest) {
           state: "ES",
           city_id: 3205309,
           state_id: 32,
-          country: "BR"
+          country: "BR",
+          lat: -20.2976,
+          lng: -40.2958
         });
       }
 
-      const cityMapping: Record<string, { city_id: number; state_id: number }> = {
-        "Vitória": { city_id: 3205309, state_id: 32 },
-        "Vila Velha": { city_id: 3205200, state_id: 32 },
-        "Serra": { city_id: 3205002, state_id: 32 },
-        "Cariacica": { city_id: 3201308, state_id: 32 },
-        "Belo Horizonte": { city_id: 3106200, state_id: 31 },
-        "São Paulo": { city_id: 3550308, state_id: 35 },
-        "Rio de Janeiro": { city_id: 3304557, state_id: 33 }
+      const cityMapping: Record<string, { city_id: number; state_id: number; lat: number; lng: number }> = {
+        "Vitória": { city_id: 3205309, state_id: 32, lat: -20.2976, lng: -40.2958 },
+        "Vila Velha": { city_id: 3205200, state_id: 32, lat: -20.3297, lng: -40.2925 },
+        "Serra": { city_id: 3205002, state_id: 32, lat: -20.1286, lng: -40.3078 },
+        "Cariacica": { city_id: 3201308, state_id: 32, lat: -20.2639, lng: -40.4169 },
+        "Belo Horizonte": { city_id: 3106200, state_id: 31, lat: -19.9167, lng: -43.9345 },
+        "São Paulo": { city_id: 3550308, state_id: 35, lat: -23.5505, lng: -46.6333 },
+        "Rio de Janeiro": { city_id: 3304557, state_id: 33, lat: -22.9068, lng: -43.1729 }
       };
 
       const cityName = data.city;
@@ -60,7 +64,9 @@ export async function GET(request: NextRequest) {
           state: "ES",
           city_id: 3205309,
           state_id: 32,
-          country: "BR"
+          country: "BR",
+          lat: -20.2976,
+          lng: -40.2958
         });
       }
 
@@ -72,7 +78,9 @@ export async function GET(request: NextRequest) {
           state: stateName,
           city_id: cityInfo.city_id,
           state_id: cityInfo.state_id,
-          country: "BR"
+          country: "BR",
+          lat: cityInfo.lat,
+          lng: cityInfo.lng
         });
       }
 
@@ -97,7 +105,9 @@ export async function GET(request: NextRequest) {
           state: stateName,
           city_id: null,
           state_id: stateId,
-          country: "BR"
+          country: "BR",
+          lat: -20.2976,
+          lng: -40.2958
         });
       }
 
@@ -106,7 +116,9 @@ export async function GET(request: NextRequest) {
         state: "ES",
         city_id: 3205309,
         state_id: 32,
-        country: "BR"
+        country: "BR",
+        lat: -20.2976,
+        lng: -40.2958
       });
 
     } catch (apiError) {
@@ -116,7 +128,9 @@ export async function GET(request: NextRequest) {
         state: "ES",
         city_id: 3205309,
         state_id: 32,
-        country: "BR"
+        country: "BR",
+        lat: -20.2976,
+        lng: -40.2958
       });
     }
 
@@ -127,7 +141,9 @@ export async function GET(request: NextRequest) {
       state: "ES",
       city_id: 3205309,
       state_id: 32,
-      country: "BR"
+      country: "BR",
+      lat: -20.2976,
+      lng: -40.2958
     });
   }
 }

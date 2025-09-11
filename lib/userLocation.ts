@@ -4,6 +4,8 @@ export interface UserLocation {
   city_id: number | null;
   state_id: number | null;
   country: string;
+  lat?: number;
+  lng?: number;
 }
 
 export async function getUserLocation(): Promise<UserLocation> {
@@ -24,7 +26,9 @@ export async function getUserLocation(): Promise<UserLocation> {
       state: "ES",
       city_id: 3205309,
       state_id: 32,
-      country: "BR"
+      country: "BR",
+      lat: -20.2976,
+      lng: -40.2958
     };
   }
 }

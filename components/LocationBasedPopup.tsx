@@ -192,6 +192,34 @@ export default function LocationBasedPopup({
               Ver Mais Imóveis
             </button>
           </div>
+          
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-500 mb-2">
+              Quer ver imóveis mais próximos da sua localização exata?
+            </p>
+            <button
+              onClick={() => {
+                if (navigator.geolocation) {
+                  navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                      const preciseLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                      };
+                      localStorage.setItem("userLocation", JSON.stringify(preciseLocation));
+                      window.location.reload();
+                    },
+                    () => {
+                      alert("Não foi possível obter sua localização precisa. Continuando com a localização aproximada.");
+                    }
+                  );
+                }
+              }}
+              className="text-sm text-primary hover:text-primary/80 underline"
+            >
+              Usar localização precisa
+            </button>
+          </div>
         </div>
       </div>
     </div>
