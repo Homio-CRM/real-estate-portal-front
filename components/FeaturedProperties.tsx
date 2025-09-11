@@ -196,7 +196,7 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
               return (
                 <div
                   key={property.listing_id ?? property.title}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                  className="group bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer"
                   onClick={() => handlePropertyClick(property)}
                 >
                                                          {/* Header / Slider */}
@@ -217,7 +217,7 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
                                 src={slide.url}
                                 alt={`${property.title} - Imagem ${slideIdx + 1}`}
                                 fill
-                                className="object-cover"
+                                className="object-cover group-hover:scale-105 transition-transform duration-300"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
                                   e.currentTarget.nextElementSibling?.classList.remove('hidden');
@@ -292,7 +292,7 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
                                      {/* Conteúdo */}
                    <div className="p-4 flex flex-col min-h-[200px]">
                      <div className="flex-1">
-                       <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">{property.title}</h3>
+                       <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1 group-hover:text-primary transition-colors">{property.title}</h3>
                        <p className="text-gray-600 text-sm mb-3 line-clamp-1">{property.display_address}</p>
 
                        <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
