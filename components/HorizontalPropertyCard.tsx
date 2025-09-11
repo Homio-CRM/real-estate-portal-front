@@ -4,6 +4,7 @@ import { PropertyCard as PropertyCardType } from "../types/listings";
 import { useState, type MouseEvent } from "react";
 import { translatePropertyType } from "../lib/propertyTypes";
 import { formatCurrency } from "../lib/formatCurrency";
+import Image from "next/image";
 
 export default function HorizontalPropertyCard(props: PropertyCardType) {
   const router = useRouter();
@@ -23,7 +24,6 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
     media,
     list_price_amount,
     iptu_amount,
-    condominium_id,
   } = props;
 
   const translatedPropertyType = translatePropertyType(String(property_type || ""));
@@ -59,10 +59,11 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
       <div className="flex flex-col lg:flex-row">
         <div className="w-full lg:w-80 h-48 sm:h-56 lg:h-64 relative">
           {displayedImage && displayedImage !== "/placeholder-property.jpg" ? (
-            <img
+            <Image
               src={displayedImage}
-              alt={title}
-              className="w-full h-full object-cover"
+              alt={title || "Property image"}
+              fill
+              className="object-cover"
             />
           ) : (
             <div className="w-full h-full bg-gray-200 flex items-center justify-center">

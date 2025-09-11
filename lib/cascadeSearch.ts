@@ -1,6 +1,6 @@
 import { fetchListings } from "./fetchListings";
 import { PropertyCard } from "../types/listings";
-import { getNearbyProperties, Location } from "./locationUtils";
+import { Location } from "./locationUtils";
 import { CityResponse } from "../types/api";
 import { getStateIdByName } from "./brazilianStates";
 

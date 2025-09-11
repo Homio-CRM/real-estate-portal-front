@@ -10,8 +10,6 @@ import {
   Home, 
   MapPin, 
   Phone, 
-  Mail, 
-  User,
   Building,
   Dumbbell,
   Waves,
@@ -34,6 +32,7 @@ import HorizontalPropertyCard from "../../../components/HorizontalPropertyCard";
 import Footer from "../../../components/Footer";
 import { translatePropertyType } from "../../../lib/propertyTypes";
 import { ImageGallery } from "../../../components/ImageGallery";
+import Image from "next/image";
 
 function getAmenityIcon(amenity: string) {
   const icons: { [key: string]: React.ComponentType<{ size?: number; className?: string }> } = {
@@ -212,10 +211,11 @@ export default function ListingDetailPage() {
             {property.media && property.media.length > 0 ? (
               <div>
                 <div className="relative h-64 sm:h-80 md:h-96 bg-white flex items-center justify-center">
-                  <img
-                    src={property.media[currentMediaIndex]?.url || property.image}
+                  <Image
+                    src={property.media[currentMediaIndex]?.url || property.image || "/placeholder-property.jpg"}
                     alt={property.title}
-                    className="w-full h-full object-cover bg-white cursor-pointer"
+                    fill
+                    className="object-cover bg-white cursor-pointer"
                     onClick={() => setShowGallery(true)}
                   />
                   {property.media.length > 1 && (
@@ -249,7 +249,7 @@ export default function ListingDetailPage() {
                         onClick={() => setCurrentMediaIndex(idx)}
                         aria-label={`Ver imagem ${idx + 1}`}
                       >
-                        <img src={m.url} alt={property.title} className="w-full h-full object-contain bg-white" />
+                        <Image src={m.url} alt={property.title} width={96} height={64} className="w-full h-full object-contain bg-white" />
                       </button>
                     ))}
                   </div>

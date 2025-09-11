@@ -1,6 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAgent } from "../../../../lib/supabaseAgent";
 
+interface MediaItem {
+  id: string;
+  url: string;
+  caption: string;
+  is_primary: boolean;
+  order: number;
+}
+
+interface ListingSearchItem {
+  listing_id: string;
+  title: string;
+  transaction_type: string;
+  agency_id: string;
+  list_price_amount: number;
+  primary_media_url: string;
+  neighborhood: string;
+  city_id: number;
+  state_id: number;
+  latitude: number;
+  longitude: number;
+  bedroom_count: number;
+  bathroom_count: number;
+  garage_count: number;
+  total_area: number;
+  private_area: number;
+  built_area: number;
+  land_area: number;
+}
+
+interface ApartmentData {
+  listing_id: string;
+  title: string;
+  transaction_type: string;
+  agency_id: string;
+  list_price_amount: number;
+  condominium_id: string;
+  public_id: string;
+  description: string;
+  area: number;
+  bathroom_count: number;
+  bedroom_count: number;
+  garage_count: number;
+  suite_count: number;
+  year_built: number;
+  display_address: string;
+  neighborhood: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  city_id: number;
+  state_id: number;
+  primary_image_url: string;
+  media_count: number;
+  media: MediaItem[];
+  price_formatted: string;
+  for_rent: boolean;
+  price: string;
+  forRent: boolean;
+  image: string;
+}
+
 // Função para obter nome da cidade
 function getCityName(cityId?: number | null): string {
   const cities: Record<number, string> = {
@@ -66,16 +127,10 @@ export async function GET(
       .eq("condominium_id", id)
       .eq("agency_id", condominium.agency_id);
 
-    console.log("=== CONDOMINIUM APARTMENTS DEBUG ===");
-    console.log("Condominium ID:", id);
-    console.log("Agency ID:", condominium.agency_id);
-    console.log("Apartment IDs error:", apartmentIdsError);
-    console.log("Apartment listing IDs:", apartmentListingIds);
 
-    const apartments = [] as any[];
+    const apartments: ApartmentData[] = [];
     if (apartmentListingIds && apartmentListingIds.length > 0) {
       const listingIds = apartmentListingIds.map(l => l.listing_id);
-      console.log("Listing IDs to search:", listingIds);
 
       // Agora buscar os dados otimizados usando a listing_search
       const { data: apartmentListings, error: apartmentError } = await supabaseAgent
@@ -102,14 +157,11 @@ export async function GET(
         `)
         .in("listing_id", listingIds);
 
-      console.log("Apartment search error:", apartmentError);
-      console.log("Raw apartment listings from search:", apartmentListings);
-      console.log("Number of listings found:", apartmentListings?.length || 0);
 
       if (apartmentListings && apartmentListings.length > 0) {
         // Processar listings usando a mesma lógica da API /api/listing
-        const results = await Promise.all((apartmentListings || []).map(async (item: any) => {
-          let allMedia = [];
+        const results = await Promise.all((apartmentListings || []).map(async (item: ListingSearchItem) => {
+          let allMedia: MediaItem[] = [];
           let mediaCount = 0;
           
           // Se tem imagem primária, buscar todas as mídias
@@ -177,7 +229,7 @@ export async function GET(
             state_id: item.state_id,
             primary_image_url: item.primary_media_url || "/placeholder-property.jpg",
             media_count: mediaCount,
-            media: allMedia.map((m: any) => ({
+            media: allMedia.map((m: MediaItem) => ({
               id: m.id,
               url: m.url,
               caption: m.caption,

@@ -29,7 +29,6 @@ type ResultsFiltersProps = {
   };
   onFilterChange: (key: string, value: string | string[]) => void;
   onClearFilters: () => void;
-  onSearch: () => void;
 };
 
 function formatCurrency(value: string): string {
@@ -51,7 +50,7 @@ function parseCurrency(value: string): number {
   return parseFloat(numbers) || 0;
 }
 
-export default function ResultsFilters({ filters, onFilterChange, onClearFilters, onSearch }: ResultsFiltersProps) {
+export default function ResultsFilters({ filters, onFilterChange, onClearFilters }: ResultsFiltersProps) {
   const [precoMinDisplay, setPrecoMinDisplay] = useState(filters.precoMin);
   const [precoMaxDisplay, setPrecoMaxDisplay] = useState(filters.precoMax);
 

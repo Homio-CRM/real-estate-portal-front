@@ -7,8 +7,6 @@ export type FetchFeaturedCondominiumsParams = {
 };
 
 export async function fetchFeaturedCondominiums(params: FetchFeaturedCondominiumsParams = {}): Promise<CondominiumCard[]> {
-  console.log("=== FETCH FEATURED CONDOMINIUMS DEBUG ===");
-  console.log("FetchFeaturedCondominiums params:", params);
   
   const searchParams = new URLSearchParams();
   
@@ -24,17 +22,14 @@ export async function fetchFeaturedCondominiums(params: FetchFeaturedCondominium
     searchParams.append("offset", params.offset.toString());
   }
   
-  console.log("URL params:", searchParams.toString());
   
   const queryString = searchParams.toString();
   const fullUrl = queryString
     ? `/api/condominiums/featured?${queryString}`
     : "/api/condominiums/featured";
-  console.log("Full URL:", fullUrl);
   
   try {
     const response = await fetch(fullUrl);
-    console.log("Response status:", response.status);
     
     if (!response.ok) {
       console.error("Response not ok:", response.status, response.statusText);
@@ -42,13 +37,10 @@ export async function fetchFeaturedCondominiums(params: FetchFeaturedCondominium
     }
     
     const data = await response.json();
-    console.log("Response data length:", data.length);
-    console.log("=== END FETCH FEATURED CONDOMINIUMS DEBUG ===");
     
     return data;
   } catch (error) {
     console.error("Error fetching featured condominiums:", error);
-    console.log("=== END FETCH FEATURED CONDOMINIUMS DEBUG ===");
     throw error;
   }
 }

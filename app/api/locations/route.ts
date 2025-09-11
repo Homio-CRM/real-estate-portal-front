@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAgent } from "../../../lib/supabaseAgent";
 
 export async function GET(req: NextRequest) {
-  const agencyId = process.env.LOCATION_ID!;
   const { searchParams } = new URL(req.url);
   const query = searchParams.get("q");
   const locationId = searchParams.get("id");
@@ -70,7 +69,13 @@ export async function GET(req: NextRequest) {
     }
 
     // Processar bairros: remover duplicatas e normalizar formatação
-    const uniqueNeighborhoods = new Map<string, any>();
+    const uniqueNeighborhoods = new Map<string, {
+      id: number;
+      name: string;
+      type: string;
+      city_name: string;
+      city_id: number;
+    }>();
     
     neighborhoodData.forEach((location: { neighborhood: string; city_id: number }) => {
       const key = `${location.neighborhood.toLowerCase()}-${location.city_id}`;

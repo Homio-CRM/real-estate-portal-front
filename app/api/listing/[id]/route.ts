@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { MediaItem } from "@/types/listings";
+
+type MediaItemFromDB = {
+  id: string;
+  url: string;
+  caption?: string;
+  is_primary: boolean;
+  order?: number;
+  medium?: string;
+};
 
 export async function GET(
   request: NextRequest,
@@ -7,8 +17,6 @@ export async function GET(
 ) {
   const { id } = await params;
   
-  console.log("=== API LISTING DETAIL ROUTE CALLED ===");
-  console.log("Listing ID:", id);
   
   try {
     const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
@@ -34,16 +42,10 @@ export async function GET(
       return NextResponse.json({ error: "Listing not found" }, { status: 404 });
     }
 
-    console.log("=== LISTING DETAIL DEBUG ===");
-    console.log("Listing found:", {
-      listing_id: listing.listing_id,
-      title: listing.title
-    });
 
     // Usar primary_media_url da materialized view e buscar todas as mídias
-    console.log("Using primary_media_url from listing_search:", listing.primary_media_url);
     
-    let allMedia = [];
+    let allMedia: MediaItem[] = [];
     let mediaCount = 0;
     
     // Se tem imagem primária, buscar todas as mídias
@@ -59,6 +61,9 @@ export async function GET(
         // Fallback para apenas a imagem primária
         allMedia = [{
           id: 'primary',
+          entity_type: 'listing' as const,
+          listing_id: id,
+          medium: 'image',
           url: listing.primary_media_url,
           caption: 'Imagem principal',
           is_primary: true,
@@ -67,32 +72,37 @@ export async function GET(
         mediaCount = 1;
       } else if (mediaData && mediaData.length > 0) {
         // Tem mídias na tabela media_item
-        allMedia = mediaData;
+        allMedia = mediaData.map((item: MediaItemFromDB) => ({
+          id: item.id,
+          entity_type: 'listing' as const,
+          listing_id: id,
+          medium: item.medium || 'image',
+          url: item.url,
+          caption: item.caption,
+          is_primary: item.is_primary,
+          order: item.order
+        }));
         mediaCount = allMedia.length;
-        console.log(`Found ${mediaCount} media items for listing ${id}`);
       } else {
         // Não tem mídias na tabela media_item, usar apenas a primária da materialized view
         allMedia = [{
           id: 'primary',
+          entity_type: 'listing' as const,
+          listing_id: id,
+          medium: 'image',
           url: listing.primary_media_url,
           caption: 'Imagem principal',
           is_primary: true,
           order: 1
         }];
         mediaCount = 1;
-        console.log(`No media_item found, using primary from listing_search for listing ${id}`);
       }
     }
     
-    console.log("Media info:", {
-      count: mediaCount,
-      primaryImage: listing.primary_media_url,
-      hasMedia: mediaCount > 0
-    });
 
     const property = {
       ...listing,
-      media: allMedia.map((m: any) => ({
+      media: allMedia.map((m: MediaItem) => ({
         id: m.id,
         url: m.url,
         caption: m.caption,
@@ -141,13 +151,6 @@ export async function GET(
       city_id: 1
     };
 
-    console.log("=== FINAL PROPERTY DEBUG ===");
-    console.log("Property media info:", {
-      media_count: property.media_count,
-      has_media: !!property.media,
-      media_length: property.media?.length || 0,
-      primary_image_url: property.primary_image_url
-    });
 
     return NextResponse.json(property);
   } catch (error) {

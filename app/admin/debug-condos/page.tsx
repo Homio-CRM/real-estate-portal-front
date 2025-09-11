@@ -1,12 +1,42 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "../../../components/ui/button";
-import { Loader2, Database, Search, Info } from "lucide-react";
+import { Loader2, Database, Search } from "lucide-react";
 
 export default function DebugCondosPage() {
   const [loading, setLoading] = useState(false);
-  const [debugData, setDebugData] = useState<any>(null);
+  const [debugData, setDebugData] = useState<{
+    agencyId: string;
+    timestamp: string;
+    condominiums: {
+      count: number;
+      error?: string;
+      data: Array<{
+        name: string;
+        is_launch: boolean;
+      }>;
+    };
+    locations: {
+      count: number;
+      condominiumLocations: number;
+      error?: string;
+      data: Array<{
+        neighborhood: string;
+        city_id: number;
+      }>;
+    };
+    media: {
+      count: number;
+      condominiumMedia: number;
+      error?: string;
+    };
+    searchTable: {
+      exists: boolean;
+      data?: unknown[];
+    };
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchDebugData = async () => {
@@ -35,7 +65,6 @@ export default function DebugCondosPage() {
       const response = await fetch('/api/condominiums/featured?cityId=3205309&limit=6');
       const data = await response.json();
       
-      console.log("Featured API Response:", data);
       alert(`Featured API: ${response.ok ? 'Success' : 'Error'} - ${JSON.stringify(data, null, 2)}`);
     } catch (err) {
       console.error("Featured API Error:", err);
@@ -118,7 +147,7 @@ export default function DebugCondosPage() {
                         <div className="mt-2">
                           <p className="font-medium">Exemplos:</p>
                           <ul className="list-disc list-inside">
-                            {debugData.condominiums.data.map((condo: any, idx: number) => (
+                            {debugData.condominiums.data.map((condo, idx: number) => (
                               <li key={idx} className="text-xs">
                                 {condo.name} ({condo.is_launch ? 'Lançamento' : 'Normal'})
                               </li>
@@ -141,7 +170,7 @@ export default function DebugCondosPage() {
                         <div className="mt-2">
                           <p className="font-medium">Exemplos:</p>
                           <ul className="list-disc list-inside">
-                            {debugData.locations.data.map((loc: any, idx: number) => (
+                            {debugData.locations.data.map((loc, idx: number) => (
                               <li key={idx} className="text-xs">
                                 {loc.neighborhood} (Cidade: {loc.city_id})
                               </li>
@@ -186,18 +215,18 @@ export default function DebugCondosPage() {
             )}
 
             <div className="text-center pt-4">
-              <a 
+              <Link 
                 href="/admin/insert-mock-data" 
                 className="text-blue-600 hover:text-blue-800 underline mr-4"
               >
                 ← Inserir Dados Mock
-              </a>
-              <a 
+              </Link>
+              <Link 
                 href="/" 
                 className="text-blue-600 hover:text-blue-800 underline"
               >
                 ← Página Inicial
-              </a>
+              </Link>
             </div>
           </div>
         </div>

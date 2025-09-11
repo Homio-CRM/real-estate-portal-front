@@ -1,5 +1,6 @@
 import { Ruler, Phone, Camera, Building } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { CondominiumCard as CondominiumCardType } from "../types/listings";
 import { translatePropertyType } from "../lib/propertyTypes";
 
@@ -60,9 +61,11 @@ export default function HorizontalCondominiumCard(props: CondominiumCardType) {
       <div className="flex flex-col lg:flex-row">
         <div className="w-full lg:w-80 h-64 relative">
           {image && image !== "/placeholder-property.jpg" ? (
-            <img 
+            <Image 
               src={image} 
               alt={name} 
+              width={320}
+              height={256}
               className="w-full h-full object-cover" 
             />
           ) : (

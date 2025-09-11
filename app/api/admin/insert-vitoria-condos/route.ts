@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { supabaseAgent } from "../../../../lib/supabaseAgent";
 
 // Dados específicos para Vitória
@@ -101,8 +101,7 @@ const vitoriaCondominiums = [
   }
 ];
 
-export async function POST(request: NextRequest) {
-  console.log("=== INSERT VITORIA CONDOS API ===");
+export async function POST() {
   
   try {
     const agencyId = process.env.LOCATION_ID;
@@ -117,7 +116,6 @@ export async function POST(request: NextRequest) {
     
     for (const condo of vitoriaCondominiums) {
       try {
-        console.log(`Creating: ${condo.name} in ${condo.neighborhood}...`);
         
         // Gerar UUID para o condomínio
         const condoId = crypto.randomUUID();
@@ -211,7 +209,6 @@ export async function POST(request: NextRequest) {
         
         successCount++;
         results.push({ name: condo.name, status: 'success' });
-        console.log(`✅ ${condo.name} created successfully!`);
         
       } catch (error) {
         console.error(`Unexpected error for ${condo.name}:`, error);
@@ -220,7 +217,6 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    console.log(`=== SUMMARY: ${successCount} success, ${errorCount} errors ===`);
     
     return NextResponse.json({
       message: `Condomínios de Vitória inseridos`,

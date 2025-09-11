@@ -5,6 +5,7 @@ import { fetchListings } from "../lib/fetchListings";
 import { PropertyCard } from "../types/listings";
 import { Building, Home } from "lucide-react";
 import { formatCurrency } from "../lib/formatCurrency";
+import Image from "next/image";
 
 interface FeaturedPropertiesProps {
   cityId?: number;
@@ -139,10 +140,11 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
                 >
                   {/* Imagem */}
                   <div className="relative h-48 bg-gray-200">
-                    <img
+                    <Image
                       src={property.image || "/placeholder-property.jpg"}
                       alt={property.title}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
                     />
                                     <div className="absolute top-3 right-3">
                     <button className="p-2 bg-white rounded-full shadow-sm hover:bg-gray-50 transition-colors">

@@ -4,11 +4,10 @@ import { useState } from "react";
 import { Phone, Loader2 } from "lucide-react";
 
 interface ContactFormProps {
-  propertyTitle?: string;
   propertyId?: string;
 }
 
-export default function ContactForm({ propertyTitle, propertyId }: ContactFormProps) {
+export default function ContactForm({ propertyId }: ContactFormProps) {
   const formUrl = propertyId 
     ? `https://sucesso.homio.com.br/widget/form/QHnK89mUPLfxN3OcVJQu?cod_imovel=${propertyId}`
     : "https://sucesso.homio.com.br/widget/form/QHnK89mUPLfxN3OcVJQu";

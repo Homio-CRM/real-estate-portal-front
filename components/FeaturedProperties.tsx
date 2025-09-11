@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { fetchListings } from "../lib/fetchListings";
+import { getUserLocation } from "../lib/userLocation";
 import { PropertyCard } from "../types/listings";
 import { Building, Home, ChevronLeft, ChevronRight, Camera, Ruler, Bed, Bath, Car } from "lucide-react";
 import { formatCurrency } from "../lib/formatCurrency";
@@ -30,27 +32,34 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
       setLoading(true);
       setError(null);
       try {
-        const saleResults = await fetchListings({
-          cityId: cityId || 3205309,
-          transactionType: "sale",
+        // Obter localização do usuário
+        const userLocation = await getUserLocation();
+        
+        // Parâmetros para busca com priorização de localização
+        const saleParams = {
+          cityId: cityId || userLocation.city_id,
+          stateId: userLocation.state_id,
+          transactionType: "sale" as const,
           limit: 6,
           offset: 0,
-        });
+          useLocationPriority: true,
+        };
 
-        const rentResults = await fetchListings({
-          cityId: cityId || 3205309,
-          transactionType: "rent",
+        const rentParams = {
+          cityId: cityId || userLocation.city_id,
+          stateId: userLocation.state_id,
+          transactionType: "rent" as const,
           limit: 6,
           offset: 0,
-        });
+          useLocationPriority: true,
+        };
 
-        const sortedSaleResults = saleResults.sort((a, b) => {
-          const priceA = a.list_price_amount || 0;
-          const priceB = b.list_price_amount || 0;
-          return priceB - priceA;
-        });
 
-        setSaleProperties(sortedSaleResults.slice(0, 6));
+        const saleResults = await fetchListings(saleParams);
+        const rentResults = await fetchListings(rentParams);
+
+        // Os resultados já vêm ordenados por prioridade do ad_type da API
+        setSaleProperties(saleResults.slice(0, 6));
         setRentProperties(rentResults.slice(0, 6));
       } catch (err) {
         console.error("Erro ao buscar imóveis em destaque:", err);
@@ -103,7 +112,6 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
 
   const prevSlide = (property: PropertyCard) => {
     const id = String(property.listing_id || property.title);
-    const slides = buildSlides(property);
     setCurrentIdx((s) => {
       const curr = s[id] ?? 0;
       // Não volta para o final, para no início
@@ -180,7 +188,6 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
               const slides = buildSlides(property);
               const id = String(property.listing_id || property.title);
               const idx = currentIdx[id] ?? 0;
-              const curr = slides[idx];
 
 
               return (
@@ -203,11 +210,11 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
                           >
                             {/* Imagem/placeholder preenchendo todo o slide */}
                             {slide.url && slide.url.trim() !== "" ? (
-                              <img
+                              <Image
                                 src={slide.url}
                                 alt={`${property.title} - Imagem ${slideIdx + 1}`}
-                                className="absolute inset-0 w-full h-full object-cover"
-                                loading="lazy"
+                                fill
+                                className="object-cover"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
                                   e.currentTarget.nextElementSibling?.classList.remove('hidden');

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { buildResultsUrl } from "../lib/navigation";
+import { buildListingsUrl } from "../lib/navigation";
 import AutocompleteField from "./AutocompleteField";
 import { Button } from "./ui/button";
 import { Search } from "lucide-react";
@@ -41,32 +41,22 @@ export default function LocationSearchField({
   };
 
   const handleItemSelect = (item: { name: string; type: string; id: number }) => {
-    console.log("=== LocationSearchField handleItemSelect ===");
-    console.log("selected item:", item);
     
     setSelectedItemType(item.type as "city" | "neighborhood");
     
     if (item.type === "city") {
       setSelectedItemData({ id: item.id, name: item.name });
       setNewLocation(String(item.id)); // ID da cidade
-      console.log("City selected - ID:", item.id, "Name:", item.name);
     } else if (item.type === "neighborhood") {
       // Para bairros, o item.id já é o city_id do bairro
       setSelectedItemData({ id: item.id, name: item.name });
       setNewLocation(item.name); // Nome do bairro para exibição
-      console.log("Neighborhood selected - City ID:", item.id, "Name:", item.name);
     }
   };
 
   const handleSearch = () => {
-    console.log("=== LocationSearchField handleSearch ===");
-    console.log("isLocationValid:", isLocationValid);
-    console.log("selectedItemType:", selectedItemType);
-    console.log("selectedItemData:", selectedItemData);
-    console.log("currentFilters:", currentFilters);
     
     if (!isLocationValid || !selectedItemType || !selectedItemData) {
-      console.log("Search blocked - missing required data");
       return;
     }
     
@@ -88,10 +78,8 @@ export default function LocationSearchField({
       })
     };
     
-    console.log("filters to be applied:", filters);
     
-    const url = buildResultsUrl(filters as Record<string, string>);
-    console.log("built URL:", url);
+    const url = buildListingsUrl(filters as Record<string, string>);
     
     // Navegar diretamente para a URL - sem evento
     router.push(url);

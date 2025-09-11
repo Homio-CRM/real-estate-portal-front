@@ -10,7 +10,7 @@ export async function fetchLocationById(id: string, type: string): Promise<CityA
     const res = await fetch(`/api/locations?id=${id}&type=${type}`);
     if (!res.ok) return null;
     return await res.json();
-  } catch (error) {
+  } catch {
     return null;
   }
 }

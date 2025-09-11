@@ -67,16 +67,6 @@ function ListingsContent() {
   });
 
   // Remover o useEffect duplicado que estava causando loop
-  // useEffect(() => {
-  //   console.log("=== useEffect apiFilters ===");
-  //   console.log("apiFilters changed:", {
-  //     localizacao: apiFilters.localizacao,
-  //     operacao: apiFilters.operacao,
-  //     tipo: apiFilters.tipo,
-  //     bairro: apiFilters.bairro
-  //   });
-  //   fetchResults();
-  // }, [apiFilters.localizacao, apiFilters.operacao, apiFilters.tipo, apiFilters.bairro]);
 
   // Removido useEffect inicial - agora tudo é tratado pelo useEffect que monitora URL
 
@@ -111,6 +101,7 @@ function ListingsContent() {
         setLoading(true);
         fetchCondominiums({
           cityId: validation.cityId!,
+          bairro: effectiveFilters.bairro,
           limit: 100,
           offset: 0,
         }).then(cs => {
@@ -362,7 +353,6 @@ function ListingsContent() {
                     }
                   }}
                   onClearFilters={handleClearFilters}
-                  onSearch={() => {}} // Não precisa mais do botão de busca
                 />
               </div>
               
@@ -433,7 +423,6 @@ function ListingsContent() {
                 handleClearFilters();
                 setIsFiltersOpen(false);
               }}
-              onSearch={() => {}}
             />
           </div>
         </div>

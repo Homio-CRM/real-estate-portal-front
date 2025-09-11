@@ -9,6 +9,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/msgsndr/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'static.arboimoveis.com.br',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };

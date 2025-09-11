@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { supabaseAgent } from "../../../../lib/supabaseAgent";
 
 // Funções utilitárias
@@ -40,18 +40,12 @@ function getCityName(cityId?: number | null): string {
 }
 
 export async function GET(request: Request) {
-  console.log("=== API FEATURED CONDOMINIUMS ROUTE ===");
   
   const { searchParams } = new URL(request.url);
   const cityId = searchParams.get("cityId");
   const limit = Math.max(1, Number(searchParams.get("limit") || 6));
   const offset = Math.max(0, Number(searchParams.get("offset") || 0));
   
-  console.log("API received params:", {
-    cityId,
-    limit,
-    offset
-  });
 
   try {
     const agencyId = process.env.LOCATION_ID;
@@ -61,12 +55,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Supabase environment variables not configured" }, { status: 500 });
     }
 
-    console.log("Using optimized featured condominiums query with params:", {
-      cityId: cityId ? Number(cityId) : undefined,
-      agencyId,
-      limit,
-      offset
-    });
 
     // Usar a tabela/view condominium_search que já tem todos os dados combinados
     // Removemos o filtro de cidade para mostrar todos os lançamentos disponíveis
@@ -95,12 +83,11 @@ export async function GET(request: Request) {
     }
 
     if (!results || results.length === 0) {
-      console.log("No featured condominiums found");
       return NextResponse.json([]);
     }
 
     // Transformar os resultados da condominium_search para o formato esperado
-    const featuredResults = results.map((item: any) => ({
+    const featuredResults = results.map((item: Record<string, unknown>) => ({
       id: item.condominium_id,
       name: item.name,
       agency_id: item.agency_id,
@@ -118,7 +105,7 @@ export async function GET(request: Request) {
       usage_type: item.usage_type,
       
       // Localização
-      display_address: item.display_address || `${item.neighborhood}, ${getCityName(item.city_id)}`,
+      display_address: item.display_address || `${item.neighborhood}, ${getCityName(item.city_id as number | null)}`,
       neighborhood: item.neighborhood,
       address: item.address,
       street_number: item.street_number,
@@ -128,14 +115,12 @@ export async function GET(request: Request) {
       
       // Campos calculados para compatibilidade
       image: item.primary_media_url || "/placeholder-property.jpg",
-      price: formatPrice(item.min_price, item.max_price),
-      area_range: formatArea(item.min_area, item.max_area),
+      price: formatPrice(item.min_price as number | null, item.max_price as number | null),
+      area_range: formatArea(item.min_area as number | null, item.max_area as number | null),
       media_count: 0, // A condominium_search não tem essa info, deixamos 0
       features: item.features || {}
     }));
 
-    console.log("Featured condominiums query results count:", featuredResults.length);
-    console.log("=== END API FEATURED CONDOMINIUMS ROUTE ===");
 
     return NextResponse.json(featuredResults);
   } catch (error) {

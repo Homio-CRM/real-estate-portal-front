@@ -14,19 +14,20 @@ function getCityName(cityId?: number | null): string {
 }
 
 export async function GET(request: Request) {
-  console.log("=== API LISTING ROUTE CALLED ===");
-  
   try {
     const { searchParams } = new URL(request.url);
     const cityId = searchParams.get("cityId");
+    const stateId = searchParams.get("stateId");
     const transactionType = searchParams.get("transactionType");
+    const tipo = searchParams.get("tipo");
+    const bairro = searchParams.get("bairro");
     const limit = Number(searchParams.get("limit") || 30);
     const offset = Number(searchParams.get("offset") || 0);
+    const useLocationPriority = searchParams.get("useLocationPriority") === "true";
     
-    console.log("Search params:", { cityId, transactionType, limit, offset });
     
-    if (!cityId || !transactionType) {
-      return NextResponse.json({ error: "cityId e transactionType são obrigatórios" }, { status: 400 });
+    if (!transactionType) {
+      return NextResponse.json({ error: "transactionType é obrigatório" }, { status: 400 });
     }
 
     const agencyId = process.env.LOCATION_ID;
@@ -43,53 +44,187 @@ export async function GET(request: Request) {
 
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
-    console.log("=== LISTING API DEBUG ===");
-    console.log("Agency ID:", agencyId);
-    console.log("Transaction Type:", transactionType);
-    console.log("Limit:", limit);
-    console.log("Offset:", offset);
 
-    // Query usando materialized view listing_search (já tem primary_media_url)
-    const { data, error } = await supabase
-      .from('listing_search')
-      .select(`
-        listing_id,
-        title,
-        transaction_type,
-        agency_id,
-        list_price_amount,
-        primary_media_url,
-        neighborhood,
-        city_id,
-        state_id,
-        latitude,
-        longitude,
-        bedroom_count,
-        bathroom_count,
-        garage_count,
-        total_area,
-        private_area,
-        built_area,
-        land_area
-      `)
-      .eq('agency_id', agencyId)
-      .eq('transaction_type', transactionType === "rent" ? "rent" : "sale")
-      .order('listing_id', { ascending: true })
-      .limit(limit)
-      .range(offset, offset + limit - 1);
+    // Função para obter prioridade do ad_type
+    const getAdTypePriority = (adType: string): number => {
+      const priorities: Record<string, number> = {
+        'superPremium': 1,
+        'premium': 2,
+        'premiere1': 3,
+        'premiere2': 4,
+        'triple': 5,
+        'standard': 6
+      };
+      return priorities[adType] || 7;
+    };
 
-    if (error) {
-      console.error("Database query error:", error);
-      return NextResponse.json({ error: "Database error" }, { status: 500 });
+    // Função para buscar listings com priorização
+    const fetchListingsWithPriority = async (filters: {
+      cityId?: number;
+      stateId?: number;
+      limit: number;
+      offset: number;
+    }) => {
+      let query = supabase
+        .from('listing_search')
+        .select(`
+          listing_id,
+          title,
+          transaction_type,
+          agency_id,
+          list_price_amount,
+          primary_media_url,
+          neighborhood,
+          city_id,
+          state_id,
+          latitude,
+          longitude,
+          bedroom_count,
+          bathroom_count,
+          garage_count,
+          total_area,
+          private_area,
+          built_area,
+          land_area,
+          property_type,
+          ad_type
+        `)
+        .eq('agency_id', agencyId)
+        .eq('transaction_type', transactionType === "rent" ? "rent" : "sale");
+
+      // Aplicar filtro de cidade se fornecido
+      if (filters.cityId) {
+        query = query.eq('city_id', filters.cityId);
+      }
+
+      // Aplicar filtro de estado se fornecido (sem cidade)
+      if (filters.stateId && !filters.cityId) {
+        query = query.eq('state_id', filters.stateId);
+      }
+
+      // Aplicar filtro de tipo de propriedade se fornecido
+      if (tipo) {
+        let propertyType = tipo;
+        if (tipo === "Casa") {
+          propertyType = "house";
+        } else if (tipo === "Apartamento") {
+          propertyType = "apartment";
+        } else if (tipo === "Condomínio") {
+        } else {
+          propertyType = tipo;
+        }
+        
+        if (tipo !== "Condomínio") {
+          query = query.eq('property_type', propertyType);
+        }
+      }
+
+      // Aplicar filtro de bairro se fornecido
+      if (bairro) {
+        query = query.ilike('neighborhood', `%${bairro}%`);
+      }
+
+      const { data, error } = await query
+        .order('listing_id', { ascending: true })
+        .limit(filters.limit)
+        .range(filters.offset, filters.offset + filters.limit - 1);
+
+      if (error) {
+        console.error("Database query error:", error);
+        throw error;
+      }
+
+      return data || [];
+    };
+
+    let results: Array<Record<string, unknown>> = [];
+    let hasResults = false;
+
+    // Estratégia de busca com priorização
+    if (useLocationPriority) {
+      // 1. Buscar por cidade específica
+      if (cityId) {
+        try {
+          const cityResults = await fetchListingsWithPriority({ 
+            cityId: Number(cityId), 
+            limit, 
+            offset 
+          });
+          
+          if (cityResults.length > 0) {
+            results = cityResults;
+            hasResults = true;
+          } else {
+          }
+        } catch (error) {
+          console.error("Error searching by city:", error);
+        }
+      }
+
+      // 2. Se não encontrou na cidade, buscar por estado
+      if (!hasResults && stateId) {
+        try {
+          const stateResults = await fetchListingsWithPriority({ 
+            stateId: Number(stateId), 
+            limit, 
+            offset 
+          });
+          
+          if (stateResults.length > 0) {
+            results = stateResults;
+            hasResults = true;
+          } else {
+          }
+        } catch (error) {
+          console.error("Error searching by state:", error);
+        }
+      }
+
+      // 3. Se não encontrou nem na cidade nem no estado, buscar qualquer imóvel
+      if (!hasResults) {
+        try {
+          const anyResults = await fetchListingsWithPriority({ 
+            limit, 
+            offset 
+          });
+          
+          if (anyResults.length > 0) {
+            results = anyResults;
+            hasResults = true;
+          }
+        } catch (error) {
+          console.error("Error searching any location:", error);
+        }
+      }
+    } else {
+      // Busca tradicional (sem priorização de localização)
+      const cityIdNumber = cityId ? Number(cityId) : undefined;
+      results = await fetchListingsWithPriority({ 
+        cityId: cityIdNumber, 
+        limit, 
+        offset 
+      });
+      hasResults = results.length > 0;
     }
 
-    console.log("Raw query result:", data);
-    console.log("Number of listings found:", data?.length || 0);
+    if (!hasResults) {
+      return NextResponse.json([]);
+    }
+
+    // Ordenar por prioridade do ad_type
+    results.sort((a, b) => {
+      const priorityA = getAdTypePriority((a.ad_type as string) || 'standard');
+      const priorityB = getAdTypePriority((b.ad_type as string) || 'standard');
+      return priorityA - priorityB;
+    });
+
+    
+    // Debug: mostrar alguns exemplos dos resultados
+    if (results && results.length > 0) {
+    }
 
     // Processar listings usando primary_media_url da materialized view e buscar todas as mídias
-    const results = await Promise.all((data || []).map(async (item: Record<string, unknown>) => {
-      console.log("Processing listing:", item.listing_id, item.title);
-      console.log("Primary media URL from listing_search:", item.primary_media_url);
+    const processedResults = await Promise.all(results.map(async (item: Record<string, unknown>) => {
       
       let allMedia: Array<{
         id: string;
@@ -123,7 +258,6 @@ export async function GET(request: Request) {
           // Tem mídias na tabela media_item
           allMedia = mediaData;
           mediaCount = allMedia.length;
-          console.log(`Found ${mediaCount} media items for listing ${item.listing_id}`);
         } else {
           // Não tem mídias na tabela media_item, usar apenas a primária da materialized view
           allMedia = [{
@@ -134,7 +268,6 @@ export async function GET(request: Request) {
             order: 1
           }];
           mediaCount = 1;
-          console.log(`No media_item found, using primary from listing_search for listing ${item.listing_id}`);
         }
       }
       
@@ -177,12 +310,10 @@ export async function GET(request: Request) {
         for_rent: item.transaction_type === 'rent'
       };
       
-      console.log("Final result for listing:", result.listing_id, "has media:", result.media_count, "primary:", result.primary_image_url);
       return result;
     }));
 
-    console.log(`Returning ${results.length} items`);
-    return NextResponse.json(results);
+    return NextResponse.json(processedResults);
   } catch (error) {
     console.error("API Error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

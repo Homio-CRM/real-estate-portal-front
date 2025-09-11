@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { buildResultsUrl } from "../lib/navigation";
+import { buildListingsUrl } from "../lib/navigation";
 import { Button } from "./ui/button";
 import { Search } from "lucide-react";
 
@@ -34,7 +34,7 @@ export default function LocationSearchBar({ currentLocation, currentFilters }: L
       bairro: newLocation,
     };
     
-    const url = buildResultsUrl(filters as Record<string, string>);
+    const url = buildListingsUrl(filters as Record<string, string>);
     router.push(url);
   };
 

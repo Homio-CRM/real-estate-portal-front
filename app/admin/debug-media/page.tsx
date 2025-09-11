@@ -2,11 +2,36 @@
 
 import { useState } from "react";
 import { Button } from "../../../components/ui/button";
-import { Loader2, Database, Image, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Loader2, Database, Image, CheckCircle, XCircle } from "lucide-react";
 
 export default function DebugMediaPage() {
   const [loading, setLoading] = useState(false);
-  const [debugData, setDebugData] = useState<any>(null);
+  const [debugData, setDebugData] = useState<{
+    agency_id: string;
+    total_media_items: number;
+    agency_listings: number;
+    join_query_results: number;
+    sample_media_items: Array<{
+      id: string;
+      listing_id: string;
+      url: string;
+      caption: string;
+      is_primary: boolean;
+    }>;
+    sample_listings: Array<{
+      listing_id: string;
+      title: string;
+      agency_id: string;
+    }>;
+    sample_join_data: Array<{
+      listing_id: string;
+      title: string;
+      media_item: Array<{
+        url: string;
+        is_primary: boolean;
+      }>;
+    }>;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchDebugData = async () => {
@@ -15,7 +40,6 @@ export default function DebugMediaPage() {
     setDebugData(null);
 
     try {
-      console.log("=== FETCHING DEBUG MEDIA DATA ===");
       
       const response = await fetch('/api/admin/debug-media');
       const data = await response.json();
@@ -24,7 +48,6 @@ export default function DebugMediaPage() {
         throw new Error(data.error || 'Erro ao buscar dados de debug');
       }
 
-      console.log("Debug data received:", data);
       setDebugData(data);
     } catch (err) {
       console.error("Debug fetch error:", err);
@@ -93,7 +116,7 @@ export default function DebugMediaPage() {
                   <h4 className="font-semibold text-green-900 mb-2">Mídias Existentes ({debugData.total_media_items})</h4>
                   {debugData.sample_media_items.length > 0 ? (
                     <div className="space-y-2">
-                      {debugData.sample_media_items.map((media: any, idx: number) => (
+                      {debugData.sample_media_items.map((media, idx: number) => (
                         <div key={idx} className="bg-white p-3 rounded border text-sm">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-medium">ID: {media.id}</span>
@@ -117,7 +140,7 @@ export default function DebugMediaPage() {
                   <h4 className="font-semibold text-orange-900 mb-2">Listings da Agência ({debugData.agency_listings})</h4>
                   {debugData.sample_listings.length > 0 ? (
                     <div className="space-y-2">
-                      {debugData.sample_listings.map((listing: any, idx: number) => (
+                      {debugData.sample_listings.map((listing, idx: number) => (
                         <div key={idx} className="bg-white p-3 rounded border text-sm">
                           <p><strong>ID:</strong> {listing.listing_id}</p>
                           <p><strong>Título:</strong> {listing.title}</p>
@@ -135,7 +158,7 @@ export default function DebugMediaPage() {
                   <h4 className="font-semibold text-secondary mb-2">Resultado da Query JOIN ({debugData.join_query_results})</h4>
                   {debugData.sample_join_data.length > 0 ? (
                     <div className="space-y-2">
-                      {debugData.sample_join_data.map((item: any, idx: number) => (
+                      {debugData.sample_join_data.map((item, idx: number) => (
                         <div key={idx} className="bg-white p-3 rounded border text-sm">
                           <div className="flex items-center gap-2 mb-2">
                             <span className="font-medium">{item.title}</span>
@@ -148,7 +171,7 @@ export default function DebugMediaPage() {
                             <div className="mt-2">
                               <p className="font-medium">Imagens:</p>
                               <ul className="list-disc list-inside ml-4">
-                                {item.media_item.map((media: any, mediaIdx: number) => (
+                                {item.media_item.map((media, mediaIdx: number) => (
                                   <li key={mediaIdx} className="break-all">
                                     {media.url} {media.is_primary && "(PRIMARY)"}
                                   </li>
@@ -202,11 +225,11 @@ export default function DebugMediaPage() {
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <h3 className="font-semibold text-gray-900 mb-2">Instruções:</h3>
               <ol className="list-decimal list-inside text-sm text-gray-700 space-y-1">
-                <li>Clique em "Analisar Dados de Mídia" para verificar o estado atual</li>
+                <li>Clique em &quot;Analisar Dados de Mídia&quot; para verificar o estado atual</li>
                 <li>Verifique se existem mídias na tabela media_item</li>
                 <li>Verifique se existem listings para sua agência</li>
                 <li>Verifique se a query JOIN está retornando dados</li>
-                <li>Use "Testar API" para ver os logs detalhados da API de listing</li>
+                <li>Use &quot;Testar API&quot; para ver os logs detalhados da API de listing</li>
               </ol>
             </div>
           </div>

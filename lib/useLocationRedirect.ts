@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Location } from "./locationUtils";
-import { propertyCache } from "./propertyCache";
 
 export function useLocationRedirect() {
   const [userLocation, setUserLocation] = useState<Location | null>(null);
@@ -37,7 +36,7 @@ export function useLocationRedirect() {
       localStorage.setItem("userLocation", JSON.stringify(location));
       
       return true;
-    } catch (error) {
+    } catch {
       // console.log("Erro ao obter localização:", error);
       const defaultLocation: Location = {
         lat: -20.2976,
@@ -77,7 +76,7 @@ export function useLocationRedirect() {
         const location = JSON.parse(savedLocation);
         // console.log("📍 Localização carregada do cache:", location);
         setUserLocation(location);
-      } catch (error) {
+      } catch {
         // console.log("❌ Erro ao carregar localização salva:", error);
         const defaultLocation: Location = {
           lat: -20.2976,
@@ -89,7 +88,7 @@ export function useLocationRedirect() {
       // console.log("🔍 Solicitando permissão de localização...");
       requestLocationPermission();
     }
-  }, []);
+  }, [requestLocationPermission]);
 
   // Configurar event listeners após localização estar pronta
   useEffect(() => {

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Footer() {
   return (
@@ -10,9 +11,11 @@ export default function Footer() {
             
             <div className="space-y-3 md:space-y-4 text-center">
               <div>
-                <img 
+                <Image 
                   src="https://static.arboimoveis.com.br/white-label-assets/3787J_VIM/logomarca_vitoria_imoveis_11667839493275.png" 
                   alt="Vitória Imóveis" 
+                  width={200}
+                  height={48}
                   className="h-10 md:h-12 w-auto mx-auto" 
                 />
               </div>

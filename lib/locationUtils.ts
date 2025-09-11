@@ -3,6 +3,12 @@ export interface Location {
   lng: number;
 }
 
+export interface PropertyWithLocation {
+  latitude: number;
+  longitude: number;
+  [key: string]: unknown;
+}
+
 export function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -15,7 +21,7 @@ export function calculateDistance(lat1: number, lng1: number, lat2: number, lng2
   return R * c;
 }
 
-export function getNearbyProperties(properties: any[], userLocation: Location, maxDistance: number = 10): any[] {
+export function getNearbyProperties(properties: PropertyWithLocation[], userLocation: Location, maxDistance: number = 10): PropertyWithLocation[] {
   return properties
     .filter(property => {
       if (!property.latitude || !property.longitude) return false;

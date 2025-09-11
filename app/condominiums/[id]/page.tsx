@@ -10,8 +10,6 @@ import {
   Home, 
   MapPin, 
   Phone, 
-  Mail, 
-  User,
   Building,
   Dumbbell,
   Waves,
@@ -32,6 +30,7 @@ import { CondominiumCard, PropertyCard } from "../../../types/listings";
 import HorizontalPropertyCard from "../../../components/HorizontalPropertyCard";
 import Footer from "../../../components/Footer";
 import { ImageGallery } from "../../../components/ImageGallery";
+import Image from "next/image";
 
 type CondominiumDetail = CondominiumCard & {
   apartments?: PropertyCard[];
@@ -94,8 +93,6 @@ export default function CondominiumDetailPage() {
 
                      if (condoRes.ok) {
              const condoData = await condoRes.json();
-             console.log("Condominium data:", condoData);
-             console.log("Apartments count:", condoData.apartments?.length || 0);
              setCondo(condoData);
            }
 
@@ -199,7 +196,7 @@ export default function CondominiumDetailPage() {
             {media.length > 0 ? (
               <div>
                 <div className="relative h-64 sm:h-80 md:h-96 bg-white flex items-center justify-center">
-                  <img src={displayedImage} alt={condo.name} className="w-full h-full object-cover bg-white cursor-pointer" onClick={() => setShowGallery(true)} />
+                  <Image src={displayedImage} alt={condo.name} fill className="object-cover bg-white cursor-pointer" onClick={() => setShowGallery(true)} />
                   {media.length > 1 && (
                     <>
                       <button aria-label="Imagem anterior" className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70" onClick={() => setCurrentMediaIndex((prev) => (prev === 0 ? (media.length || 1) - 1 : prev - 1))}>
@@ -223,7 +220,7 @@ export default function CondominiumDetailPage() {
                         onClick={() => setCurrentMediaIndex(idx)}
                         aria-label={`Ver imagem ${idx + 1}`}
                       >
-                        <img src={m.url} alt={condo.name} className="w-full h-full object-contain bg-white" />
+                        <Image src={m.url} alt={condo.name} width={96} height={64} className="w-full h-full object-contain bg-white" />
                       </button>
                     ))}
                   </div>

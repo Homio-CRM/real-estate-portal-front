@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { X, MapPin, Phone, Bed, Bath, Car, Ruler } from "lucide-react";
+import Image from "next/image";
 import { PropertyCard } from "../types/listings";
 import { Location } from "../lib/locationUtils";
 import { propertyCache } from "../lib/propertyCache";
@@ -21,33 +22,21 @@ export default function LocationBasedPopup({
   const [properties, setProperties] = useState<PropertyCard[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Debug: log props
-  useEffect(() => {
-    console.log("🎭 LocationBasedPopup props:", {
-      isVisible,
-      userLocation,
-      loading
-    });
-  }, [isVisible, userLocation, loading]);
 
   useEffect(() => {
     if (isVisible && userLocation) {
-      console.log("🚀 Popup visível, carregando propriedades do cache...");
       setLoading(true);
       
       // Usar cache se disponível, senão carregar
       if (propertyCache.isLoaded(userLocation, transactionType)) {
         const cachedProperties = propertyCache.getProperties(userLocation, transactionType);
-        console.log("📦 Usando propriedades do cache:", cachedProperties.length);
         setProperties(cachedProperties);
         setLoading(false);
       } else {
-        console.log("⏳ Cache não disponível, aguardando carregamento...");
         // Aguardar um pouco para o cache carregar
         const checkCache = () => {
           if (propertyCache.isLoaded(userLocation, transactionType)) {
             const cachedProperties = propertyCache.getProperties(userLocation, transactionType);
-            console.log("✅ Cache carregado, usando propriedades:", cachedProperties.length);
             setProperties(cachedProperties);
             setLoading(false);
           } else {
@@ -73,14 +62,11 @@ export default function LocationBasedPopup({
     return `${distance.toFixed(1)}km`;
   }, [userLocation]);
 
-  console.log("🎭 LocationBasedPopup render - isVisible:", isVisible);
 
   if (!isVisible) {
-    console.log("🎭 Popup não visível, retornando null");
     return null;
   }
 
-  console.log("🎭 Renderizando popup");
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -124,9 +110,11 @@ export default function LocationBasedPopup({
                     {/* Imagem */}
                     <div className="h-48 bg-gray-200 relative">
                       {property.image ? (
-                        <img
+                        <Image
                           src={property.image}
                           alt={property.title}
+                          width={400}
+                          height={192}
                           className="w-full h-full object-cover"
                         />
                       ) : (

@@ -1,24 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { supabaseAgent } from "../../../lib/supabaseAgent";
 
 export async function GET(request: Request) {
-  console.log("=== API CONDOMINIUM ROUTE OPTIMIZED ===");
-  
   const { searchParams } = new URL(request.url);
   const cityId = searchParams.get("cityId");
   const transactionType = searchParams.get("transactionType");
+  const bairro = searchParams.get("bairro");
   const limit = Number(searchParams.get("limit") || 30);
   const offset = Number(searchParams.get("offset") || 0);
   
-  console.log("API received params:", {
-    cityId,
-    transactionType,
-    limit,
-    offset
-  });
   
   if (!cityId) {
-    console.log("Missing required params");
     return NextResponse.json({ error: "cityId é obrigatório" }, { status: 400 });
   }
 
@@ -26,7 +18,6 @@ export async function GET(request: Request) {
     const agencyId = process.env.LOCATION_ID;
     
     if (!agencyId) {
-      console.log("Agency ID not configured");
       return NextResponse.json({ error: "Supabase environment variables not configured" }, { status: 500 });
     }
 
@@ -35,18 +26,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Supabase environment variables not configured" }, { status: 500 });
     }
 
-    console.log("Using optimized condominium query with params:", {
-      cityId: Number(cityId),
-      agencyId,
-      limit,
-      offset
-    });
+    
+    if (bairro) {
+    }
 
     // Usando a função otimizada do Supabase
     const { data: results, error } = await supabaseAgent
       .rpc('get_condominiums_optimized', {
         p_city_id: Number(cityId),
         p_agency_id: agencyId,
+        p_neighborhood: bairro || null,
         p_limit: limit,
         p_offset: offset
       });
@@ -57,7 +46,31 @@ export async function GET(request: Request) {
     }
 
     // Transformando os resultados para o formato esperado pelo frontend
-    const transformedResults = (results || []).map((item: any) => ({
+    const transformedResults = (results || []).map((item: {
+      condominium_id: number;
+      name: string;
+      agency_id: string;
+      is_launch: boolean;
+      min_price: number;
+      max_price: number;
+      min_area: number;
+      max_area: number;
+      year_built: number;
+      total_units: number;
+      description: string;
+      usage_type: string;
+      display_address: string;
+      neighborhood: string;
+      address: string;
+      street_number: string;
+      postal_code: string;
+      latitude: number;
+      longitude: number;
+      primary_image_url: string;
+      price_range_formatted: string;
+      area_range_formatted: string;
+      media_count: number;
+    }) => ({
       id: item.condominium_id,
       name: item.name,
       agency_id: item.agency_id,
@@ -90,8 +103,6 @@ export async function GET(request: Request) {
       media_count: item.media_count
     }));
 
-    console.log("Optimized condominium query results count:", transformedResults.length);
-    console.log("=== END API CONDOMINIUM ROUTE OPTIMIZED ===");
 
     return NextResponse.json(transformedResults);
   } catch (error) {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Database, Search, MapPin, Plus, Home, Settings, Image } from "lucide-react";
+import { Search, Plus, Home, Settings, Image as ImageIcon } from "lucide-react";
 
 export default function AdminPage() {
   return (
@@ -24,7 +24,7 @@ export default function AdminPage() {
               className="block p-6 bg-secondary/10 border border-secondary/30 rounded-lg hover:bg-secondary/20 transition-colors"
             >
               <div className="flex items-center mb-3">
-                <Image className="h-8 w-8 text-secondary mr-3" />
+                <ImageIcon className="h-8 w-8 text-secondary mr-3" />
                 <h3 className="text-lg font-semibold text-secondary">Debug Mídia</h3>
               </div>
               <p className="text-secondary text-sm">
@@ -67,7 +67,7 @@ export default function AdminPage() {
                 <h3 className="text-lg font-semibold text-orange-900">Página Inicial</h3>
               </div>
               <p className="text-orange-800 text-sm">
-                Ver o resultado na seção "Imóveis em Destaque".
+                Ver o resultado na seção &quot;Imóveis em Destaque&quot;.
               </p>
             </Link>
           </div>
@@ -101,10 +101,10 @@ export default function AdminPage() {
           <div className="mt-8 pt-6 border-t">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Próximos Passos</h3>
             <ol className="list-decimal list-inside space-y-2 text-gray-700">
-              <li><strong>Execute "Debug Mídia"</strong> para analisar os dados de mídia existentes</li>
-              <li>Clique em "Testar API" para ver os logs detalhados da API de listing</li>
+              <li><strong>Execute &quot;Debug Mídia&quot;</strong> para analisar os dados de mídia existentes</li>
+              <li>Clique em &quot;Testar API&quot; para ver os logs detalhados da API de listing</li>
               <li>Verifique se as mídias estão associadas aos listings da sua agência</li>
-              <li>Vá para "Página Inicial" para ver os "Imóveis em Destaque"</li>
+              <li>Vá para &quot;Página Inicial&quot; para ver os &quot;Imóveis em Destaque&quot;</li>
             </ol>
             
             <div className="mt-4 p-3 bg-green-50 rounded-lg">
@@ -117,7 +117,7 @@ export default function AdminPage() {
             
             <div className="mt-4 p-3 bg-blue-50 rounded-lg">
               <p className="text-blue-800 text-sm">
-                <strong>🔍 Ferramenta de Debug:</strong> Use "Debug Mídia" para analisar os dados 
+                <strong>🔍 Ferramenta de Debug:</strong> Use &quot;Debug Mídia&quot; para analisar os dados 
                 existentes e identificar por que as imagens não estão aparecendo nos componentes.
               </p>
             </div>

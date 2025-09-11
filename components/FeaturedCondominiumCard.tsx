@@ -1,5 +1,6 @@
 import { Ruler, Building, Calendar, MapPin, Tag } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { CondominiumCard as CondominiumCardType } from "../types/listings";
 
 interface FeaturedCondominiumCardProps extends CondominiumCardType {
@@ -49,10 +50,11 @@ export default function FeaturedCondominiumCard(props: FeaturedCondominiumCardPr
       <div className="relative">
         <div className="w-full h-64 relative overflow-hidden">
           {image && image !== "/placeholder-property.jpg" ? (
-            <img 
+            <Image 
               src={image} 
               alt={name} 
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-300" 
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">

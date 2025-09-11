@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import FeaturedCondominiumCard from "./FeaturedCondominiumCard";
 import { CondominiumCard } from "../types/listings";
@@ -99,7 +99,7 @@ export default function FeaturedCondominiums({ cityId }: FeaturedCondominiumsPro
         
         <div className="text-center">
           <Link 
-            href="/resultados?tipo=Condomínio&operacao=venda"
+            href="/listings?tipo=Condomínio&operacao=venda"
             className="inline-flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-secondary transition-colors"
           >
             Ver Todos os Condomínios

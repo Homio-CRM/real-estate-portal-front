@@ -1,8 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { supabaseAgent } from "../../../../lib/supabaseAgent";
 
-export async function GET(request: NextRequest) {
-  console.log("=== DEBUG CONDOS ROUTE ===");
+export async function GET() {
   
   try {
     const agencyId = process.env.LOCATION_ID;
@@ -54,7 +53,7 @@ export async function GET(request: NextRequest) {
         searchTableExists = true;
         searchData = data;
       }
-    } catch (e) {
+    } catch {
       // Table doesn't exist
     }
 
@@ -90,7 +89,6 @@ export async function GET(request: NextRequest) {
       tablesError: tablesError?.message
     };
 
-    console.log("Debug info:", debugInfo);
     return NextResponse.json(debugInfo);
 
   } catch (error) {
