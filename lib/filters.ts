@@ -2,7 +2,7 @@ import { URLSearchParams } from "url";
 
 export type Filters = {
   tipo: string;
-  localizacao: string;
+  cidade: string;
   operacao: string;
   bairro?: string;
 };
@@ -10,18 +10,18 @@ export type Filters = {
 export function parseFiltersFromSearchParams(searchParams: URLSearchParams): Filters {
   return {
     tipo: searchParams.get("tipo") || "",
-    localizacao: searchParams.get("localizacao") || "",
+    cidade: searchParams.get("cidade") || "",
     operacao: searchParams.get("operacao") || "todos",
     bairro: searchParams.get("bairro") || "",
   };
 }
 
 export function validateFilters(filters: Filters): { isValid: boolean; cityId?: number } {
-  if (!filters.localizacao) {
+  if (!filters.cidade) {
     return { isValid: false };
   }
   
-  const cityId = Number(filters.localizacao);
+  const cityId = Number(filters.cidade);
   if (!cityId) {
     return { isValid: false };
   }

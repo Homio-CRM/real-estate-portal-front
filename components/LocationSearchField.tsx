@@ -40,7 +40,8 @@ export default function LocationSearchField({
     }
   };
 
-  const handleItemSelect = (item: { name: string; type: string; id: number }) => {
+  const handleItemSelect = (item: { name: string; type: string; id: number; city_id?: number }) => {
+    console.log('🏠 LocationSearchField: Item selecionado:', item);
     
     setSelectedItemType(item.type as "city" | "neighborhood");
     
@@ -48,13 +49,20 @@ export default function LocationSearchField({
       setSelectedItemData({ id: item.id, name: item.name });
       setNewLocation(String(item.id)); // ID da cidade
     } else if (item.type === "neighborhood") {
-      // Para bairros, o item.id já é o city_id do bairro
+      // Agora o item.id JÁ É o city_id correto
+      console.log('🏘️ LocationSearchField: Bairro selecionado - cityId:', item.id, 'name:', item.name);
       setSelectedItemData({ id: item.id, name: item.name });
       setNewLocation(item.name); // Nome do bairro para exibição
     }
   };
 
   const handleSearch = () => {
+    console.log('🔍 LocationSearchField: Iniciando busca com:', {
+      isLocationValid,
+      selectedItemType,
+      selectedItemData,
+      currentFilters
+    });
     
     if (!isLocationValid || !selectedItemType || !selectedItemData) {
       return;
@@ -65,21 +73,22 @@ export default function LocationSearchField({
     // Determinar se é cidade ou bairro baseado no tipo selecionado
     const filters = {
       ...currentFilters,
-      // Se for cidade, usar como localizacao e limpar bairro
-      // Se for bairro, atualizar localizacao com city_id e bairro com nome do bairro
+      // Se for cidade, usar como cidade e limpar bairro
+      // Se for bairro, atualizar cidade com city_id e bairro com nome do bairro
       ...(selectedItemType === "city" ? {
-        localizacao: String(selectedItemData.id), // ID da cidade
+        cidade: String(selectedItemData.id), // ID da cidade
         bairro: ""
       } : {
         // Para bairro, precisamos do city_id do bairro selecionado
         // O selectedItemData.id neste caso é o city_id do bairro
-        localizacao: String(selectedItemData.id), // ID da cidade do bairro
+        cidade: String(selectedItemData.id), // ID da cidade do bairro
         bairro: selectedItemData.name // Nome do bairro
       })
     };
     
-    
+    console.log('🏠 LocationSearchField: Filtros finais:', filters);
     const url = buildListingsUrl(filters as Record<string, string>);
+    console.log('🌐 LocationSearchField: URL gerada:', url);
     
     // Navegar diretamente para a URL - sem evento
     router.push(url);

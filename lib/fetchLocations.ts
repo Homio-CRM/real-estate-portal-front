@@ -5,9 +5,9 @@ export type LocationResult = {
   cities: CityAutocomplete[];
 };
 
-export async function fetchLocationById(id: string, type: string): Promise<CityAutocomplete | null> {
+export async function fetchLocationById(id: string): Promise<CityAutocomplete | null> {
   try {
-    const res = await fetch(`/api/locations?id=${id}&type=${type}`);
+    const res = await fetch(`/api/locations?id=${id}`);
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -17,16 +17,31 @@ export async function fetchLocationById(id: string, type: string): Promise<CityA
 
 export async function fetchLocationsByQuery(query: string): Promise<LocationResult> {
   try {
-    const res = await fetch(`/api/locations?q=${encodeURIComponent(query)}`);
+    console.log('🔍 fetchLocationsByQuery: Iniciando busca para query:', query);
+    const url = `/api/locations?q=${encodeURIComponent(query)}`;
+    console.log('🌐 fetchLocationsByQuery: URL da requisição:', url);
+    
+    const res = await fetch(url);
+    console.log('📡 fetchLocationsByQuery: Status da resposta:', res.status, res.statusText);
+    
     if (!res.ok) {
       if (res.status === 404) {
         const errorData = await res.json();
+        console.log('❌ fetchLocationsByQuery: Erro 404 - dados:', errorData);
         throw new Error(errorData.error);
       }
+      console.log('⚠️ fetchLocationsByQuery: Resposta não OK, retornando arrays vazios');
       return { neighborhoods: [], cities: [] };
     }
-    return await res.json();
+    
+    const result = await res.json();
+    console.log('✅ fetchLocationsByQuery: Resultado recebido:', {
+      neighborhoods: result.neighborhoods?.length || 0,
+      cities: result.cities?.length || 0
+    });
+    return result;
   } catch (error) {
+    console.error('💥 fetchLocationsByQuery: Erro capturado:', error);
     throw error;
   }
 } 

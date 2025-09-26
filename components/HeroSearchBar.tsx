@@ -29,14 +29,14 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
     propertyCache.clear();
     
     // Se temos localização válida, fazer nova busca
-    if (isLocationValid && filters.localizacao) {
+    if (isLocationValid && filters.cidade) {
       try {
         // Extrair coordenadas da localização (formato pode variar)
         let lat, lng;
         
-        if (filters.localizacao.includes(',')) {
+        if (filters.cidade.includes(',')) {
           // Formato: "lat,lng"
-          const coords = filters.localizacao.split(',');
+          const coords = filters.cidade.split(',');
           lat = parseFloat(coords[0]);
           lng = parseFloat(coords[1]);
         } else {
@@ -61,8 +61,10 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
   useEffect(() => {
     const handleNeighborhoodSelected = (event: CustomEvent) => {
       const { cityId, neighborhoodName } = event.detail;
-      onFilterChange("localizacao", String(cityId));
-      onFilterChange("bairro", neighborhoodName);
+      // Remover a parte da cidade do nome do bairro
+      const cleanNeighborhoodName = neighborhoodName.split(' - ')[0];
+      onFilterChange("cidade", String(cityId));
+      onFilterChange("bairro", cleanNeighborhoodName);
     };
 
     window.addEventListener('neighborhoodSelected', handleNeighborhoodSelected as EventListener);
@@ -152,8 +154,8 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
 
           <div className="w-full">
             <AutocompleteField
-              value={filters.localizacao}
-              onChange={value => onFilterChange("localizacao", value)}
+              value={filters.cidade}
+              onChange={value => onFilterChange("cidade", value)}
               onValidityChange={setIsLocationValid}
               placeholder="Digite o nome do bairro ou cidade"
               label="Onde deseja morar?"

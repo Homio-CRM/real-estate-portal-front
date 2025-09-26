@@ -90,8 +90,12 @@ export async function GET(request: Request) {
           property_type,
           ad_type
         `)
-        .eq('agency_id', agencyId)
-        .eq('transaction_type', transactionType === "rent" ? "rent" : "sale");
+        .eq('agency_id', agencyId);
+      
+      // Aplicar filtro de tipo de transação se não for "all"
+      if (transactionType !== "all") {
+        query = query.eq('transaction_type', transactionType);
+      }
 
       // Aplicar filtro de cidade se fornecido
       if (filters.cityId) {
@@ -124,6 +128,9 @@ export async function GET(request: Request) {
       if (bairro) {
         query = query.ilike('neighborhood', `%${bairro}%`);
       }
+
+      // Filtro global: excluir ad_type null ou paused
+      query = query.not('ad_type', 'is', null).not('ad_type', 'eq', 'paused');
 
       // Buscar mais resultados para garantir que temos imóveis de alta prioridade
       const searchLimit = Math.max(filters.limit * 3, 30); // Buscar pelo menos 30 ou 3x o limite solicitado
@@ -318,7 +325,7 @@ export async function GET(request: Request) {
           order: m.order
         })),
         price_formatted: item.list_price_amount ? `R$ ${(item.list_price_amount as number).toLocaleString('pt-BR')}` : 'Preço sob consulta',
-        for_rent: item.transaction_type === 'rent'
+        forRent: item.transaction_type === 'rent'
       };
       
       return result;

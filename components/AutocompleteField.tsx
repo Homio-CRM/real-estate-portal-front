@@ -8,7 +8,7 @@ type AutocompleteFieldProps = {
   value: string;
   onChange: (value: string) => void;
   onValidityChange?: (isValid: boolean) => void;
-  onItemSelect?: (item: { name: string; type: string; id: number }) => void;
+  onItemSelect?: (item: { name: string; type: string; id: number; city_id?: number }) => void;
   placeholder: string;
   label: string;
   type: "city" | "neighborhood" | "location";
@@ -60,7 +60,7 @@ export default function AutocompleteField({
     }
     
     const fetchItemName = async () => {
-      const item = await fetchLocationById(value, "city");
+      const item = await fetchLocationById(value);
       if (item) {
         setInput(item.name);
         setSelectedItem(item);
@@ -122,13 +122,19 @@ export default function AutocompleteField({
       setError(null);
 
       try {
+        console.log('🔍 AutocompleteField: Fazendo busca para input:', input);
         const result = await fetchLocationsByQuery(input);
+        console.log('✅ AutocompleteField: Resultado recebido:', {
+          neighborhoods: result.neighborhoods?.length || 0,
+          cities: result.cities?.length || 0
+        });
 
         setLocationData(result);
         cachedDataRef.current = result;
         hasInitialDataRef.current = true;
         setShowOptions(true);
-      } catch {
+      } catch (error) {
+        console.error('💥 AutocompleteField: Erro na busca:', error);
         setError("Erro ao buscar localizações");
         setLocationData({ neighborhoods: [], cities: [] });
       } finally {
@@ -180,7 +186,8 @@ export default function AutocompleteField({
       onItemSelect?.({
         name: item.name,
         type: 'type' in item ? item.type : 'city',
-        id: 'type' in item && item.type === "neighborhood" && 'city_id' in item ? (item.city_id || item.id) : item.id
+        id: item.id, // Agora o ID já é o correto
+        city_id: 'city_id' in item ? item.city_id : undefined
       });
     } else {
       onChange(String(item.id));
@@ -258,7 +265,7 @@ export default function AutocompleteField({
                           className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-gray-900"
                           onMouseDown={() => handleSelect(item)}
                         >
-                          {item.name}, {item.city_name}
+                          {item.name}
                         </li>
                       ))}
                     </ul>

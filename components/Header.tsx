@@ -9,9 +9,9 @@ export default function Header() {
           <Image 
             src="https://static.arboimoveis.com.br/white-label-assets/3787J_VIM/logomarca_vitoria_imoveis_11667839493275.png" 
             alt="Vitória Imóveis" 
-            width={200}
-            height={64}
-            className="h-16 w-auto cursor-pointer" 
+            width={300}
+            height={96}
+            className="h-20 w-auto cursor-pointer" 
           />
         </Link>
       </div>

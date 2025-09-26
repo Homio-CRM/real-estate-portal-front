@@ -49,7 +49,7 @@ function ListingsContent() {
     tipo: initialFilters.tipo,
     operacao: initialFilters.operacao,
     bairro: initialFilters.bairro,
-    localizacao: initialFilters.localizacao,
+    cidade: initialFilters.cidade,
   });
   
   // Filtros que apenas filtram os resultados já carregados
@@ -74,7 +74,7 @@ function ListingsContent() {
   useEffect(() => {
     // Fazer a busca com os filtros da URL
     const effectiveFilters = {
-      localizacao: initialFilters.localizacao,
+      cidade: initialFilters.cidade,
       operacao: initialFilters.operacao,
       tipo: initialFilters.tipo,
       bairro: initialFilters.bairro,
@@ -83,8 +83,8 @@ function ListingsContent() {
     const validation = validateFilters(effectiveFilters);
     if (validation.isValid) {
       // Atualizar o currentLocation imediatamente, independente do tipo de busca
-      if (effectiveFilters.localizacao) {
-        getCityName(Number(effectiveFilters.localizacao)).then(cityInfo => {
+      if (effectiveFilters.cidade) {
+        getCityName(Number(effectiveFilters.cidade)).then(cityInfo => {
           if (cityInfo) {
             const stateAbbreviation = getStateAbbreviationById(cityInfo.stateId);
             setCurrentLocation(`${cityInfo.name} - ${stateAbbreviation}`);
@@ -194,7 +194,7 @@ function ListingsContent() {
       tipo: "",
       operacao: "",
       bairro: "",
-      localizacao: "",
+      cidade: "",
     };
     
     setApiFilters(clearedApiFilters);

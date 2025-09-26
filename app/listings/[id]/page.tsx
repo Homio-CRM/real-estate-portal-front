@@ -83,54 +83,62 @@ export default function ListingDetailPage() {
 
       const txType = data.transaction_type === "rental" ? "rent" : "sale";
 
-      // Estratégia 1: Buscar no mesmo condomínio (apartamentos)
-      if (data.property_type === "apartment" && data.condominium_id) {
-        try {
-          const res = await fetch(`/api/condominium/${data.condominium_id}`);
-          if (res.ok) {
-            const condo = await res.json();
-            setCondominiumInfo({ id: condo.id || data.condominium_id, name: condo.name, min_price: condo.min_price, max_price: condo.max_price, min_area: condo.min_area, max_area: condo.max_area });
-            const inSameCondo: PropertyCardType[] = (Array.isArray(condo.apartments) ? condo.apartments : [])
-              .filter((p: PropertyCardType) => p.listing_id !== data.listing_id)
-              .slice(0, 3);
-            if (inSameCondo.length > 0) {
-              setSimilarProperties(inSameCondo);
-              return;
-            }
-          }
-        } catch {}
-      }
-
-      // Estratégia 2: Buscar no mesmo bairro
-      if (data.neighborhood) {
-        try {
-          const byNeighborhood = await fetchListings({
-            cityId: data.city_id,
-            transactionType: txType,
-            tipo: data.property_type === "apartment" ? "Apartamento" : "Casa",
-            bairro: data.neighborhood,
-            limit: 6,
-            offset: 0,
-          });
-          const filtered = byNeighborhood.filter((p: PropertyCardType) => p.listing_id !== data.listing_id).slice(0, 3);
-          if (filtered.length > 0) {
-            setSimilarProperties(filtered);
-            return;
-          }
-        } catch {}
-      }
-
-      // Estratégia 3: Buscar na mesma cidade
+      // Nova lógica de imóveis similares
       try {
-        const byCity = await fetchListings({
+        const currentPrice = data.list_price_amount || 0;
+        const priceRange = data.transaction_type === "rental" ? 3000 : 250000;
+        const minPrice = Math.max(0, currentPrice - priceRange);
+        const maxPrice = currentPrice + priceRange;
+
+        // Buscar todos os imóveis que atendem aos critérios básicos
+        const allSimilar = await fetchListings({
           cityId: data.city_id,
           transactionType: txType,
           tipo: data.property_type === "apartment" ? "Apartamento" : "Casa",
-          limit: 6,
+          limit: 50, // Buscar mais para ter opções de ordenação
           offset: 0,
         });
-        const filtered = byCity.filter((p: PropertyCardType) => p.listing_id !== data.listing_id).slice(0, 3);
-        setSimilarProperties(filtered);
+
+        // Filtrar por critérios obrigatórios
+        const filtered = allSimilar.filter((p: PropertyCardType) => {
+          if (p.listing_id === data.listing_id) return false;
+          if (p.bedroom_count !== data.bedroom_count) return false;
+          if (!p.list_price_amount) return false;
+          if (p.list_price_amount < minPrice || p.list_price_amount > maxPrice) return false;
+          return true;
+        });
+
+        // Ordenar por proximidade: bairro → cidade → estado
+        const sorted = filtered.sort((a: PropertyCardType, b: PropertyCardType) => {
+          // Prioridade 1: Mesmo bairro
+          const aSameNeighborhood = a.neighborhood === data.neighborhood ? 1 : 0;
+          const bSameNeighborhood = b.neighborhood === data.neighborhood ? 1 : 0;
+          if (aSameNeighborhood !== bSameNeighborhood) {
+            return bSameNeighborhood - aSameNeighborhood;
+          }
+
+          // Prioridade 2: Mesma cidade
+          const aSameCity = a.city_id === data.city_id ? 1 : 0;
+          const bSameCity = b.city_id === data.city_id ? 1 : 0;
+          if (aSameCity !== bSameCity) {
+            return bSameCity - aSameCity;
+          }
+
+          // Prioridade 3: Mesmo estado
+          const aSameState = a.state_id === data.state_id ? 1 : 0;
+          const bSameState = b.state_id === data.state_id ? 1 : 0;
+          if (aSameState !== bSameState) {
+            return bSameState - aSameState;
+          }
+
+          // Se tudo igual, ordenar por preço (mais próximo primeiro)
+          const aPriceDiff = Math.abs(a.list_price_amount - currentPrice);
+          const bPriceDiff = Math.abs(b.list_price_amount - currentPrice);
+          return aPriceDiff - bPriceDiff;
+        });
+
+        // Pegar os 3 primeiros
+        setSimilarProperties(sorted.slice(0, 3));
       } catch {
         setSimilarProperties([]);
       }

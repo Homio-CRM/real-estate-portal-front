@@ -156,9 +156,12 @@ export async function GET(
           total_area,
           private_area,
           built_area,
-          land_area
+          land_area,
+          ad_type
         `)
-        .in("listing_id", listingIds);
+        .in("listing_id", listingIds)
+        .not('ad_type', 'is', null)
+        .not('ad_type', 'eq', 'paused');
 
       if (apartmentError) {
         console.error("Error fetching apartment listings:", apartmentError);

@@ -30,7 +30,7 @@ export default function LocationSearchBar({ currentLocation, currentFilters }: L
     setIsSearching(true);
     const filters = {
       ...currentFilters,
-      localizacao: newLocation,
+      cidade: newLocation,
       bairro: newLocation,
     };
     

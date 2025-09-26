@@ -44,9 +44,12 @@ export async function GET(
         total_area,
         private_area,
         built_area,
-        land_area
+        land_area,
+        ad_type
       `)
       .eq("listing_id", id)
+      .not('ad_type', 'is', null)
+      .not('ad_type', 'eq', 'paused')
       .single();
 
     if (listingError || !listing) {

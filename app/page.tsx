@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "../components/Header";
 import HeroSearchBar from "../components/HeroSearchBar";
 import FeaturedProperties from "../components/FeaturedProperties";
@@ -12,10 +12,11 @@ export default function Home() {
   const router = useRouter();
   const [filters, setFilters] = useState({
     tipo: "",
-    localizacao: "",
+    cidade: "",
     operacao: "comprar",
     bairro: "",
   });
+  const [agencyPhone, setAgencyPhone] = useState<string | null>(null);
 
   function handleFilterChange(key: string, value: string) {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -25,6 +26,28 @@ export default function Home() {
     const url = buildListingsUrl(filters as Record<string, string>);
     router.push(url);
   }
+
+  useEffect(() => {
+    async function fetchAgencyPhone() {
+      try {
+        const phoneResponse = await fetch('/api/agency/phone');
+        if (phoneResponse.ok) {
+          const phoneData = await phoneResponse.json();
+          setAgencyPhone(phoneData.phone);
+        }
+      } catch (error) {
+        console.error('Error fetching agency phone:', error);
+      }
+    }
+    fetchAgencyPhone();
+  }, []);
+
+  const generateWhatsAppLink = () => {
+    if (!agencyPhone) return '#';
+    const message = `Olá! Gostaria de anunciar meu imóvel com vocês. Podem me ajudar com mais informações?`;
+    const cleanPhone = agencyPhone.replace(/\D/g, '');
+    return `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`;
+  };
 
   
 
@@ -60,7 +83,9 @@ export default function Home() {
           
           <div className="mt-8 text-center">
             <a 
-              href="#" 
+              href={generateWhatsAppLink()}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-white underline text-lg hover:text-white/80 transition-colors"
             >
               Anuncie seu imóvel conosco
