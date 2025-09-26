@@ -71,14 +71,14 @@ export async function GET() {
       },
       locations: {
         count: locations?.length || 0,
-        condominiumLocations: locations?.filter(l => l.entity_type === 'condominium').length || 0,
-        data: locations?.filter(l => l.entity_type === 'condominium').slice(0, 3) || [],
+        condominiumLocations: locations?.filter((l: { entity_type: string }) => l.entity_type === 'condominium').length || 0,
+        data: locations?.filter((l: { entity_type: string }) => l.entity_type === 'condominium').slice(0, 3) || [],
         error: locationError?.message
       },
       media: {
         count: media?.length || 0,
-        condominiumMedia: media?.filter(m => m.entity_type === 'condominium').length || 0,
-        data: media?.filter(m => m.entity_type === 'condominium').slice(0, 3) || [],
+        condominiumMedia: media?.filter((m: { entity_type: string }) => m.entity_type === 'condominium').length || 0,
+        data: media?.filter((m: { entity_type: string }) => m.entity_type === 'condominium').slice(0, 3) || [],
         error: mediaError?.message
       },
       searchTable: {

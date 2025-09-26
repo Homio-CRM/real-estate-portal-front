@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAgent } from "../../../../../lib/supabaseAgent";
 
+interface ListingRecord {
+  listing_id: string;
+}
+
+interface ListingDetailsRecord {
+  bedroom_count: number | null;
+  suite_count: number | null;
+  property_administration_fee_amount: number | null;
+  iptu_amount: number | null;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -12,7 +23,7 @@ export async function GET(
       .from("listing")
       .select("listing_id")
       .eq("condominium_id", id)
-      .eq("property_type", "apartment");
+      .eq("property_type", "apartment") as { data: ListingRecord[] | null; error: unknown };
 
     if (listingsError || !apartmentListings || apartmentListings.length === 0) {
       return NextResponse.json({
@@ -26,12 +37,12 @@ export async function GET(
       });
     }
 
-    const listingIds = apartmentListings.map(l => l.listing_id);
+    const listingIds = apartmentListings.map((l: ListingRecord) => l.listing_id);
 
     const { data: detailsList } = await supabaseAgent
       .from("listing_details")
       .select("bedroom_count, suite_count, property_administration_fee_amount, iptu_amount")
-      .in("listing_id", listingIds);
+      .in("listing_id", listingIds) as { data: ListingDetailsRecord[] | null; error: unknown };
 
     if (!detailsList || detailsList.length === 0) {
       return NextResponse.json({
@@ -45,18 +56,18 @@ export async function GET(
       });
     }
 
-    const bedrooms = detailsList.map(d => d.bedroom_count).filter(b => b !== null && b !== undefined);
-    const suites = detailsList.map(d => d.suite_count).filter(s => s !== null && s !== undefined);
-    const condoFees = detailsList.map(d => d.property_administration_fee_amount).filter(f => f !== null && f !== undefined);
-    const iptus = detailsList.map(d => d.iptu_amount).filter(i => i !== null && i !== undefined);
+    const bedrooms = detailsList.map((d: ListingDetailsRecord) => d.bedroom_count).filter((b: number | null) => b !== null && b !== undefined) as number[];
+    const suites = detailsList.map((d: ListingDetailsRecord) => d.suite_count).filter((s: number | null) => s !== null && s !== undefined) as number[];
+    const condoFees = detailsList.map((d: ListingDetailsRecord) => d.property_administration_fee_amount).filter((f: number | null) => f !== null && f !== undefined) as number[];
+    const iptus = detailsList.map((d: ListingDetailsRecord) => d.iptu_amount).filter((i: number | null) => i !== null && i !== undefined) as number[];
 
     const stats = {
       min_bedrooms: bedrooms.length > 0 ? Math.min(...bedrooms) : 0,
       max_bedrooms: bedrooms.length > 0 ? Math.max(...bedrooms) : 0,
       min_suites: suites.length > 0 ? Math.min(...suites) : 0,
       max_suites: suites.length > 0 ? Math.max(...suites) : 0,
-      avg_condo_fee: condoFees.length > 0 ? Math.round(condoFees.reduce((a, b) => a + b, 0) / condoFees.length) : 0,
-      avg_iptu: iptus.length > 0 ? Math.round(iptus.reduce((a, b) => a + b, 0) / iptus.length) : 0,
+      avg_condo_fee: condoFees.length > 0 ? Math.round(condoFees.reduce((a: number, b: number) => a + b, 0) / condoFees.length) : 0,
+      avg_iptu: iptus.length > 0 ? Math.round(iptus.reduce((a: number, b: number) => a + b, 0) / iptus.length) : 0,
       total_apartments: apartmentListings.length
     };
 

@@ -27,6 +27,7 @@ import {
 import Header from "../../../components/Header";
 import ListingDetailSkeleton from "../../../components/ListingDetailSkeleton";
 import { fetchListingById, fetchListings } from "../../../lib/fetchListings";
+import { fetchCondominiumById } from "../../../lib/fetchCondominiums";
 import { PropertyCard as PropertyCardType } from "../../../types/listings";
 import HorizontalPropertyCard from "../../../components/HorizontalPropertyCard";
 import Footer from "../../../components/Footer";
@@ -81,6 +82,25 @@ export default function ListingDetailPage() {
 
       if (!data) return;
 
+      // Fetch condominium information if property is an apartment with condominium_id
+      if (data.property_type === "apartment" && data.condominium_id) {
+        try {
+          const condominiumData = await fetchCondominiumById(data.condominium_id);
+          if (condominiumData) {
+            setCondominiumInfo({
+              id: data.condominium_id,
+              name: condominiumData.name,
+              min_price: condominiumData.min_price,
+              max_price: condominiumData.max_price,
+              min_area: condominiumData.min_area,
+              max_area: condominiumData.max_area
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching condominium info:', error);
+        }
+      }
+
       const txType = data.transaction_type === "rental" ? "rent" : "sale";
 
       // Nova lógica de imóveis similares
@@ -132,8 +152,8 @@ export default function ListingDetailPage() {
           }
 
           // Se tudo igual, ordenar por preço (mais próximo primeiro)
-          const aPriceDiff = Math.abs(a.list_price_amount - currentPrice);
-          const bPriceDiff = Math.abs(b.list_price_amount - currentPrice);
+          const aPriceDiff = Math.abs((a.list_price_amount || 0) - currentPrice);
+          const bPriceDiff = Math.abs((b.list_price_amount || 0) - currentPrice);
           return aPriceDiff - bPriceDiff;
         });
 

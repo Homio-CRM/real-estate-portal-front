@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-// @ts-ignore
 import { supabaseAgent } from "../../../lib/supabaseAgent";
 
 export async function GET(req: NextRequest) {

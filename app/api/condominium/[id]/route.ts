@@ -9,6 +9,28 @@ interface MediaItem {
   order: number;
 }
 
+interface CondominiumData {
+  id: string;
+  name: string;
+  agency_id: string;
+  [key: string]: unknown;
+}
+
+interface LocationData {
+  latitude: number;
+  longitude: number;
+  address: string;
+  [key: string]: unknown;
+}
+
+interface FeaturesData {
+  [key: string]: unknown;
+}
+
+interface ListingIdData {
+  listing_id: string;
+}
+
 interface ListingSearchItem {
   listing_id: string;
   title: string;
@@ -85,7 +107,7 @@ export async function GET(
       .from("condominium")
       .select("*")
       .eq("id", id)
-      .single();
+      .single() as { data: CondominiumData | null; error: unknown };
 
     if (condominiumError || !condominium) {
       return NextResponse.json({ error: "Condominium not found" }, { status: 404 });
@@ -96,28 +118,28 @@ export async function GET(
       .select("*")
       .eq("condominium_id", id)
       .eq("entity_type", "condominium")
-      .single();
+      .single() as { data: LocationData | null; error: unknown };
 
     const { data: features } = await supabaseAgent
       .from("entity_features")
       .select("*")
       .eq("condominium_id", id)
       .eq("entity_type", "condominium")
-      .single();
+      .single() as { data: FeaturesData | null; error: unknown };
 
     const { data: media } = await supabaseAgent
       .from("media_item")
       .select("*")
       .eq("entity_type", "condominium")
       .eq("condominium_id", id)
-      .order("is_primary", { ascending: false });
+      .order("is_primary", { ascending: false }) as { data: MediaItem[] | null; error: unknown };
 
     const condoResponse = {
       ...condominium,
       ...(location || {}),
       ...(features || {}),
       media: media || [],
-      image: media?.find(m => m.is_primary)?.url || "/placeholder-property.jpg",
+      image: media?.find((m: MediaItem) => m.is_primary)?.url || "/placeholder-property.jpg",
     } as const;
 
     // Primeiro, buscar os listing_ids dos apartamentos deste condomínio
@@ -125,7 +147,7 @@ export async function GET(
       .from("listing")
       .select("listing_id")
       .eq("condominium_id", id)
-      .eq("agency_id", condominium.agency_id);
+      .eq("agency_id", condominium.agency_id) as { data: ListingIdData[] | null; error: unknown };
 
     if (apartmentIdsError) {
       console.error("Error fetching apartment listing IDs:", apartmentIdsError);
@@ -133,7 +155,7 @@ export async function GET(
 
     const apartments: ApartmentData[] = [];
     if (apartmentListingIds && apartmentListingIds.length > 0) {
-      const listingIds = apartmentListingIds.map(l => l.listing_id);
+      const listingIds = apartmentListingIds.map((l: ListingIdData) => l.listing_id);
 
       // Agora buscar os dados otimizados usando a listing_search
       const { data: apartmentListings, error: apartmentError } = await supabaseAgent
@@ -161,7 +183,7 @@ export async function GET(
         `)
         .in("listing_id", listingIds)
         .not('ad_type', 'is', null)
-        .not('ad_type', 'eq', 'paused');
+        .not('ad_type', 'eq', 'paused') as { data: ListingSearchItem[] | null; error: unknown };
 
       if (apartmentError) {
         console.error("Error fetching apartment listings:", apartmentError);
@@ -180,7 +202,7 @@ export async function GET(
               .from('media_item')
               .select('id, url, caption, is_primary, order')
               .eq('listing_id', item.listing_id)
-              .order('order', { ascending: true });
+              .order('order', { ascending: true }) as { data: MediaItem[] | null; error: unknown };
 
             if (mediaError) {
               console.error(`Media error for listing ${item.listing_id}:`, mediaError);
