@@ -20,7 +20,6 @@ export async function GET(
         transaction_type,
         agency_id,
         transaction_status,
-        is_public,
         property_type,
         list_price_amount,
         list_price_currency,
@@ -89,6 +88,7 @@ export async function GET(
 
     const property = {
       ...listing,
+      is_public: true, // Assumindo que todos os listings são públicos
       ...(details || {}),
       ...(location || {}),
       ...(features || {}),

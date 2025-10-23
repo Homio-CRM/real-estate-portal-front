@@ -86,7 +86,17 @@ export default function ListingDetailPage() {
         } catch {}
       }
 
-      if (data.neighborhood) {
+      console.log("=== SIMILAR PROPERTIES DEBUG ===");
+      console.log("Property data:", {
+        listing_id: data.listing_id,
+        city_id: data.city_id,
+        neighborhood: data.neighborhood,
+        property_type: data.property_type,
+        transaction_type: data.transaction_type
+      });
+
+      if (data.neighborhood && data.city_id) {
+        console.log("Searching by neighborhood:", data.neighborhood);
         try {
           const byNeighborhood = await fetchListings({
             cityId: data.city_id,
@@ -97,24 +107,36 @@ export default function ListingDetailPage() {
             offset: 0,
           });
           const filtered = byNeighborhood.filter((p: PropertyCardType) => p.listing_id !== data.listing_id).slice(0, 3);
+          console.log("Found by neighborhood:", filtered.length, "properties");
           if (filtered.length > 0) {
             setSimilarProperties(filtered);
             return;
           }
-        } catch {}
+        } catch (error) {
+          console.error("Error fetching by neighborhood:", error);
+        }
       }
 
-      try {
-        const byCity = await fetchListings({
-          cityId: data.city_id,
-          transactionType: txType,
-          tipo: data.property_type === "apartment" ? "Apartamento" : "Casa",
-          limit: 6,
-          offset: 0,
-        });
-        const filtered = byCity.filter((p: PropertyCardType) => p.listing_id !== data.listing_id).slice(0, 3);
-        setSimilarProperties(filtered);
-      } catch {
+      if (data.city_id) {
+        console.log("Searching by city:", data.city_id);
+        try {
+          const byCity = await fetchListings({
+            cityId: data.city_id,
+            transactionType: txType,
+            tipo: data.property_type === "apartment" ? "Apartamento" : "Casa",
+            limit: 6,
+            offset: 0,
+          });
+          const filtered = byCity.filter((p: PropertyCardType) => p.listing_id !== data.listing_id).slice(0, 3);
+          console.log("Found by city:", filtered.length, "properties");
+          setSimilarProperties(filtered);
+        } catch (error) {
+          console.error("Error fetching by city:", error);
+          setSimilarProperties([]);
+        }
+      } else {
+        console.log("No city_id available for similar properties");
+        console.log("Available data keys:", Object.keys(data));
         setSimilarProperties([]);
       }
     }
@@ -488,11 +510,11 @@ export default function ListingDetailPage() {
              </div>
            </div>
            
-           {similarProperties.length > 0 && (
-             <div className="mt-12">
-               <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                 Imóveis Similares
-               </h2>
+           <div className="mt-12">
+             <h2 className="text-2xl font-bold text-gray-900 mb-6">
+               Imóveis Similares
+             </h2>
+             {similarProperties.length > 0 ? (
                <div className="space-y-4">
                  {similarProperties.map((similarProperty) => (
                    <HorizontalPropertyCard 
@@ -501,8 +523,15 @@ export default function ListingDetailPage() {
                    />
                  ))}
                </div>
-             </div>
-           )}
+             ) : (
+               <div className="text-center py-8 text-gray-500">
+                 <p>Não há imóveis similares disponíveis no momento.</p>
+                 <p className="text-sm mt-2">
+                   Informações de localização podem estar incompletas.
+                 </p>
+               </div>
+             )}
+           </div>
          </div>
        </div>
      </div>

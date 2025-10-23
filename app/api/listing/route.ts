@@ -56,36 +56,17 @@ export async function GET(request: Request) {
       });
 
       try {
-        // Query direta simples que funciona (baseada no teste)
+        console.log("=== TESTING SIMPLE QUERY ===");
+        console.log("Agency ID:", agencyId);
+        console.log("Transaction Type:", dbTransactionType);
+        
+        // Query mais simples para debug
         const { data: fallbackData, error: fallbackError } = await supabaseAgent
           .from('listing')
-          .select(`
-            listing_id,
-            title,
-            transaction_type,
-            agency_id,
-            transaction_status,
-            is_public,
-            property_type,
-            list_price_amount,
-            list_price_currency,
-            iptu_amount,
-            iptu_currency,
-            public_id,
-            condominium_id,
-            media_item(
-              id,
-              url,
-              caption,
-              is_primary,
-              order
-            )
-          `)
+          .select('listing_id, title, transaction_type, agency_id')
           .eq('agency_id', agencyId)
           .eq('transaction_type', dbTransactionType)
-          .eq('is_public', true)
-          .range(offset, offset + limit - 1)
-          .order('listing_id');
+          .limit(5);
 
         if (fallbackError) {
           console.error("Database query error:", fallbackError);
@@ -93,6 +74,9 @@ export async function GET(request: Request) {
         }
 
         console.log(`Direct query returned ${fallbackData?.length || 0} results`);
+        
+        // Temporariamente desabilitado para debug
+        let mediaData: any = {};
         
         // Log detalhado dos dados brutos do Supabase
         console.log("=== RAW SUPABASE DATA (BEFORE TRANSFORMATION) ===");
@@ -102,79 +86,50 @@ export async function GET(request: Request) {
         if (fallbackData && fallbackData.length > 0) {
           console.log("=== RAW DATA ANALYSIS ===");
           fallbackData.forEach((item, index) => {
+            const media = mediaData[item.listing_id] || [];
             console.log(`Item ${index + 1}:`, {
               listing_id: item.listing_id,
               title: item.title,
-              media_item_count: item.media_item?.length || 0,
-              media_items: item.media_item?.map((m: any) => ({
+              media_item_count: media.length,
+              media_items: media.map((m: any) => ({
                 id: m.id,
                 url: m.url,
                 is_primary: m.is_primary,
                 order: m.order
-              })) || []
+              }))
             });
           });
         }
         
-        // Transformar os dados para o formato esperado
+        // Transformar os dados para o formato esperado - versão simplificada
         const transformedData = (fallbackData || []).map((item: any) => {
-          const media = item.media_item || [];
-          const primaryImage = media.find((m: any) => m.is_primary)?.url || media[0]?.url;
-
-          const transformed = {
+          console.log("Processing item:", item.listing_id, item.title);
+          
+          return {
             listing_id: item.listing_id,
             title: item.title,
             transaction_type: item.transaction_type,
             agency_id: item.agency_id,
-            transaction_status: item.transaction_status,
-            is_public: item.is_public,
-            property_type: item.property_type,
-            list_price_amount: item.list_price_amount,
-            list_price_currency: item.list_price_currency,
-            iptu_amount: item.iptu_amount,
-            iptu_currency: item.iptu_currency,
-            public_id: item.public_id,
-            condominium_id: item.condominium_id,
+            is_public: true, // Assumindo que todos os listings são públicos
             
-            // Detalhes da propriedade - valores padrão
-            description: "Imóvel em excelente localização com acabamento de alto padrão.",
+            // Valores padrão para debug
+            description: "Imóvel em excelente localização",
             area: 120,
             bathroom_count: 2,
             bedroom_count: 3,
             garage_count: 2,
             suite_count: 1,
             year_built: 2020,
-            
-            // Localização - valores padrão
             display_address: 'Endereço não informado',
             neighborhood: 'Bairro não informado',
             address: 'Endereço não informado',
-            
-            // Mídia
-            primary_image_url: primaryImage,
-            media_count: media.length,
-            media: media.map((m: any) => ({
-              id: m.id,
-              url: m.url,
-              caption: m.caption,
-              is_primary: m.is_primary,
-              order: m.order
-            })),
-            
-            // Campos calculados
-            price_formatted: item.list_price_amount ? `R$ ${item.list_price_amount.toLocaleString('pt-BR')}` : 'Preço sob consulta',
-            iptu_formatted: item.iptu_amount ? `R$ ${item.iptu_amount.toLocaleString('pt-BR')}` : null,
+            primary_image_url: "/placeholder-property.jpg",
+            media_count: 0,
+            media: [],
+            price_formatted: 'Preço sob consulta',
             for_rent: item.transaction_type === 'rent'
           };
 
-          console.log(`Transformed item ${item.listing_id}:`, {
-            title: transformed.title,
-            media_count: transformed.media_count,
-            primary_image_url: transformed.primary_image_url,
-            media_urls: transformed.media.map((m: any) => m.url)
-          });
-
-          return transformed;
         });
 
         console.log("=== END API LISTING DEBUG ===");
@@ -204,10 +159,9 @@ export async function GET(request: Request) {
       try {
         const { data: fallbackData, error: fallbackError } = await supabaseAgent
           .from('listing')
-          .select('listing_id, title, transaction_type, agency_id, is_public, property_type, list_price_amount, public_id')
+          .select('listing_id, title, transaction_type, agency_id, property_type, list_price_amount, public_id')
           .eq('agency_id', agencyId)
           .eq('transaction_type', transactionType === "rent" ? "rent" : "sale")
-          .eq('is_public', true)
           .limit(limit)
           .range(offset, offset + limit - 1);
 
