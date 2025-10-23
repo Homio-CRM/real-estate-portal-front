@@ -27,7 +27,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import Header from "../../../components/Header";
-import LoadingModal from "../../../components/LoadingModal";
+import ListingDetailSkeleton from "../../../components/ListingDetailSkeleton";
 import { fetchListingById, fetchListings } from "../../../lib/fetchListings";
 import { PropertyCard as PropertyCardType } from "../../../types/listings";
 import HorizontalPropertyCard from "../../../components/HorizontalPropertyCard";
@@ -144,7 +144,7 @@ export default function ListingDetailPage() {
   }, [params.id]);
 
   if (loading) {
-    return <LoadingModal />;
+    return <ListingDetailSkeleton />;
   }
 
   if (!property) {
