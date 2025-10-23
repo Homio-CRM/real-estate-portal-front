@@ -10,6 +10,8 @@ import {
   Home, 
   MapPin, 
   Phone, 
+  Mail, 
+  User,
   Building,
   Dumbbell,
   Waves,
@@ -25,15 +27,12 @@ import {
   ChevronRight
 } from "lucide-react";
 import Header from "../../../components/Header";
-import ListingDetailSkeleton from "../../../components/ListingDetailSkeleton";
+import LoadingModal from "../../../components/LoadingModal";
 import { fetchListingById, fetchListings } from "../../../lib/fetchListings";
-import { fetchCondominiumById } from "../../../lib/fetchCondominiums";
 import { PropertyCard as PropertyCardType } from "../../../types/listings";
 import HorizontalPropertyCard from "../../../components/HorizontalPropertyCard";
-import Footer from "../../../components/Footer";
+import ContactForm from "../../../components/ContactForm";
 import { translatePropertyType } from "../../../lib/propertyTypes";
-import { ImageGallery } from "../../../components/ImageGallery";
-import Image from "next/image";
 
 function getAmenityIcon(amenity: string) {
   const icons: { [key: string]: React.ComponentType<{ size?: number; className?: string }> } = {
@@ -58,108 +57,86 @@ export default function ListingDetailPage() {
   const [loading, setLoading] = useState(true);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [condominiumInfo, setCondominiumInfo] = useState<{ id: string; name?: string; min_price?: number; max_price?: number; min_area?: number; max_area?: number } | null>(null);
-  const [showGallery, setShowGallery] = useState(false);
-  const [agencyPhone, setAgencyPhone] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchProperty() {
       if (!params.id) return;
-      
-      // Buscar telefone da agência
-      try {
-        const phoneResponse = await fetch('/api/agency/phone');
-        if (phoneResponse.ok) {
-          const phoneData = await phoneResponse.json();
-          setAgencyPhone(phoneData.phone);
-        }
-      } catch (error) {
-        console.error('Error fetching agency phone:', error);
-      }
-      
       const data = await fetchListingById(params.id as string);
       setProperty(data);
       setLoading(false);
 
       if (!data) return;
 
-      // Fetch condominium information if property is an apartment with condominium_id
+      const txType = data.transaction_type === "rental" ? "rent" : "sale";
+
       if (data.property_type === "apartment" && data.condominium_id) {
         try {
-          const condominiumData = await fetchCondominiumById(data.condominium_id);
-          if (condominiumData) {
-            setCondominiumInfo({
-              id: data.condominium_id,
-              name: condominiumData.name,
-              min_price: condominiumData.min_price,
-              max_price: condominiumData.max_price,
-              min_area: condominiumData.min_area,
-              max_area: condominiumData.max_area
-            });
+          const res = await fetch(`/api/condominium/${data.condominium_id}`);
+          if (res.ok) {
+            const condo = await res.json();
+            setCondominiumInfo({ id: condo.id || data.condominium_id, name: condo.name, min_price: condo.min_price, max_price: condo.max_price, min_area: condo.min_area, max_area: condo.max_area });
+            const inSameCondo: PropertyCardType[] = (Array.isArray(condo.apartments) ? condo.apartments : [])
+              .filter((p: PropertyCardType) => p.listing_id !== data.listing_id)
+              .slice(0, 3);
+            if (inSameCondo.length > 0) {
+              setSimilarProperties(inSameCondo);
+              return;
+            }
+          }
+        } catch {}
+      }
+
+      console.log("=== SIMILAR PROPERTIES DEBUG ===");
+      console.log("Property data:", {
+        listing_id: data.listing_id,
+        city_id: data.city_id,
+        neighborhood: data.neighborhood,
+        property_type: data.property_type,
+        transaction_type: data.transaction_type
+      });
+
+      if (data.neighborhood && data.city_id) {
+        console.log("Searching by neighborhood:", data.neighborhood);
+        try {
+          const byNeighborhood = await fetchListings({
+            cityId: data.city_id,
+            transactionType: txType,
+            tipo: data.property_type === "apartment" ? "Apartamento" : "Casa",
+            bairro: data.neighborhood,
+            limit: 6,
+            offset: 0,
+          });
+          const filtered = byNeighborhood.filter((p: PropertyCardType) => p.listing_id !== data.listing_id).slice(0, 3);
+          console.log("Found by neighborhood:", filtered.length, "properties");
+          if (filtered.length > 0) {
+            setSimilarProperties(filtered);
+            return;
           }
         } catch (error) {
-          console.error('Error fetching condominium info:', error);
+          console.error("Error fetching by neighborhood:", error);
         }
       }
 
-      const txType = data.transaction_type === "rental" ? "rent" : "sale";
-
-      // Nova lógica de imóveis similares
-      try {
-        const currentPrice = data.list_price_amount || 0;
-        const priceRange = data.transaction_type === "rental" ? 3000 : 250000;
-        const minPrice = Math.max(0, currentPrice - priceRange);
-        const maxPrice = currentPrice + priceRange;
-
-        // Buscar todos os imóveis que atendem aos critérios básicos
-        const allSimilar = await fetchListings({
-          cityId: data.city_id,
-          transactionType: txType,
-          tipo: data.property_type === "apartment" ? "Apartamento" : "Casa",
-          limit: 50, // Buscar mais para ter opções de ordenação
-          offset: 0,
-        });
-
-        // Filtrar por critérios obrigatórios
-        const filtered = allSimilar.filter((p: PropertyCardType) => {
-          if (p.listing_id === data.listing_id) return false;
-          if (p.bedroom_count !== data.bedroom_count) return false;
-          if (!p.list_price_amount) return false;
-          if (p.list_price_amount < minPrice || p.list_price_amount > maxPrice) return false;
-          return true;
-        });
-
-        // Ordenar por proximidade: bairro → cidade → estado
-        const sorted = filtered.sort((a: PropertyCardType, b: PropertyCardType) => {
-          // Prioridade 1: Mesmo bairro
-          const aSameNeighborhood = a.neighborhood === data.neighborhood ? 1 : 0;
-          const bSameNeighborhood = b.neighborhood === data.neighborhood ? 1 : 0;
-          if (aSameNeighborhood !== bSameNeighborhood) {
-            return bSameNeighborhood - aSameNeighborhood;
-          }
-
-          // Prioridade 2: Mesma cidade
-          const aSameCity = a.city_id === data.city_id ? 1 : 0;
-          const bSameCity = b.city_id === data.city_id ? 1 : 0;
-          if (aSameCity !== bSameCity) {
-            return bSameCity - aSameCity;
-          }
-
-          // Prioridade 3: Mesmo estado
-          const aSameState = a.state_id === data.state_id ? 1 : 0;
-          const bSameState = b.state_id === data.state_id ? 1 : 0;
-          if (aSameState !== bSameState) {
-            return bSameState - aSameState;
-          }
-
-          // Se tudo igual, ordenar por preço (mais próximo primeiro)
-          const aPriceDiff = Math.abs((a.list_price_amount || 0) - currentPrice);
-          const bPriceDiff = Math.abs((b.list_price_amount || 0) - currentPrice);
-          return aPriceDiff - bPriceDiff;
-        });
-
-        // Pegar os 3 primeiros
-        setSimilarProperties(sorted.slice(0, 3));
-      } catch {
+      if (data.city_id) {
+        console.log("Searching by city:", data.city_id);
+        try {
+          const byCity = await fetchListings({
+            cityId: data.city_id,
+            transactionType: txType,
+            tipo: data.property_type === "apartment" ? "Apartamento" : "Casa",
+            limit: 6,
+            offset: 0,
+          });
+          const filtered = byCity.filter((p: PropertyCardType) => p.listing_id !== data.listing_id).slice(0, 3);
+          console.log("Found by city:", filtered.length, "properties");
+          setSimilarProperties(filtered);
+        } catch (error) {
+          console.error("Error fetching by city:", error);
+          setSimilarProperties([]);
+        }
+      } else {
+        console.log("No city_id available for similar properties");
+        console.log("Available data keys:", Object.keys(data));
         setSimilarProperties([]);
       }
     }
@@ -167,12 +144,7 @@ export default function ListingDetailPage() {
   }, [params.id]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <ListingDetailSkeleton />
-      </div>
-    );
+    return <LoadingModal />;
   }
 
   if (!property) {
@@ -213,22 +185,15 @@ export default function ListingDetailPage() {
   const breadcrumbs = [
     property.forRent ? "Aluguel" : "Venda",
     "ES",
-    `${translatePropertyType(property.property_type || "")} ${property.forRent ? "à aluguel" : "à venda"}`,
+    `${translatePropertyType(property.property_type)} ${property.forRent ? "à aluguel" : "à venda"}`,
     property.neighborhood || "Vitória",
     property.address || "Endereço não informado"
   ];
 
-  const generateWhatsAppLink = () => {
-    if (!agencyPhone) return '#';
-    const message = `Olá! Tenho interesse no imóvel: ${property.title}. Poderia me passar mais informações?`;
-    const cleanPhone = agencyPhone.replace(/\D/g, '');
-    return `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`;
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="pt-24 pb-28 md:pb-0">
+      <div className="pt-24">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <button
             onClick={() => router.back()}
@@ -241,13 +206,11 @@ export default function ListingDetailPage() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             {property.media && property.media.length > 0 ? (
               <div>
-                <div className="relative h-64 sm:h-80 md:h-96 bg-white flex items-center justify-center">
-                  <Image
-                    src={property.media[currentMediaIndex]?.url || property.image || "/placeholder-property.jpg"}
+                <div className="relative h-96 bg-white flex items-center justify-center">
+                  <img
+                    src={property.media[currentMediaIndex]?.url || property.image}
                     alt={property.title}
-                    fill
-                    className="object-cover bg-white cursor-pointer"
-                    onClick={() => setShowGallery(true)}
+                    className="w-full h-full object-contain bg-white"
                   />
                   {property.media.length > 1 && (
                     <>
@@ -276,11 +239,11 @@ export default function ListingDetailPage() {
                     {property.media.map((m, idx) => (
                       <button
                         key={m.id || m.url + idx}
-                        className={`relative w-24 h-16 rounded overflow-hidden border ${idx === currentMediaIndex ? "border-secondary" : "border-gray-200"}`}
+                        className={`relative w-24 h-16 rounded overflow-hidden border ${idx === currentMediaIndex ? "border-purple-600" : "border-gray-200"}`}
                         onClick={() => setCurrentMediaIndex(idx)}
                         aria-label={`Ver imagem ${idx + 1}`}
                       >
-                        <Image src={m.url} alt={property.title} width={96} height={64} className="w-full h-full object-contain bg-white" />
+                        <img src={m.url} alt={property.title} className="w-full h-full object-contain bg-white" />
                       </button>
                     ))}
                   </div>
@@ -297,14 +260,14 @@ export default function ListingDetailPage() {
             )}
 
             <div className="p-6">
-              <div className="flex gap-3 mb-4 flex-wrap">
-                <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors w-full sm:w-auto justify-center" onClick={() => setShowGallery(true)}>
+              <div className="flex gap-3 mb-4">
+                <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
                   <Camera size={16} />
                   {property.media?.length || 0} fotos
                 </button>
                 {property.latitude && property.longitude && (
                   <button 
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors w-full sm:w-auto justify-center"
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                     onClick={() => window.open(`https://www.google.com/maps?q=${property.latitude},${property.longitude}`, '_blank')}
                   >
                     <MapPin size={16} />
@@ -317,16 +280,16 @@ export default function ListingDetailPage() {
                 {breadcrumbs.join(" / ")}
               </div>
 
-              <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-4 mb-6">
-                <span className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm font-medium">
+              <div className="flex items-start gap-4 mb-6">
+                <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium">
                   {property.forRent ? "Aluguel" : "Venda"}
                 </span>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{property.title}</h1>
+                <h1 className="text-3xl font-bold text-gray-900">{property.title}</h1>
               </div>
 
               {property.property_type === "apartment" && property.condominium_id && (
                 <div className="flex items-center gap-2 mb-6 text-gray-700">
-                  <Building size={18} className="text-secondary" />
+                  <Building size={18} className="text-purple-600" />
                   <span>Condomínio: </span>
                   <a href={`/condominiums/${property.condominium_id}`} className="text-primary hover:underline">
                     {condominiumInfo?.name || "Ver condomínio"}
@@ -334,78 +297,67 @@ export default function ListingDetailPage() {
                 </div>
               )}
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6">
-                <div className="text-2xl sm:text-3xl font-bold text-green-600">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="text-2xl font-bold text-green-600">
                   {property.price}
                 </div>
-                {agencyPhone && (
-                  <a 
-                    href={generateWhatsAppLink()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors w-full sm:w-auto justify-center"
-                  >
-                    <Phone size={20} />
-                    WhatsApp
-                  </a>
-                )}
+                <button 
+                  className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                  onClick={() => {
+                    const phone = property.owner_phone || property.agent_phone;
+                    if (phone) {
+                      window.open(`tel:${phone}`, '_self');
+                    }
+                  }}
+                >
+                  <Phone size={20} />
+                  Contatar
+                </button>
               </div>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                  <div className="lg:col-span-2 space-y-6">
                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                        <div className="flex items-center gap-3 text-gray-700">
-                         <span className="inline-flex w-7 h-7 items-center justify-center text-secondary shrink-0">
-                           <Ruler size={22} />
-                         </span>
+                         <Ruler size={24} className="text-purple-600" />
                          <div>
-                           <div className="font-bold text-base md:text-lg">{property.area || 0} m²</div>
-                           <div className="text-xs md:text-sm text-gray-500">Área</div>
+                           <div className="font-bold text-lg">{property.area || 0} m²</div>
+                           <div className="text-sm text-gray-500">Área</div>
                          </div>
                        </div>
                        <div className="flex items-center gap-3 text-gray-700">
-                         <span className="inline-flex w-7 h-7 items-center justify-center text-secondary shrink-0">
-                           <Bed size={22} />
-                         </span>
+                         <Bed size={24} className="text-purple-600" />
                          <div>
-                           <div className="font-bold text-base md:text-lg">{property.bedroom_count || 0} quartos</div>
-                           <div className="text-xs md:text-sm text-gray-500">Dormitórios</div>
+                           <div className="font-bold text-lg">{property.bedroom_count || 0} quartos</div>
+                           <div className="text-sm text-gray-500">Dormitórios</div>
                          </div>
                        </div>
                        <div className="flex items-center gap-3 text-gray-700">
-                         <span className="inline-flex w-7 h-7 items-center justify-center text-secondary shrink-0">
-                           <Bath size={22} />
-                         </span>
+                         <Bath size={24} className="text-purple-600" />
                          <div>
-                           <div className="font-bold text-base md:text-lg">{property.bathroom_count || 0} banheiros</div>
-                           <div className="text-xs md:text-sm text-gray-500">Banheiros</div>
+                           <div className="font-bold text-lg">{property.bathroom_count || 0} banheiros</div>
+                           <div className="text-sm text-gray-500">Banheiros</div>
                          </div>
                        </div>
                        <div className="flex items-center gap-3 text-gray-700">
-                         <span className="inline-flex w-7 h-7 items-center justify-center text-secondary shrink-0">
-                           <Car size={22} />
-                         </span>
+                         <Car size={24} className="text-purple-600" />
                          <div>
-                           <div className="font-bold text-base md:text-lg">{property.garage_count || 0} vagas</div>
-                           <div className="text-xs md:text-sm text-gray-500">Garagem</div>
+                           <div className="font-bold text-lg">{property.garage_count || 0} vagas</div>
+                           <div className="text-sm text-gray-500">Garagem</div>
                          </div>
                        </div>
                        <div className="flex items-center gap-3 text-gray-700">
-                         <span className="inline-flex w-7 h-7 items-center justify-center text-secondary shrink-0">
-                           <Home size={22} />
-                         </span>
+                         <Home size={24} className="text-purple-600" />
                          <div>
-                           <div className="font-bold text-base md:text-lg">{property.suite_count || 0} suítes</div>
-                           <div className="text-xs md:text-sm text-gray-500">Suítes</div>
+                           <div className="font-bold text-lg">{property.suite_count || 0} suítes</div>
+                           <div className="text-sm text-gray-500">Suítes</div>
                          </div>
                        </div>
                        <div className="flex items-center gap-3 text-gray-700">
-                         <span className="inline-flex w-7 h-7 items-center justify-center text-secondary shrink-0">
-                           <Calendar size={22} />
-                         </span>
+                         <Calendar size={24} className="text-purple-600" />
                          <div>
-                           <div className="font-bold text-base md:text-lg">{property.year_built || "N/A"}</div>
-                           <div className="text-xs md:text-sm text-gray-500">Ano</div>
+                           <div className="font-bold text-lg">{property.year_built || "N/A"}</div>
+                           <div className="text-sm text-gray-500">Ano</div>
                          </div>
                        </div>
                      </div>
@@ -414,7 +366,7 @@ export default function ListingDetailPage() {
                                      {amenities.length > 0 && (
                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                        <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
-                         <Building size={20} className="text-secondary" />
+                         <Building size={20} className="text-purple-600" />
                          Características
                        </h3>
                        <div className="grid grid-cols-2 gap-3">
@@ -422,7 +374,7 @@ export default function ListingDetailPage() {
                            const IconComponent = getAmenityIcon(amenity.key);
                            return (
                              <div key={amenity.key} className="flex items-center gap-2 text-gray-700">
-                               <IconComponent size={20} className="text-secondary" />
+                               <IconComponent size={16} className="text-purple-600" />
                                <span>{amenity.label}</span>
                              </div>
                            );
@@ -438,12 +390,29 @@ export default function ListingDetailPage() {
                      </div>
                    )}
 
+                   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                     <button 
+                       className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors text-lg"
+                       onClick={() => {
+                         const phone = property.owner_phone || property.agent_phone;
+                         if (phone) {
+                           window.open(`tel:${phone}`, '_self');
+                         }
+                       }}
+                     >
+                       <Phone size={24} />
+                       Contatar Agora
+                     </button>
+                     <p className="text-center text-sm text-gray-600 mt-2">
+                       Entre em contato para mais informações
+                     </p>
+                   </div>
                 </div>
 
                                  <div className="space-y-6">
                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                      <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
-                       <MapPin size={20} className="text-secondary" />
+                       <MapPin size={20} className="text-purple-600" />
                        Localização
                      </h3>
                      <div className="space-y-2 text-gray-700">
@@ -454,65 +423,98 @@ export default function ListingDetailPage() {
 
                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                      <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
-                       <span className="text-green-600">$</span>
-                       Resumo Financeiro
+                       <Phone size={20} className="text-purple-600" />
+                       Contatos
                      </h3>
-                     <div className="space-y-2 text-gray-700">
-                       <div>
-                         <span className="font-medium">
-                           {property.forRent ? "Aluguel mensal:" : "Valor do imóvel:"}
-                         </span> {property.price}
-                       </div>
-                       {property.property_administration_fee_amount && (
+                     <div className="space-y-4">
+                       {property.owner_name && (
                          <div>
-                           <span className="font-medium">Condomínio:</span> R$ {property.property_administration_fee_amount.toLocaleString("pt-BR")}
+                           <h4 className="font-medium text-gray-900 mb-2">Proprietário</h4>
+                           <div className="space-y-1 text-sm text-gray-700">
+                             <div className="flex items-center gap-2">
+                               <User size={14} />
+                               <span>{property.owner_name}</span>
+                             </div>
+                             {property.owner_phone && (
+                               <div className="flex items-center gap-2">
+                                 <Phone size={14} />
+                                 <span>{property.owner_phone}</span>
+                               </div>
+                             )}
+                             {property.owner_email && (
+                               <div className="flex items-center gap-2">
+                                 <Mail size={14} />
+                                 <span>{property.owner_email}</span>
+                               </div>
+                             )}
+                           </div>
                          </div>
                        )}
-                       {property.iptu_amount && (
+
+                       {property.agent_name && (
                          <div>
-                           <span className="font-medium">IPTU:</span> R$ {property.iptu_amount.toLocaleString("pt-BR")}
+                           <h4 className="font-medium text-gray-900 mb-2">Corretor</h4>
+                           <div className="space-y-1 text-sm text-gray-700">
+                             <div className="flex items-center gap-2">
+                               <User size={14} />
+                               <span>{property.agent_name}</span>
+                             </div>
+                             {property.agent_phone && (
+                               <div className="flex items-center gap-2">
+                                 <Phone size={14} />
+                                 <span>{property.agent_phone}</span>
+                               </div>
+                             )}
+                             {property.agent_email && (
+                               <div className="flex items-center gap-2">
+                                 <Mail size={14} />
+                                 <span>{property.agent_email}</span>
+                               </div>
+                             )}
+                           </div>
                          </div>
                        )}
                      </div>
                    </div>
 
-                   {agencyPhone && (
-                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                       <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
-                         <Phone size={20} className="text-secondary" />
-                         Contato
-                       </h3>
-                       <div className="space-y-4">
-                         <p className="text-gray-600">
-                           Entre em contato via WhatsApp para mais informações sobre este imóvel.
-                         </p>
-                         <div className="flex items-center gap-2 text-gray-700">
-                           <Phone size={16} />
-                           <span>{agencyPhone}</span>
-                         </div>
-                         <a 
-                           href={generateWhatsAppLink()}
-                           target="_blank"
-                           rel="noopener noreferrer"
-                           className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
-                         >
-                           <Phone size={16} />
-                           Falar no WhatsApp
-                         </a>
-                       </div>
-                     </div>
-                   )}
+                                       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                      <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
+                        <span className="text-green-600">$</span>
+                        Resumo Financeiro
+                      </h3>
+                      <div className="space-y-2 text-gray-700">
+                        <div>
+                          <span className="font-medium">
+                            {property.forRent ? "Aluguel mensal:" : "Valor do imóvel:"}
+                          </span> {property.price}
+                        </div>
+                        {property.property_administration_fee_amount && (
+                          <div>
+                            <span className="font-medium">Condomínio:</span> R$ {property.property_administration_fee_amount.toLocaleString("pt-BR")}
+                          </div>
+                        )}
+                        {property.iptu_amount && (
+                          <div>
+                            <span className="font-medium">IPTU:</span> R$ {property.iptu_amount.toLocaleString("pt-BR")}
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
+                    <ContactForm
+                      propertyId={property.public_id || property.listing_id || ""}
+                      propertyTitle={property.title}
+                    />
                                  </div>
                </div>
              </div>
            </div>
            
-           {similarProperties.length > 0 && (
-             <div className="mt-12">
-               <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                 Imóveis Similares
-               </h2>
+           <div className="mt-12">
+             <h2 className="text-2xl font-bold text-gray-900 mb-6">
+               Imóveis Similares
+             </h2>
+             {similarProperties.length > 0 ? (
                <div className="space-y-4">
                  {similarProperties.map((similarProperty) => (
                    <HorizontalPropertyCard 
@@ -521,38 +523,17 @@ export default function ListingDetailPage() {
                    />
                  ))}
                </div>
-             </div>
-           )}
+             ) : (
+               <div className="text-center py-8 text-gray-500">
+                 <p>Não há imóveis similares disponíveis no momento.</p>
+                 <p className="text-sm mt-2">
+                   Informações de localização podem estar incompletas.
+                 </p>
+               </div>
+             )}
+           </div>
          </div>
        </div>
-       
-             <Footer />
-      
-      {showGallery && property?.media && (
-        <ImageGallery
-          mediaItems={property.media.map(item => ({
-            id: item.id || '',
-            url: item.url,
-            caption: item.caption,
-            is_primary: item.is_primary
-          }))}
-          onClose={() => setShowGallery(false)}
-        />
-      )}
-
-      {property && agencyPhone && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white p-4 flex items-center justify-between gap-3">
-          <div className="text-lg font-semibold text-gray-900">{property.price}</div>
-          <a
-            href={generateWhatsAppLink()}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors text-center"
-          >
-            WhatsApp
-          </a>
-        </div>
-      )}
-    </div>
-  );
-} 
+     </div>
+   );
+ } 
