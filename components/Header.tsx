@@ -1,6 +1,14 @@
 import Link from 'next/link';
 
-export default function Header() {
+interface HeaderProps {
+  showLogo?: boolean;
+}
+
+export default function Header({ showLogo = true }: HeaderProps) {
+  if (!showLogo) {
+    return null;
+  }
+
   return (
     <header className="w-full absolute top-0 left-0 z-10 flex items-center h-24 px-8">
       <div className="flex items-center">

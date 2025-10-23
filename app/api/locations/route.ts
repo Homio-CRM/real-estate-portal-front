@@ -51,52 +51,60 @@ export async function GET(req: NextRequest) {
       .select("neighborhood, city_id")
       .not("neighborhood", "is", null)
       .not("neighborhood", "eq", "")
-      .ilike("neighborhood", `${query}%`)
-      .limit(50);
+      .not("city_id", "is", null)
+      .ilike("neighborhood", `%${query}%`)
+      .limit(20);
 
     if (neighborhoodsError) {
-      return NextResponse.json({ error: neighborhoodsError.message }, { status: 500 });
+      console.error("Neighborhoods query error:", neighborhoodsError);
+      // Continuar sem bairros se houver erro
     }
 
-    // Buscar os nomes das cidades dos bairros
-    const neighborhoodCityIds = [...new Set(neighborhoodData.map((n: { city_id: number }) => n.city_id))];
-    const { data: neighborhoodCities, error: neighborhoodCitiesError } = await supabaseAgent
-      .from("city")
-      .select("id, name")
-      .in("id", neighborhoodCityIds);
+    let neighborhoods: any[] = [];
 
-    if (neighborhoodCitiesError) {
-      return NextResponse.json({ error: neighborhoodCitiesError.message }, { status: 500 });
-    }
+    if (neighborhoodData && neighborhoodData.length > 0) {
+      // Buscar os nomes das cidades dos bairros
+      const neighborhoodCityIds = [...new Set(neighborhoodData.map((n: { city_id: number }) => n.city_id))];
+      const { data: neighborhoodCities, error: neighborhoodCitiesError } = await supabaseAgent
+        .from("city")
+        .select("id, name")
+        .in("id", neighborhoodCityIds);
 
-    // Processar bairros: remover duplicatas e normalizar formatação
-    const uniqueNeighborhoods = new Map<string, any>();
-    
-    neighborhoodData.forEach((location: { neighborhood: string; city_id: number }) => {
-      const key = `${location.neighborhood.toLowerCase()}-${location.city_id}`;
-      if (!uniqueNeighborhoods.has(key)) {
-        // Normalizar a formatação: primeira letra maiúscula, resto minúscula
-        const normalizedName = location.neighborhood
-          .toLowerCase()
-          .split(' ')
-          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ');
+      if (neighborhoodCitiesError) {
+        console.error("Neighborhood cities query error:", neighborhoodCitiesError);
+        // Continuar sem bairros se houver erro
+      } else if (neighborhoodCities) {
+        // Processar bairros: remover duplicatas e normalizar formatação
+        const uniqueNeighborhoods = new Map<string, any>();
         
-        const cityName = neighborhoodCities.find(city => city.id === location.city_id)?.name || '';
-        
-        uniqueNeighborhoods.set(key, {
-          id: uniqueNeighborhoods.size + 10000,
-          name: normalizedName,
-          type: 'neighborhood',
-          city_name: cityName,
-          city_id: location.city_id
+        neighborhoodData.forEach((location: { neighborhood: string; city_id: number }) => {
+          const key = `${location.neighborhood.toLowerCase()}-${location.city_id}`;
+          if (!uniqueNeighborhoods.has(key)) {
+            // Normalizar a formatação: primeira letra maiúscula, resto minúscula
+            const normalizedName = location.neighborhood
+              .toLowerCase()
+              .split(' ')
+              .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+            
+            const cityName = neighborhoodCities.find(city => city.id === location.city_id)?.name || '';
+            
+            uniqueNeighborhoods.set(key, {
+              id: uniqueNeighborhoods.size + 10000,
+              name: `${normalizedName}, ${cityName}`, // Mostrar bairro com cidade
+              type: 'neighborhood',
+              city_name: cityName,
+              city_id: location.city_id,
+              neighborhood_name: normalizedName // Nome do bairro sem a cidade
+            });
+          }
         });
-      }
-    });
 
-    const neighborhoods = Array.from(uniqueNeighborhoods.values())
-      .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
-      .slice(0, 10);
+        neighborhoods = Array.from(uniqueNeighborhoods.values())
+          .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+          .slice(0, 10);
+      }
+    }
 
     // Formatar cidades com tipo
     const formattedCities = cities.map(city => ({

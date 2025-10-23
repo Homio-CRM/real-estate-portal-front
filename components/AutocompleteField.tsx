@@ -251,7 +251,7 @@ export default function AutocompleteField({
                       className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-gray-900"
                       onMouseDown={() => handleSelect(item)}
                     >
-                      {item.name}, {item.city_name}
+                      {item.name}
                     </li>
                   ))}
                 </ul>

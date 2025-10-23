@@ -6,6 +6,7 @@ import Link from "next/link";
 import FeaturedCondominiumCard from "./FeaturedCondominiumCard";
 import { CondominiumCard } from "../types/listings";
 import { fetchFeaturedCondominiums } from "../lib/fetchFeaturedCondominiums";
+import CondominiumCardSkeleton from "./CondominiumCardSkeleton";
 
 interface FeaturedCondominiumsProps {
   cityId?: number;
@@ -44,13 +45,15 @@ export default function FeaturedCondominiums({ cityId }: FeaturedCondominiumsPro
     return (
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <div className="text-center">
+          <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Condomínios em Destaque - Venda</h2>
-            <p className="text-gray-600 mb-12">Descubra os lançamentos mais exclusivos da região</p>
+            <p className="text-gray-600">Descubra os lançamentos mais exclusivos da região</p>
           </div>
           
-          <div className="flex justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <CondominiumCardSkeleton key={index} />
+            ))}
           </div>
         </div>
       </section>

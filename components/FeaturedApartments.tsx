@@ -5,6 +5,7 @@ import { fetchListings } from "../lib/fetchListings";
 import { PropertyCard } from "../types/listings";
 import { Building, Home } from "lucide-react";
 import { formatCurrency } from "../lib/formatCurrency";
+import PropertyCardSkeleton from "./PropertyCardSkeleton";
 
 interface FeaturedPropertiesProps {
   cityId?: number;
@@ -65,10 +66,16 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
     return (
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
-                      <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-4 text-gray-600">Carregando imóveis em destaque...</p>
-            </div>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Apartamentos em Destaque</h2>
+            <p className="text-gray-600">Descubra os melhores apartamentos da região</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <PropertyCardSkeleton key={index} />
+            ))}
+          </div>
         </div>
       </section>
     );

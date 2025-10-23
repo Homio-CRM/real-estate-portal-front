@@ -2,7 +2,8 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, useMemo, Suspense } from "react";
 import Header from "../../components/Header";
-import LoadingModal from "../../components/LoadingModal";
+import PropertyCardSkeleton from "../../components/PropertyCardSkeleton";
+import BackToSearchButton from "../../components/BackToSearchButton";
 import { fetchListings } from "../../lib/fetchListings";
 import { fetchCondominiums } from "../../lib/fetchCondominiums";
 import HorizontalPropertyCard from "../../components/HorizontalPropertyCard";
@@ -324,10 +325,17 @@ function ListingsContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-      <div className="pt-24">
+      <Header showLogo={false} />
+      <div className="pt-8">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          {loading && <LoadingModal />}
+          <BackToSearchButton />
+          {loading && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <PropertyCardSkeleton key={index} />
+              ))}
+            </div>
+          )}
           
           {!loading && (
             <div className="flex gap-6">
@@ -393,7 +401,14 @@ function ListingsContent() {
 
 export default function Listings() {
   return (
-    <Suspense fallback={<LoadingModal />}>
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-pulse">
+          <div className="h-8 w-8 bg-primary rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando imóveis...</p>
+        </div>
+      </div>
+    </div>}>
       <ListingsContent />
     </Suspense>
   );

@@ -27,7 +27,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import Header from "../../../components/Header";
-import LoadingModal from "../../../components/LoadingModal";
+import ListingDetailSkeleton from "../../../components/ListingDetailSkeleton";
 import { fetchListingById, fetchListings } from "../../../lib/fetchListings";
 import { PropertyCard as PropertyCardType } from "../../../types/listings";
 import HorizontalPropertyCard from "../../../components/HorizontalPropertyCard";
@@ -125,14 +125,14 @@ export default function ListingDetailPage() {
   }, [params.id]);
 
   if (loading) {
-    return <LoadingModal />;
+    return <ListingDetailSkeleton />;
   }
 
   if (!property) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="pt-24">
+        <Header showLogo={false} />
+        <div className="pt-8">
           <div className="max-w-7xl mx-auto px-4 py-6">
             <div className="text-center">
               <h1 className="text-2xl font-bold text-gray-900 mb-4">
@@ -173,8 +173,8 @@ export default function ListingDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-      <div className="pt-24">
+      <Header showLogo={false} />
+      <div className="pt-4">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <button
             onClick={() => router.back()}
