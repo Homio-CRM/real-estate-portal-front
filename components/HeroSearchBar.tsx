@@ -81,13 +81,13 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4">
-      <div className="bg-white rounded-lg shadow-lg p-6">
+    <div className="w-full">
+      <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
         <div className="flex flex-wrap gap-1 mb-4">
           <button
             type="button"
             onClick={() => handleTransactionChange("comprar")}
-            className={`px-4 md:px-6 py-2 rounded-t-lg font-medium transition-colors text-sm md:text-base ${
+            className={`px-3 sm:px-4 md:px-6 py-2 rounded-t-lg font-medium transition-colors text-xs sm:text-sm md:text-base flex-1 sm:flex-none ${
               filters.operacao === "comprar"
                 ? "bg-primary text-primary-foreground"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -98,7 +98,7 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
           <button
             type="button"
             onClick={() => handleTransactionChange("alugar")}
-            className={`px-4 md:px-6 py-2 rounded-t-lg font-medium transition-colors text-sm md:text-base ${
+            className={`px-3 sm:px-4 md:px-6 py-2 rounded-t-lg font-medium transition-colors text-xs sm:text-sm md:text-base flex-1 sm:flex-none ${
               filters.operacao === "alugar"
                 ? "bg-primary text-primary-foreground"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -110,7 +110,7 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
           <button
             type="button"
             onClick={() => handleTransactionChange("lancamento")}
-            className={`px-4 md:px-6 py-2 rounded-t-lg font-medium transition-colors text-sm md:text-base ${
+            className={`px-3 sm:px-4 md:px-6 py-2 rounded-t-lg font-medium transition-colors text-xs sm:text-sm md:text-base flex-1 sm:flex-none ${
               filters.operacao === "lancamento"
                 ? "bg-primary text-primary-foreground"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -120,13 +120,13 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
           </button>
         </div>
         
-        <form onSubmit={handleSubmit} className="flex flex-col md:flex-row items-end gap-4">
-          <div className="w-48">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 sm:gap-4">
+          <div className="w-full sm:w-48">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Tipo de imóvel
             </label>
             <Select value={filters.tipo || "todos"} onValueChange={(value) => onFilterChange("tipo", value === "todos" ? "" : value)}>
-              <SelectTrigger>
+              <SelectTrigger className="text-xs sm:text-sm">
                 <SelectValue placeholder="Todos os imóveis" />
               </SelectTrigger>
               <SelectContent>
@@ -169,9 +169,9 @@ export default function HeroSearchBar({ filters, onFilterChange, onSearch }: Pro
             <Button
               type="submit"
               disabled={!isLocationValid}
-              className="w-full md:w-auto px-8"
+              className="w-full sm:w-auto px-6 sm:px-8 text-xs sm:text-sm"
             >
-              <Search className="mr-2 h-4 w-4" />
+              <Search className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
               Buscar
             </Button>
           </div>
