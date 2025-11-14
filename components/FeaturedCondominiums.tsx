@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import FeaturedCondominiumCard from "./FeaturedCondominiumCard";
 import { CondominiumCard } from "../types/listings";
@@ -10,46 +10,96 @@ import CondominiumCardSkeleton from "./CondominiumCardSkeleton";
 
 interface FeaturedCondominiumsProps {
   cityId?: number;
+  initialCondominiums?: CondominiumCard[];
+  shouldRevalidate?: boolean;
+  onDataLoaded?: (data: {
+    condominiums: CondominiumCard[];
+    cityId?: number;
+    timestamp: number;
+  }) => void;
 }
 
-export default function FeaturedCondominiums({ cityId }: FeaturedCondominiumsProps) {
-  const [condominiums, setCondominiums] = useState<CondominiumCard[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function FeaturedCondominiums({
+  cityId,
+  initialCondominiums,
+  shouldRevalidate,
+  onDataLoaded,
+}: FeaturedCondominiumsProps) {
+  const [condominiums, setCondominiums] = useState<CondominiumCard[]>(initialCondominiums ?? []);
+  const [loading, setLoading] = useState(!(initialCondominiums?.length));
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (initialCondominiums) {
+      setCondominiums(initialCondominiums);
+    }
+  }, [initialCondominiums]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const hasInitialData = Boolean(initialCondominiums?.length);
+    const needsFetch = shouldRevalidate || !hasInitialData;
+
+    if (!needsFetch) {
+      setLoading(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
     const loadFeaturedCondominiums = async () => {
-      try {
+      if (!hasInitialData) {
         setLoading(true);
+      }
+
+      try {
         setError(null);
-        
+
         const featured = await fetchFeaturedCondominiums({
           cityId,
           limit: 6,
-          offset: 0
+          offset: 0,
         });
-        
+
+        if (!isMounted) {
+          return;
+        }
+
         setCondominiums(featured);
+        onDataLoaded?.({
+          condominiums: featured,
+          cityId,
+          timestamp: Date.now(),
+        });
       } catch (err) {
+        if (!isMounted) {
+          return;
+        }
         console.error("Error loading featured condominiums:", err);
         setError("Erro ao carregar condomínios em destaque");
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     loadFeaturedCondominiums();
-  }, [cityId]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [cityId, shouldRevalidate, initialCondominiums, onDataLoaded]);
 
   if (loading) {
     return (
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Condomínios em Destaque - Venda</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Lançamentos em Destaque</h2>
             <p className="text-gray-600">Descubra os lançamentos mais exclusivos da região</p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, index) => (
               <CondominiumCardSkeleton key={index} />
@@ -60,48 +110,18 @@ export default function FeaturedCondominiums({ cityId }: FeaturedCondominiumsPro
     );
   }
 
-  if (error) {
-    return (
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Condomínios em Destaque - Venda</h2>
-            <p className="text-gray-600 mb-12">Descubra os lançamentos mais exclusivos da região</p>
-          </div>
-          
-          <div className="text-center py-12">
-            <p className="text-gray-500">{error}</p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (condominiums.length === 0) {
-    return (
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Condomínios em Destaque - Venda</h2>
-            <p className="text-gray-600 mb-12">Descubra os lançamentos mais exclusivos da região</p>
-          </div>
-          
-          <div className="text-center py-12">
-            <p className="text-gray-500">Nenhum lançamento disponível no momento</p>
-          </div>
-        </div>
-      </section>
-    );
+  if (error || condominiums.length === 0) {
+    return null;
   }
 
   return (
     <section className="py-16 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Condomínios em Destaque - Venda</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Lançamentos em Destaque - Venda</h2>
           <p className="text-gray-600 mb-8">Descubra os lançamentos mais exclusivos da região</p>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {condominiums.map((condominium) => (
             <FeaturedCondominiumCard
@@ -111,13 +131,13 @@ export default function FeaturedCondominiums({ cityId }: FeaturedCondominiumsPro
             />
           ))}
         </div>
-        
+
         <div className="text-center">
-          <Link 
-            href="/resultados?tipo=Condomínio&operacao=venda"
+          <Link
+            href="/launches?localizacao=3205309&operacao=lancamento"
             className="inline-flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-secondary transition-colors"
           >
-            Ver Todos os Condomínios
+            Ver Todos os Lançamentos
             <ArrowRight size={20} />
           </Link>
         </div>

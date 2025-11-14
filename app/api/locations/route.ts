@@ -1,8 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAgent } from "../../../lib/supabaseAgent";
+import type { Database } from "../../../types/database";
+
+type CityRow = Database["public"]["Tables"]["city"]["Row"];
+type EntityLocationRow = Database["public"]["Tables"]["entity_location"]["Row"];
+
+type CityResult = {
+  id: number;
+  name: string;
+  type: "city";
+  city_name: string;
+  city_id: number;
+};
+
+type NeighborhoodResult = {
+  id: number;
+  name: string;
+  type: "neighborhood";
+  city_name: string;
+  city_id: number;
+  neighborhood_name: string;
+};
 
 export async function GET(req: NextRequest) {
-  const agencyId = process.env.LOCATION_ID!;
   const { searchParams } = new URL(req.url);
   const query = searchParams.get("q");
   const locationId = searchParams.get("id");
@@ -60,11 +80,17 @@ export async function GET(req: NextRequest) {
       // Continuar sem bairros se houver erro
     }
 
-    let neighborhoods: any[] = [];
+    let neighborhoods: NeighborhoodResult[] = [];
 
     if (neighborhoodData && neighborhoodData.length > 0) {
-      // Buscar os nomes das cidades dos bairros
-      const neighborhoodCityIds = [...new Set(neighborhoodData.map((n: { city_id: number }) => n.city_id))];
+      const typedNeighborhoodData = neighborhoodData as Array<{ neighborhood: string | null; city_id: number | null }>;
+      const neighborhoodCityIds = [
+        ...new Set(
+          typedNeighborhoodData
+            .map((entry) => entry.city_id)
+            .filter((id): id is number => typeof id === "number")
+        ),
+      ];
       const { data: neighborhoodCities, error: neighborhoodCitiesError } = await supabaseAgent
         .from("city")
         .select("id, name")
@@ -75,27 +101,29 @@ export async function GET(req: NextRequest) {
         // Continuar sem bairros se houver erro
       } else if (neighborhoodCities) {
         // Processar bairros: remover duplicatas e normalizar formatação
-        const uniqueNeighborhoods = new Map<string, any>();
+        const uniqueNeighborhoods = new Map<string, NeighborhoodResult>();
         
-        neighborhoodData.forEach((location: { neighborhood: string; city_id: number }) => {
+        typedNeighborhoodData.forEach((location) => {
+          if (!location.neighborhood || typeof location.city_id !== "number") {
+            return;
+          }
           const key = `${location.neighborhood.toLowerCase()}-${location.city_id}`;
           if (!uniqueNeighborhoods.has(key)) {
-            // Normalizar a formatação: primeira letra maiúscula, resto minúscula
             const normalizedName = location.neighborhood
               .toLowerCase()
               .split(' ')
               .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
               .join(' ');
             
-            const cityName = neighborhoodCities.find(city => city.id === location.city_id)?.name || '';
+            const cityName = neighborhoodCities.find(city => city.id === location.city_id)?.name ?? "";
             
             uniqueNeighborhoods.set(key, {
               id: uniqueNeighborhoods.size + 10000,
-              name: `${normalizedName}, ${cityName}`, // Mostrar bairro com cidade
-              type: 'neighborhood',
+              name: `${normalizedName}, ${cityName}`,
+              type: "neighborhood",
               city_name: cityName,
               city_id: location.city_id,
-              neighborhood_name: normalizedName // Nome do bairro sem a cidade
+              neighborhood_name: normalizedName
             });
           }
         });
@@ -107,16 +135,17 @@ export async function GET(req: NextRequest) {
     }
 
     // Formatar cidades com tipo
-    const formattedCities = cities.map(city => ({
+    const typedCities = (cities ?? []) as Array<{ id: number; name: string }>;
+    const formattedCities: CityResult[] = typedCities.map((city) => ({
       id: city.id,
       name: city.name,
-      type: 'city',
+      type: "city",
       city_name: city.name,
       city_id: city.id
     }));
 
-    const result = {
-      neighborhoods: neighborhoods,
+    const result: { neighborhoods: NeighborhoodResult[]; cities: CityResult[] } = {
+      neighborhoods,
       cities: formattedCities
     };
 

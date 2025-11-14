@@ -14,7 +14,7 @@ if (!supabaseUrl || !anonKey) {
 const createSupabaseAgent = () => {
   try {
     const client = createClient(supabaseUrl, anonKey);
-    // console.log("Supabase client created successfully");
+
     return client;
   } catch (error) {
     console.error("Error creating Supabase client:", error);

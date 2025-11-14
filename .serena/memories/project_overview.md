@@ -1,0 +1,12 @@
+# Real Estate Portal Front
+- **Purpose**: Frontend for a real-estate portal that surfaces featured listings and condominium launches backed by Supabase data.
+- **Core stack**: Next.js 15 (App Router) with React 19, TypeScript 5, TailwindCSS 3, Supabase JS v2 for data access, Radix UI components, lucide-react icons.
+- **Key directories**:
+  - `app/`: Next.js route handlers (`app/api`) and application pages.
+  - `components/`: Reusable UI pieces such as featured property cards and skeletons.
+  - `lib/`: Data-fetch helpers (e.g., Supabase client factory, fetchers) and utilities.
+  - `supabase/`: SQL or Supabase function definitions and generated assets.
+  - `types/`: Shared TypeScript type definitions including Supabase generated types.
+  - `public/`: Static assets.
+- **Backend integration**: Supabase tables/views (e.g., `listing_search`, `condominium_search`, `launch_search`) accessed via API routes.
+- **Build tooling**: Next.js with Turbopack in dev, ESLint flat config, Tailwind for styling.

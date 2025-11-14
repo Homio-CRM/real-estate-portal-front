@@ -4,6 +4,7 @@ import { X, MapPin, Phone, Bed, Bath, Car, Ruler } from "lucide-react";
 import { PropertyCard } from "../types/listings";
 import { Location } from "../lib/locationUtils";
 import { propertyCache } from "../lib/propertyCache";
+import { buildListingsUrl } from "../lib/navigation";
 
 interface LocationBasedPopupProps {
   isVisible: boolean;
@@ -12,42 +13,27 @@ interface LocationBasedPopupProps {
   transactionType?: "sale" | "rent" | "all";
 }
 
-export default function LocationBasedPopup({ 
-  isVisible, 
-  onClose, 
+export default function LocationBasedPopup({
+  isVisible,
+  onClose,
   userLocation,
   transactionType = "sale"
 }: LocationBasedPopupProps) {
   const [properties, setProperties] = useState<PropertyCard[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Debug: log props
-  useEffect(() => {
-    console.log("🎭 LocationBasedPopup props:", {
-      isVisible,
-      userLocation,
-      loading
-    });
-  }, [isVisible, userLocation, loading]);
-
   useEffect(() => {
     if (isVisible && userLocation) {
-      console.log("🚀 Popup visível, carregando propriedades do cache...");
       setLoading(true);
-      
-      // Usar cache se disponível, senão carregar
+
       if (propertyCache.isLoaded(userLocation, transactionType)) {
         const cachedProperties = propertyCache.getProperties(userLocation, transactionType);
-        console.log("📦 Usando propriedades do cache:", cachedProperties.length);
         setProperties(cachedProperties);
         setLoading(false);
       } else {
-        console.log("⏳ Cache não disponível, aguardando carregamento...");
-        // Aguardar um pouco para o cache carregar
         const checkCache = () => {
           if (propertyCache.isLoaded(userLocation, transactionType)) {
             const cachedProperties = propertyCache.getProperties(userLocation, transactionType);
-            console.log("✅ Cache carregado, usando propriedades:", cachedProperties.length);
             setProperties(cachedProperties);
             setLoading(false);
           } else {
@@ -61,26 +47,21 @@ export default function LocationBasedPopup({
 
   const getDistance = useCallback((property: PropertyCard) => {
     if (!userLocation || !property.latitude || !property.longitude) return null;
-    
+
     const distance = Math.sqrt(
-      Math.pow(userLocation.lat - property.latitude, 2) + 
+      Math.pow(userLocation.lat - property.latitude, 2) +
       Math.pow(userLocation.lng - property.longitude, 2)
     ) * 111;
-    
+
     if (distance < 1) {
       return `${Math.round(distance * 1000)}m`;
     }
     return `${distance.toFixed(1)}km`;
   }, [userLocation]);
 
-  console.log("🎭 LocationBasedPopup render - isVisible:", isVisible);
-
   if (!isVisible) {
-    console.log("🎭 Popup não visível, retornando null");
     return null;
   }
-
-  console.log("🎭 Renderizando popup");
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -118,7 +99,10 @@ export default function LocationBasedPopup({
                     key={property.listing_id}
                     className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
                     onClick={() => {
-                                              window.location.href = `/listings/${property.listing_id}`;
+                      if (typeof window !== 'undefined') {
+                        sessionStorage.setItem(`listing_${property.listing_id}`, JSON.stringify(property));
+                      }
+                      window.location.href = `/listings/${property.listing_id}`;
                     }}
                   >
                     {/* Imagem */}
@@ -146,29 +130,37 @@ export default function LocationBasedPopup({
                       <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
                         {property.title}
                       </h3>
-                      
+
                       <p className="text-sm text-gray-600 mb-3">
                         {property.neighborhood}, {property.display_address}
                       </p>
 
                       {/* Características */}
                       <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Ruler size={14} className="text-primary" />
-                          <span>{property.area || 0} m²</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Bed size={14} className="text-primary" />
-                          <span>{property.bedroom_count || 0}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Bath size={14} className="text-primary" />
-                          <span>{property.bathroom_count || 0}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Car size={14} className="text-primary" />
-                          <span>{property.garage_count || 0}</span>
-                        </div>
+                        {property.area && property.area > 0 && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Ruler size={14} className="text-primary" />
+                            <span>{property.area} m²</span>
+                          </div>
+                        )}
+                        {property.bedroom_count && property.bedroom_count > 0 && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Bed size={14} className="text-primary" />
+                            <span>{property.bedroom_count}</span>
+                          </div>
+                        )}
+                        {property.bathroom_count && property.bathroom_count > 0 && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Bath size={14} className="text-primary" />
+                            <span>{property.bathroom_count}</span>
+                          </div>
+                        )}
+                        {property.garage_count && property.garage_count > 0 && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Car size={14} className="text-primary" />
+                            <span>{property.garage_count}</span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -197,7 +189,19 @@ export default function LocationBasedPopup({
             </button>
             <button
               onClick={() => {
-                window.location.href = "/listings";
+                const cityId = properties.length > 0 && properties[0].city_id 
+                  ? String(properties[0].city_id) 
+                  : null;
+                
+                if (cityId) {
+                  const filters: Record<string, string> = {
+                    localizacao: cityId,
+                    operacao: transactionType === "rent" ? "alugar" : transactionType === "sale" ? "comprar" : "todos",
+                  };
+                  window.location.href = buildListingsUrl(filters);
+                } else {
+                  window.location.href = "/resultados";
+                }
               }}
               className="flex-1 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
             >

@@ -1,32 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAgent } from "../../../lib/supabaseAgent";
+import type { Database } from "../../../types/database";
 
-export async function GET(request: Request) {
-  console.log("=== API CONDOMINIUM ROUTE OPTIMIZED ===");
-  
+type OptimizedCondoRow = Database["public"]["Functions"]["get_condominiums_optimized"]["Returns"][number];
+
+export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const cityId = searchParams.get("cityId");
-  const transactionType = searchParams.get("transactionType");
   const limit = Number(searchParams.get("limit") || 30);
   const offset = Number(searchParams.get("offset") || 0);
-  
-  console.log("API received params:", {
-    cityId,
-    transactionType,
-    limit,
-    offset
-  });
-  
+
+
   if (!cityId) {
-    console.log("Missing required params");
+
     return NextResponse.json({ error: "cityId é obrigatório" }, { status: 400 });
   }
 
   try {
     const agencyId = process.env.LOCATION_ID;
-    
+
     if (!agencyId) {
-      console.log("Agency ID not configured");
+
       return NextResponse.json({ error: "Supabase environment variables not configured" }, { status: 500 });
     }
 
@@ -35,12 +29,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Supabase environment variables not configured" }, { status: 500 });
     }
 
-    console.log("Using optimized condominium query with params:", {
-      cityId: Number(cityId),
-      agencyId,
-      limit,
-      offset
-    });
+
 
     // Usando a função otimizada do Supabase
     const { data: results, error } = await supabaseAgent
@@ -57,11 +46,11 @@ export async function GET(request: Request) {
     }
 
     // Transformando os resultados para o formato esperado pelo frontend
-    const transformedResults = (results || []).map((item: any) => ({
+    const transformedResults = (results || []).map((item: OptimizedCondoRow) => ({
       id: item.condominium_id,
       name: item.name,
       agency_id: item.agency_id,
-      
+
       // Detalhes do condomínio
       condominium_id: item.condominium_id,
       is_launch: item.is_launch,
@@ -73,7 +62,7 @@ export async function GET(request: Request) {
       total_units: item.total_units,
       description: item.description,
       usage_type: item.usage_type,
-      
+
       // Localização
       display_address: item.display_address,
       neighborhood: item.neighborhood,
@@ -82,7 +71,7 @@ export async function GET(request: Request) {
       postal_code: item.postal_code,
       latitude: item.latitude,
       longitude: item.longitude,
-      
+
       // Campos calculados para compatibilidade
       image: item.primary_image_url || "/placeholder-property.jpg",
       price: item.price_range_formatted,
@@ -90,8 +79,7 @@ export async function GET(request: Request) {
       media_count: item.media_count
     }));
 
-    console.log("Optimized condominium query results count:", transformedResults.length);
-    console.log("=== END API CONDOMINIUM ROUTE OPTIMIZED ===");
+
 
     return NextResponse.json(transformedResults);
   } catch (error) {

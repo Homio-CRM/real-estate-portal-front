@@ -1,15 +1,26 @@
 import { URLSearchParams } from "url";
 
 export type Filters = {
-  tipo: string;
+  tipo: string | string[];
   localizacao: string;
   operacao: string;
   bairro?: string;
 };
 
 export function parseFiltersFromSearchParams(searchParams: URLSearchParams): Filters {
+  const tipoParam = searchParams.get("tipo");
+  let tipo: string | string[] = "";
+  
+  if (tipoParam) {
+    if (tipoParam.includes(",")) {
+      tipo = tipoParam.split(",").filter(t => t.trim() !== "");
+    } else {
+      tipo = tipoParam;
+    }
+  }
+  
   return {
-    tipo: searchParams.get("tipo") || "",
+    tipo,
     localizacao: searchParams.get("localizacao") || "",
     operacao: searchParams.get("operacao") || "todos",
     bairro: searchParams.get("bairro") || "",

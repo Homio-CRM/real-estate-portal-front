@@ -11,10 +11,12 @@ import {
 import { Checkbox } from "./ui/checkbox";
 import { Button } from "./ui/button";
 import { X } from "lucide-react";
+import { getAllFeatureKeys, translateFeatureKey } from "../lib/featureTranslations";
+import { getAllPropertyTypes } from "../lib/propertyTypes";
 
 type ResultsFiltersProps = {
   filters: {
-    tipo: string;
+    tipo: string | string[];
     operacao: string;
     quartos: string;
     banheiros: string;
@@ -54,6 +56,14 @@ function parseCurrency(value: string): number {
 export default function ResultsFilters({ filters, onFilterChange, onClearFilters, onSearch }: ResultsFiltersProps) {
   const [precoMinDisplay, setPrecoMinDisplay] = useState(filters.precoMin);
   const [precoMaxDisplay, setPrecoMaxDisplay] = useState(filters.precoMax);
+  const [showAllFeatures, setShowAllFeatures] = useState(false);
+  
+  const allFeatures = getAllFeatureKeys();
+  const INITIAL_FEATURES_COUNT = 8;
+  const displayedFeatures = showAllFeatures 
+    ? allFeatures 
+    : allFeatures.slice(0, INITIAL_FEATURES_COUNT);
+  const remainingCount = allFeatures.length - INITIAL_FEATURES_COUNT;
 
   // Sincronizar estados de exibição quando os filtros mudam
   useEffect(() => {
@@ -103,48 +113,49 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
   };
 
   return (
-    <div className="space-y-4 w-80">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <h4 className="text-sm font-semibold text-gray-900 mb-3">Tipo de Transação</h4>
-        <Select value={filters.operacao || "todos"} onValueChange={(value: string) => onFilterChange("operacao", value === "todos" ? "" : value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Todos" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos</SelectItem>
-            <SelectItem value="comprar">Comprar</SelectItem>
-            <SelectItem value="alugar">Alugar</SelectItem>
-            <SelectItem value="lancamento">Lançamento</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <h4 className="text-sm font-semibold text-gray-900 mb-3">Tipos de Propriedade</h4>
-        <div className="space-y-2">
-          {[
-            "Apartamento",
-            "Casa", 
-            "Kitnet",
-            "Loft",
-            "Cobertura",
-            "Casa Geminada",
-            "Terreno",
-            "Comercial",
-            "Escritório",
-            "Loja",
-            "Galpão"
-          ].map((propertyType) => (
-            <label key={propertyType} className="flex items-center space-x-2 cursor-pointer">
-              <Checkbox
-                checked={filters.tipo === propertyType}
-                onCheckedChange={() => onFilterChange("tipo", filters.tipo === propertyType ? "" : propertyType)}
-              />
-              <span className="text-sm text-gray-700">{propertyType}</span>
-            </label>
-          ))}
+    <div className="space-y-4 w-96">
+      {filters.operacao !== "lancamento" && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <h4 className="text-sm font-semibold text-gray-900 mb-3">Tipo de Transação</h4>
+          <Select value={filters.operacao || "todos"} onValueChange={(value: string) => onFilterChange("operacao", value === "todos" ? "" : value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="comprar">Comprar</SelectItem>
+              <SelectItem value="alugar">Alugar</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      </div>
+      )}
+
+      {filters.operacao !== "lancamento" && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <h4 className="text-sm font-semibold text-gray-900 mb-3">Tipos de Propriedade</h4>
+          <div className="space-y-2">
+            {getAllPropertyTypes().map(({ displayValue }) => {
+              const currentTipos = Array.isArray(filters.tipo) ? filters.tipo : (filters.tipo ? [filters.tipo] : []);
+              const isChecked = currentTipos.includes(displayValue);
+              
+              return (
+                <label key={displayValue} className="flex items-center space-x-2 cursor-pointer">
+                  <Checkbox
+                    checked={isChecked}
+                    onCheckedChange={() => {
+                      const newTipos = isChecked
+                        ? currentTipos.filter(t => t !== displayValue)
+                        : [...currentTipos, displayValue];
+                      onFilterChange("tipo", newTipos.length > 0 ? newTipos : "");
+                    }}
+                  />
+                  <span className="text-sm text-gray-700">{displayValue}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <h4 className="text-sm font-semibold text-gray-900 mb-3">Características</h4>
@@ -220,7 +231,7 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
               type="text"
               value={precoMinDisplay}
               onChange={(e) => handlePrecoMinChange(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary text-sm"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-0 focus:ring-transparent focus:border-gray-500 text-sm"
               placeholder="R$ 100.000"
             />
           </div>
@@ -230,7 +241,7 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
               type="text"
               value={precoMaxDisplay}
               onChange={(e) => handlePrecoMaxChange(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary text-sm"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-0 focus:ring-transparent focus:border-gray-500 text-sm"
               placeholder="R$ 1.000.000"
             />
           </div>
@@ -246,7 +257,7 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
               type="number"
               value={filters.areaMin}
               onChange={(e) => onFilterChange("areaMin", e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary text-sm"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-0 focus:ring-transparent focus:border-gray-500 text-sm"
               placeholder="0"
             />
           </div>
@@ -256,7 +267,7 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
               type="number"
               value={filters.areaMax}
               onChange={(e) => onFilterChange("areaMax", e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary text-sm"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-0 focus:ring-transparent focus:border-gray-500 text-sm"
               placeholder="Sem limite"
             />
           </div>
@@ -272,7 +283,7 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
               type="number"
               value={filters.anoMin}
               onChange={(e) => onFilterChange("anoMin", e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary text-sm"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-0 focus:ring-transparent focus:border-gray-500 text-sm"
               placeholder="Ex: 2000"
             />
           </div>
@@ -282,7 +293,7 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
               type="number"
               value={filters.anoMax}
               onChange={(e) => onFilterChange("anoMax", e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary text-sm"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-0 focus:ring-transparent focus:border-gray-500 text-sm"
               placeholder="Ex: 2024"
             />
           </div>
@@ -290,34 +301,50 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <h4 className="text-sm font-semibold text-gray-900 mb-3">Características</h4>
+        <h4 className="text-sm font-semibold text-gray-900 mb-3">Acomodações</h4>
         <div className="space-y-2">
-          {[
-            "Piscina",
-            "Academia", 
-            "Salão de Festas",
-            "Churrasqueira",
-            "Quadra Poliesportiva",
-            "Quadra de Tênis",
-            "Sauna",
-            "Espaço Gourmet"
-          ].map((feature) => (
-            <label key={feature} className="flex items-center space-x-2 cursor-pointer">
-              <Checkbox 
-                checked={filters.caracteristicas.includes(feature)}
-                onCheckedChange={() => {
-                  const newCaracteristicas = filters.caracteristicas.includes(feature)
-                    ? filters.caracteristicas.filter(f => f !== feature)
-                    : [...filters.caracteristicas, feature];
-                  onFilterChange("caracteristicas", newCaracteristicas);
-                }}
-              />
-              <span className="text-sm text-gray-700">{feature}</span>
-            </label>
-          ))}
-          <button className="text-sm text-gray-700 hover:text-gray-900 transition-colors mt-2">
-            Mostrar mais (21)
-          </button>
+          {displayedFeatures.map((featureKey) => {
+            const translatedLabel = translateFeatureKey(featureKey);
+            const isChecked = filters.caracteristicas.some(f => {
+              const featureKeyFromFilter = f.toLowerCase().replace(/\s+/g, '_');
+              return featureKeyFromFilter === featureKey;
+            });
+            
+            return (
+              <label key={featureKey} className="flex items-center space-x-2 cursor-pointer">
+                <Checkbox 
+                  checked={isChecked}
+                  onCheckedChange={() => {
+                    const currentKeys = filters.caracteristicas.map(f => f.toLowerCase().replace(/\s+/g, '_'));
+                    const newCaracteristicas = currentKeys.includes(featureKey)
+                      ? filters.caracteristicas.filter(f => {
+                          const keyFromFilter = f.toLowerCase().replace(/\s+/g, '_');
+                          return keyFromFilter !== featureKey;
+                        })
+                      : [...filters.caracteristicas, translatedLabel];
+                    onFilterChange("caracteristicas", newCaracteristicas);
+                  }}
+                />
+                <span className="text-sm text-gray-700">{translatedLabel}</span>
+              </label>
+            );
+          })}
+          {!showAllFeatures && remainingCount > 0 && (
+            <button 
+              onClick={() => setShowAllFeatures(true)}
+              className="text-sm text-gray-700 hover:text-gray-900 transition-colors mt-2"
+            >
+              Mostrar mais ({remainingCount})
+            </button>
+          )}
+          {showAllFeatures && (
+            <button 
+              onClick={() => setShowAllFeatures(false)}
+              className="text-sm text-gray-700 hover:text-gray-900 transition-colors mt-2"
+            >
+              Mostrar menos
+            </button>
+          )}
         </div>
       </div>
 

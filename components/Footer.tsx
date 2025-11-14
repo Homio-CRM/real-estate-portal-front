@@ -1,6 +1,30 @@
-import Link from 'next/link';
+"use client";
 
-export default function Footer() {
+import Link from "next/link";
+import Image from "next/image";
+import { useState } from "react";
+import { X } from "lucide-react";
+import ContactForm from "./ContactForm";
+
+interface FooterProps {
+  onOwnerLeadClick?: () => void;
+}
+
+export default function Footer({ onOwnerLeadClick }: FooterProps) {
+  const [showOwnerLeadModal, setShowOwnerLeadModal] = useState(false);
+
+  const handleOwnerLeadClick = () => {
+    if (onOwnerLeadClick) {
+      onOwnerLeadClick();
+      return;
+    }
+    setShowOwnerLeadModal(true);
+  };
+
+  const handleCloseOwnerLead = () => {
+    setShowOwnerLeadModal(false);
+  };
+
   return (
     <>
       <div className="border-t border-gray-100"></div>
@@ -10,10 +34,12 @@ export default function Footer() {
             
             <div className="space-y-4 text-center">
               <div>
-                <img 
-                  src="https://static.arboimoveis.com.br/white-label-assets/3787J_VIM/logomarca_vitoria_imoveis_11667839493275.png" 
-                  alt="Vitória Imóveis" 
-                  className="h-12 w-auto mx-auto" 
+                <Image
+                  src="/logomarca_vitoria_imoveis_11667839493275.png"
+                  alt="Vitória Imóveis"
+                  width={200}
+                  height={48}
+                  className="h-12 w-auto mx-auto"
                 />
               </div>
               <div className="text-gray-600 text-sm">
@@ -50,7 +76,11 @@ export default function Footer() {
             </div>
 
             <div className="space-y-4">
-              <button className="w-full bg-primary text-primary-foreground py-3 px-6 rounded-lg font-semibold hover:bg-secondary transition-colors">
+              <button
+                type="button"
+                className="w-full bg-primary text-primary-foreground py-3 px-6 rounded-lg font-semibold hover:bg-secondary transition-colors"
+                onClick={handleOwnerLeadClick}
+              >
                 Cadastre seu imóvel
               </button>
               
@@ -84,6 +114,30 @@ export default function Footer() {
           </div>
         </div>
       </footer>
+
+      {showOwnerLeadModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={handleCloseOwnerLead}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Cadastre seu imóvel</h2>
+              <button
+                type="button"
+                onClick={handleCloseOwnerLead}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <ContactForm dealType="sale" leadOrigin="owner-footer" />
+          </div>
+        </div>
+      )}
     </>
   );
 }

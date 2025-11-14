@@ -2,9 +2,6 @@ import { FetchListingsParams } from "../types/api";
 import { PropertyCard } from "../types/listings";
 
 export async function fetchListings(params: FetchListingsParams): Promise<PropertyCard[]> {
-  console.log("=== FETCH LISTINGS DEBUG ===");
-  console.log("Params received:", params);
-  
   const searchParams = new URLSearchParams();
   
   if (params.cityId) {
@@ -16,7 +13,11 @@ export async function fetchListings(params: FetchListingsParams): Promise<Proper
   }
   
   if (params.tipo) {
-    searchParams.append("tipo", params.tipo);
+    if (Array.isArray(params.tipo)) {
+      searchParams.append("tipo", params.tipo.join(","));
+    } else {
+      searchParams.append("tipo", params.tipo);
+    }
   }
   
   if (params.bairro) {
@@ -36,25 +37,17 @@ export async function fetchListings(params: FetchListingsParams): Promise<Proper
   }
   
   const fullUrl = `/api/listing?${searchParams.toString()}`;
-  console.log("Full URL:", fullUrl);
   
   try {
-    console.log("Making fetch request...");
     const response = await fetch(fullUrl);
-    console.log("Response status:", response.status);
     
     if (!response.ok) {
-      console.error("Response not ok:", response.status, response.statusText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
     const data = await response.json();
-    console.log("Response data length:", data.length);
-    console.log("First item sample:", data[0]);
-    console.log("=== END FETCH LISTINGS DEBUG ===");
     return data;
   } catch (error) {
-    console.error("Error fetching listings:", error);
     throw error;
   }
 }

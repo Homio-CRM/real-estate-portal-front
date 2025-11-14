@@ -212,10 +212,10 @@ export default function AutocompleteField({
       <div className="relative w-full">
         <input
           type="text"
-          className={`w-full border rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary text-sm transition-colors ${
+          className={`w-full border rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-0 focus:ring-transparent focus:border-gray-500 text-sm transition-colors ${
             isSelected 
               ? "border-primary bg-primary/5" 
-              : "border-gray-300 focus:border-primary"
+              : "border-gray-300 focus:border-gray-500"
           } ${inputClassName}`}
           placeholder={placeholder}
           value={input}
@@ -282,7 +282,7 @@ export default function AutocompleteField({
           <div className="absolute right-3 top-3 w-4 h-4 animate-spin border-2 border-primary border-t-transparent rounded-full"></div>
         )}
         {error && showOptions && (
-          <div className="absolute z-10 w-full bg-white border border-destructive rounded-lg mt-1 p-3 text-destructive text-sm">
+          <div className="absolute z-10 w-full bg-white border border-primary rounded-lg mt-1 p-3 text-foreground text-sm">
             {error}
           </div>
         )}

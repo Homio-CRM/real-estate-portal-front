@@ -21,14 +21,14 @@ function ResultadosContent() {
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState<PropertyCardType[]>([]);
   const [condoResults, setCondoResults] = useState<CondominiumCardType[]>([]);
-  
+
   // Filtros que disparam nova busca na API
   const [apiFilters, setApiFilters] = useState({
     tipo: initialFilters.tipo,
     operacao: initialFilters.operacao,
     bairro: initialFilters.bairro,
   });
-  
+
   // Filtros que apenas filtram os resultados já carregados
   const [clientFilters, setClientFilters] = useState({
     quartos: "",
@@ -53,7 +53,7 @@ function ResultadosContent() {
     }
 
     const transactionType = getTransactionType(currentApiFilters.operacao || initialFilters.operacao);
-    
+
     if (currentApiFilters.tipo === "Condomínio") {
       const cs = await fetchCondominiums({
         cityId: validation.cityId!,
@@ -65,7 +65,7 @@ function ResultadosContent() {
       setLoading(false);
       return;
     }
-    
+
     const isLaunch = currentApiFilters.operacao === "lancamento";
     const listings = await fetchListings({
       cityId: validation.cityId!,
@@ -88,15 +88,16 @@ function ResultadosContent() {
   const handleApiFilterChange = (key: string, value: string) => {
     const newApiFilters = { ...apiFilters, [key]: value };
     setApiFilters(newApiFilters);
-    
+
     const mergedFilters = { ...initialFilters, ...newApiFilters };
     const urlFilters: Record<string, string> = {};
     Object.entries(mergedFilters).forEach(([filterKey, filterValue]) => {
-      if (filterValue && filterValue !== "") {
-        urlFilters[filterKey] = filterValue;
+      const normalizedValue = Array.isArray(filterValue) ? filterValue[0] || "" : (filterValue || "");
+      if (normalizedValue && normalizedValue !== "") {
+        urlFilters[filterKey] = normalizedValue;
       }
     });
-    
+
     const newUrl = buildResultsUrl(urlFilters);
     router.push(newUrl);
   };
@@ -123,17 +124,18 @@ function ResultadosContent() {
       anoMax: "",
       caracteristicas: [],
     });
-    
+
     // Atualizar a URL removendo os filtros
     const urlFilters: Record<string, string> = {};
-    
+
     // Copiar apenas filtros não vazios dos filtros iniciais
     Object.entries(initialFilters).forEach(([key, value]) => {
-      if (value && value !== "" && key !== "tipo" && key !== "operacao" && key !== "bairro") {
-        urlFilters[key] = value;
+      const normalizedValue = Array.isArray(value) ? value[0] || "" : (value || "");
+      if (normalizedValue && normalizedValue !== "" && key !== "tipo" && key !== "operacao" && key !== "bairro") {
+        urlFilters[key] = normalizedValue;
       }
     });
-    
+
     const newUrl = buildResultsUrl(urlFilters);
     router.push(newUrl);
   };
@@ -149,19 +151,19 @@ function ResultadosContent() {
       if (clientFilters.quartos === "5+" && (property.bedroom_count || 0) < 5) return false;
       if (clientFilters.quartos !== "5+" && property.bedroom_count !== quartos) return false;
     }
-    
+
     if (clientFilters.banheiros && clientFilters.banheiros !== "") {
       const banheiros = parseInt(clientFilters.banheiros);
       if (clientFilters.banheiros === "5+" && (property.bathroom_count || 0) < 5) return false;
       if (clientFilters.banheiros !== "5+" && property.bathroom_count !== banheiros) return false;
     }
-    
+
     if (clientFilters.vagas && clientFilters.vagas !== "") {
       const vagas = parseInt(clientFilters.vagas);
       if (clientFilters.vagas === "5+" && (property.garage_count || 0) < 5) return false;
       if (clientFilters.vagas !== "5+" && property.garage_count !== vagas) return false;
     }
-    
+
     // Filtro de preço melhorado
     if (clientFilters.precoMin && clientFilters.precoMin !== "") {
       const precoMin = parseFloat(clientFilters.precoMin);
@@ -177,7 +179,7 @@ function ResultadosContent() {
         if (!propertyPrice || propertyPrice < precoMin) return false;
       }
     }
-    
+
     if (clientFilters.precoMax && clientFilters.precoMax !== "") {
       const precoMax = parseFloat(clientFilters.precoMax);
       if (precoMax > 0) { // Só aplica se for um valor válido
@@ -192,27 +194,27 @@ function ResultadosContent() {
         if (!propertyPrice || propertyPrice > precoMax) return false;
       }
     }
-    
+
     if (clientFilters.areaMin && clientFilters.areaMin !== "") {
       const areaMin = parseFloat(clientFilters.areaMin);
       if (!property.area || property.area < areaMin) return false;
     }
-    
+
     if (clientFilters.areaMax && clientFilters.areaMax !== "") {
       const areaMax = parseFloat(clientFilters.areaMax);
       if (!property.area || property.area > areaMax) return false;
     }
-    
+
     if (clientFilters.anoMin && clientFilters.anoMin !== "") {
       const anoMin = parseInt(clientFilters.anoMin);
       if (!property.year_built || property.year_built < anoMin) return false;
     }
-    
+
     if (clientFilters.anoMax && clientFilters.anoMax !== "") {
       const anoMax = parseInt(clientFilters.anoMax);
       if (!property.year_built || property.year_built > anoMax) return false;
     }
-    
+
     if (clientFilters.caracteristicas.length > 0) {
       const hasAllFeatures = clientFilters.caracteristicas.every(feature => {
         const featureKey = feature.toLowerCase().replace(/\s+/g, '_');
@@ -220,7 +222,7 @@ function ResultadosContent() {
       });
       if (!hasAllFeatures) return false;
     }
-    
+
     return true;
   });
 
@@ -243,35 +245,36 @@ function ResultadosContent() {
               ))}
             </div>
           )}
-          
+
           {!loading && (
             <div className="flex gap-6">
               <div className="flex-shrink-0">
-                <ResultsFilters
-                  filters={combinedFilters}
-                  onFilterChange={(key: string, value: string | string[]) => {
-                    // Determina se é um filtro de API ou cliente
-                    if (key === "operacao" || key === "tipo") {
-                      handleApiFilterChange(key, value as string);
-                    } else {
-                      handleClientFilterChange(key, value);
-                    }
-                  }}
-                  onClearFilters={handleClearFilters}
-                  onSearch={() => {}} // Não precisa mais do botão de busca
-                />
+                <div className="sticky top-8">
+                  <ResultsFilters
+                    filters={combinedFilters}
+                    onFilterChange={(key: string, value: string | string[]) => {
+                      if (key === "operacao" || key === "tipo") {
+                        handleApiFilterChange(key, value as string);
+                      } else {
+                        handleClientFilterChange(key, value);
+                      }
+                    }}
+                    onClearFilters={handleClearFilters}
+                    onSearch={() => { }}
+                  />
+                </div>
               </div>
-              
+
               <div className="flex-1">
                 <LocationSearchField
                   currentLocation={apiFilters.bairro || "Vitória - ES"}
                   currentFilters={{
                     operacao: apiFilters.operacao,
-                    tipo: apiFilters.tipo,
+                    tipo: Array.isArray(apiFilters.tipo) ? apiFilters.tipo[0] || "" : (apiFilters.tipo || ""),
                     bairro: apiFilters.bairro || "",
                   }}
                 />
-                
+
                 {(apiFilters.tipo === "Condomínio" ? condoResults.length === 0 : results.length === 0) ? (
                   <div className="w-full flex flex-col items-center justify-center py-16 text-lg text-gray-600 font-medium">
                     Nenhum imóvel encontrado para os filtros selecionados.
@@ -283,15 +286,15 @@ function ResultadosContent() {
                         {apiFilters.tipo === "Condomínio" ? condoResults.length : filteredResults.length} resultado{(apiFilters.tipo === "Condomínio" ? condoResults.length : filteredResults.length) !== 1 ? 's' : ''} encontrado{(apiFilters.tipo === "Condomínio" ? condoResults.length : filteredResults.length) !== 1 ? 's' : ''}
                       </div>
                     </div>
-                    
+
                     <div className="space-y-4">
                       {apiFilters.tipo === "Condomínio"
                         ? condoResults.map((condo) => (
-                            <HorizontalCondominiumCard key={condo.id} {...condo} />
-                          ))
+                          <HorizontalCondominiumCard key={condo.id} {...condo} />
+                        ))
                         : filteredResults.map((property, idx) => (
-                            <HorizontalPropertyCard key={property.listing_id || idx} {...property} />
-                          ))}
+                          <HorizontalPropertyCard key={property.listing_id || idx} {...property} />
+                        ))}
                     </div>
                   </div>
                 )}

@@ -1,44 +1,147 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchListings } from "../lib/fetchListings";
 import { PropertyCard } from "../types/listings";
-import { Building, Home, ChevronLeft, ChevronRight, Camera, Ruler, Bed, Bath, Car } from "lucide-react";
+import { Building, Home, ChevronLeft, ChevronRight, Camera, Ruler, Bed, Bath, Car, MapPin } from "lucide-react";
 import { formatCurrency } from "../lib/formatCurrency";
 import PropertyCardSkeleton from "./PropertyCardSkeleton";
+import { getStateAbbreviationById } from "../lib/brazilianStates";
+import { translateRentalPeriod } from "../lib/rentalPeriod";
+import { buildListingsUrl } from "../lib/navigation";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 interface FeaturedPropertiesProps {
   cityId?: number;
+  initialSaleProperties?: PropertyCard[];
+  initialRentProperties?: PropertyCard[];
+  initialCityNames?: Record<number, string>;
+  initialActiveTab?: "comprar" | "alugar";
+  shouldRevalidate?: boolean;
+  onDataLoaded?: (data: {
+    saleProperties: PropertyCard[];
+    rentProperties: PropertyCard[];
+    cityNames: Record<number, string>;
+    cityId: number;
+    activeTab: "comprar" | "alugar";
+    timestamp: number;
+  }) => void;
+  onActiveTabChange?: (tab: "comprar" | "alugar") => void;
 }
 
 type Slide = { url: string; isMore?: boolean; moreCount?: number };
 
-export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) {
+const DEFAULT_CITY_ID = 3205309;
+
+export default function FeaturedProperties({
+  cityId,
+  initialSaleProperties,
+  initialRentProperties,
+  initialCityNames,
+  initialActiveTab,
+  shouldRevalidate,
+  onDataLoaded,
+  onActiveTabChange,
+}: FeaturedPropertiesProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"comprar" | "alugar">("comprar");
-  const [saleProperties, setSaleProperties] = useState<PropertyCard[]>([]);
-  const [rentProperties, setRentProperties] = useState<PropertyCard[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"comprar" | "alugar">(initialActiveTab ?? "comprar");
+  const [saleProperties, setSaleProperties] = useState<PropertyCard[]>(initialSaleProperties ?? []);
+  const [rentProperties, setRentProperties] = useState<PropertyCard[]>(initialRentProperties ?? []);
+  const [loading, setLoading] = useState(!(initialSaleProperties?.length || initialRentProperties?.length));
   const [error, setError] = useState<string | null>(null);
 
-  // índice do slide por card
   const [currentIdx, setCurrentIdx] = useState<Record<string, number>>({});
+  const [cityNames, setCityNames] = useState<Record<number, string>>(initialCityNames ?? {});
+  const activeTabRef = useRef<"comprar" | "alugar">(initialActiveTab ?? "comprar");
+  const cityNamesRef = useRef<Record<number, string>>(initialCityNames ?? {});
 
   useEffect(() => {
+    cityNamesRef.current = cityNames;
+  }, [cityNames]);
+
+  useEffect(() => {
+    if (initialSaleProperties && initialSaleProperties.length > 0) {
+      setSaleProperties(initialSaleProperties);
+    }
+  }, [initialSaleProperties]);
+
+  useEffect(() => {
+    if (initialRentProperties && initialRentProperties.length > 0) {
+      setRentProperties(initialRentProperties);
+    }
+  }, [initialRentProperties]);
+
+  useEffect(() => {
+    if (initialCityNames) {
+      setCityNames(initialCityNames);
+      cityNamesRef.current = initialCityNames;
+    }
+  }, [initialCityNames]);
+
+  useEffect(() => {
+    if (initialActiveTab) {
+      setActiveTab(initialActiveTab);
+    }
+  }, [initialActiveTab]);
+
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+    onActiveTabChange?.(activeTab);
+  }, [activeTab, onActiveTabChange]);
+
+  const toSentenceCase = (text: string): string => {
+    if (!text) return text;
+    return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+  };
+
+  const fetchCityName = async (cityId: number): Promise<string | null> => {
+    if (cityNamesRef.current[cityId]) {
+      return cityNamesRef.current[cityId];
+    }
+
+    try {
+      const response = await fetch(`/api/cities?id=${cityId}`);
+      if (response.ok) {
+        const city = await response.json();
+        if (city && city.name) {
+          return city.name;
+        }
+      }
+    } catch (error) {
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    const targetCityId = cityId || DEFAULT_CITY_ID;
+    const hasInitialData = Boolean(initialSaleProperties?.length || initialRentProperties?.length);
+    const needsFetch = shouldRevalidate || !hasInitialData;
+
+    if (!needsFetch) {
+      setLoading(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
     const fetchApartments = async () => {
-      setLoading(true);
+      if (!hasInitialData) {
+        setLoading(true);
+      }
       setError(null);
       try {
         const saleResults = await fetchListings({
-          cityId: cityId || 3205309,
+          cityId: targetCityId,
           transactionType: "sale",
           limit: 6,
           offset: 0,
         });
 
         const rentResults = await fetchListings({
-          cityId: cityId || 3205309,
+          cityId: targetCityId,
           transactionType: "rent",
           limit: 6,
           offset: 0,
@@ -50,23 +153,102 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
           return priceB - priceA;
         });
 
-        setSaleProperties(sortedSaleResults.slice(0, 6));
-        setRentProperties(rentResults.slice(0, 6));
+        const limitedSale = sortedSaleResults.slice(0, 6);
+        const limitedRent = rentResults.slice(0, 6);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setSaleProperties(limitedSale);
+        setRentProperties(limitedRent);
+
+        const allCityIds = new Set<number>();
+        [...limitedSale, ...limitedRent].forEach((property) => {
+          if (property.city_id) {
+            allCityIds.add(property.city_id);
+          }
+        });
+
+        const cityPromises = Array.from(allCityIds).map(async (id) => {
+          const cityName = await fetchCityName(id);
+          return cityName ? { id, cityName } : null;
+        });
+
+        const cityResults = (await Promise.all(cityPromises)).filter(
+          (item): item is { id: number; cityName: string } => item !== null
+        );
+
+        let mergedCityNames = cityNamesRef.current;
+
+        if (cityResults.length > 0) {
+          mergedCityNames = cityResults.reduce<Record<number, string>>((acc, item) => {
+            acc[item.id] = item.cityName;
+            return acc;
+          }, { ...cityNamesRef.current });
+
+          cityNamesRef.current = mergedCityNames;
+          setCityNames(mergedCityNames);
+        }
+
+        onDataLoaded?.({
+          saleProperties: limitedSale,
+          rentProperties: limitedRent,
+          cityNames: mergedCityNames,
+          cityId: targetCityId,
+          activeTab: activeTabRef.current,
+          timestamp: Date.now(),
+        });
       } catch (err) {
-        console.error("Erro ao buscar imóveis em destaque:", err);
+        if (!isMounted) {
+          return;
+        }
         setError("Erro ao carregar imóveis em destaque");
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchApartments();
-  }, [cityId]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [cityId, shouldRevalidate, initialSaleProperties, initialRentProperties, onDataLoaded]);
 
   const currentProperties = activeTab === "comprar" ? saleProperties : rentProperties;
 
+  const formatAddress = (property: PropertyCard): string => {
+    const parts: string[] = [];
+
+    if (property.neighborhood) {
+      parts.push(toSentenceCase(property.neighborhood));
+    }
+
+    if (property.city_id) {
+      const cityName = cityNames[property.city_id];
+      if (cityName) {
+        parts.push(toSentenceCase(cityName));
+      }
+    }
+
+    if (property.state_id) {
+      const stateAbbrev = getStateAbbreviationById(property.state_id);
+      if (stateAbbrev) {
+        parts.push(stateAbbrev.toUpperCase());
+      }
+    }
+
+    return parts.length > 0 ? parts.join(", ") : "Endereço não informado";
+  };
+
   const handlePropertyClick = (property: PropertyCard) => {
     if (property.listing_id) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(`listing_${property.listing_id}`, JSON.stringify(property));
+      }
       router.push(`/listings/${property.listing_id}`);
     }
   };
@@ -78,23 +260,19 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
         : [];
     const fallback = property.image ? [property.image] : [];
     const imgs = fromMedia.length ? fromMedia : fallback;
-    // remove duplicadas simples
     return Array.from(new Set(imgs));
   };
 
   const buildSlides = (property: PropertyCard): Slide[] => {
     const imgs = getPropertyImages(property);
-    // Sempre retorna pelo menos 1 slide (placeholder se não houver imagens)
     if (imgs.length === 0) {
       return [{ url: "" }];
     }
-    
-    // Se tem 4 ou menos imagens, mostra todas
+
     if (imgs.length <= 4) {
       return imgs.map((url) => ({ url }));
     }
-    
-    // Se tem mais de 4, mostra as primeiras 4 + 1 com overlay "+N fotos"
+
     const first4 = imgs.slice(0, 4).map((url) => ({ url }));
     const more = imgs.length - 4;
     const bg = imgs[4] || imgs[0];
@@ -106,7 +284,6 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
     const slides = buildSlides(property);
     setCurrentIdx((s) => {
       const curr = s[id] ?? 0;
-      // Não volta para o final, para no início
       const next = curr === 0 ? 0 : curr - 1;
       return { ...s, [id]: next };
     });
@@ -117,7 +294,6 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
     const slides = buildSlides(property);
     setCurrentIdx((s) => {
       const curr = s[id] ?? 0;
-      // Não vai para o início, para no final
       const next = curr === slides.length - 1 ? slides.length - 1 : curr + 1;
       return { ...s, [id]: next };
     });
@@ -131,7 +307,7 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Imóveis em Destaque</h2>
             <p className="text-gray-600">Descubra os melhores imóveis da região</p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, index) => (
               <PropertyCardSkeleton key={index} />
@@ -142,18 +318,8 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
     );
   }
 
-  if (error) {
-    return (
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center">
-            <Building size={48} className="text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 mb-2">Erro ao carregar imóveis</p>
-            <p className="text-gray-500 text-sm">{error}</p>
-          </div>
-        </div>
-      </section>
-    );
+  if (error || (saleProperties.length === 0 && rentProperties.length === 0)) {
+    return null;
   }
 
   return (
@@ -166,47 +332,40 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
           </p>
         </div>
 
-        {/* Abas */}
         <div className="flex justify-center mb-6">
           <div className="flex bg-white rounded-lg shadow-sm border border-gray-200 p-1">
             <button
               onClick={() => setActiveTab("comprar")}
-              className={`px-6 py-2 rounded-md font-medium transition-colors ${
-                activeTab === "comprar" ? "bg-primary text-primary-foreground shadow-sm" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
+              className={`px-6 py-2 rounded-md font-medium transition-colors ${activeTab === "comprar" ? "bg-primary text-primary-foreground shadow-sm" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
             >
               Comprar
             </button>
             <button
               onClick={() => setActiveTab("alugar")}
-              className={`px-6 py-2 rounded-md font-medium transition-colors ${
-                activeTab === "alugar" ? "bg-primary text-primary-foreground shadow-sm" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
+              className={`px-6 py-2 rounded-md font-medium transition-colors ${activeTab === "alugar" ? "bg-primary text-primary-foreground shadow-sm" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
             >
               Alugar
             </button>
           </div>
         </div>
 
-        {/* Grid */}
         {currentProperties.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {currentProperties.map((property) => {
-              const slides = buildSlides(property);
-              const id = String(property.listing_id || property.title);
-              const idx = currentIdx[id] ?? 0;
-              const curr = slides[idx];
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {currentProperties.map((property) => {
+                const slides = buildSlides(property);
+                const id = String(property.listing_id || property.title);
+                const idx = currentIdx[id] ?? 0;
 
-
-              return (
-                <div
-                  key={property.listing_id ?? property.title}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => handlePropertyClick(property)}
-                >
-                                                         {/* Header / Slider */}
+                return (
+                  <div
+                    key={property.listing_id ?? property.title}
+                    className="group bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                    onClick={() => handlePropertyClick(property)}
+                  >
                     <div className="relative h-56 md:h-60 bg-gray-200 overflow-hidden">
-                      {/* Track */}
                       <div
                         className="flex h-full transition-transform duration-300 ease-in-out"
                         style={{ transform: `translateX(-${idx * 100}%)` }}
@@ -214,14 +373,13 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
                         {slides.map((slide, slideIdx) => (
                           <div
                             key={slideIdx}
-                            className="relative flex-none min-w-full w-full h-full"
+                            className="relative flex-none min-w-full w-full h-full overflow-hidden"
                           >
-                            {/* Imagem/placeholder preenchendo todo o slide */}
                             {slide.url && slide.url.trim() !== "" ? (
                               <img
                                 src={slide.url}
                                 alt={`${property.title} - Imagem ${slideIdx + 1}`}
-                                className="absolute inset-0 w-full h-full object-cover"
+                                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 loading="lazy"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
@@ -234,7 +392,6 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
                               <span className="text-sm">Sem imagem</span>
                             </div>
 
-                            {/* Overlay +X fotos quando for o slide especial */}
                             {slide.isMore && (
                               <div className="absolute inset-0 bg-black/55 flex flex-col items-center justify-center">
                                 <Camera size={28} className="text-white mb-2" />
@@ -247,7 +404,6 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
                         ))}
                       </div>
 
-                      {/* Setas – NÃO navegar para a página */}
                       {slides.length > 1 && (
                         <>
                           <button
@@ -255,15 +411,14 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
                               e.stopPropagation();
                               prevSlide(property);
                             }}
-                            className={`absolute left-3 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-full shadow border border-gray-200 transition-all ${
-                              idx === 0
-                                ? "bg-gray-300/50 text-gray-500 cursor-not-allowed"
-                                : "bg-white/95 text-gray-700 hover:bg-white"
-                            }`}
+                            className={`absolute left-3 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-full border transition-all ${idx === 0
+                              ? "bg-black/30 text-white/60 cursor-not-allowed border-transparent"
+                              : "bg-black/60 text-white border-black/50 hover:bg-black/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                              }`}
                             aria-label="Anterior"
                             disabled={idx === 0}
                           >
-                            <ChevronLeft size={18} />
+                            <ChevronLeft size={18} strokeWidth={3} />
                           </button>
 
                           <button
@@ -271,91 +426,101 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
                               e.stopPropagation();
                               nextSlide(property);
                             }}
-                            className={`absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-full shadow border border-gray-200 transition-all ${
-                              idx === slides.length - 1
-                                ? "bg-gray-300/50 text-gray-500 cursor-not-allowed"
-                                : "bg-white/95 text-gray-700 hover:bg-white"
-                            }`}
+                            className={`absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-full border transition-all ${idx === slides.length - 1
+                              ? "bg-black/30 text-white/60 cursor-not-allowed border-transparent"
+                              : "bg-black/60 text-white border-black/50 hover:bg-black/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                              }`}
                             aria-label="Próximo"
                             disabled={idx === slides.length - 1}
                           >
-                            <ChevronRight size={18} />
+                            <ChevronRight size={18} strokeWidth={3} />
                           </button>
                         </>
                       )}
 
-                                             {/* Indicador de fotos */}
-                       {slides.length > 1 && (
-                         <div className="absolute bottom-3 left-3">
-                           <div className="bg-black/70 text-white text-xs px-2 py-1 rounded-md font-medium">
-                             {idx + 1}/{slides.length}
-                           </div>
-                         </div>
-                       )}
+                      {slides.length > 1 && (
+                        <div className="absolute bottom-3 left-3">
+                          <div className="bg-black/70 text-white text-xs px-2 py-1 rounded-md font-medium">
+                            {idx + 1}/{slides.length}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                                     {/* Conteúdo */}
-                   <div className="p-4 flex flex-col min-h-[200px]">
-                     <div className="flex-1">
-                       <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">{property.title}</h3>
-                       <p className="text-gray-600 text-sm mb-3 line-clamp-1">{property.display_address}</p>
+                    <div className="p-4 flex flex-col min-h-[200px]">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1 group-hover:text-primary transition-colors">{property.title}</h3>
+                        <div className="flex items-center gap-1 text-gray-600 text-sm mb-3 line-clamp-1">
+                          <MapPin size={14} />
+                          <span>{formatAddress(property)}</span>
+                        </div>
 
-                       <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                         {property.area && (
-                           <div className="flex items-center gap-1">
-                             <Ruler size={14} />
-                             <span>{property.area}m²</span>
-                           </div>
-                         )}
-                         {property.bedroom_count != null && (
-                           <div className="flex items-center gap-1">
-                             <Bed size={14} />
-                             <span>{property.bedroom_count} quartos</span>
-                           </div>
-                         )}
-                         {property.bathroom_count != null && (
-                           <div className="flex items-center gap-1">
-                             <Bath size={14} />
-                             <span>{property.bathroom_count} banheiros</span>
-                           </div>
-                         )}
-                         {property.garage_count != null && (
-                           <div className="flex items-center gap-1">
-                             <Car size={14} />
-                             <span>{property.garage_count} vagas</span>
-                           </div>
-                         )}
-                       </div>
-                     </div>
+                        <div className="mb-3">
+                          {activeTab === "alugar" && property.rental_price_amount ? (
+                            <p className="text-lg font-bold text-primary">
+                              {formatCurrency(property.rental_price_amount)}
+                              {property.rental_period && (
+                                <> /{translateRentalPeriod(property.rental_period)}</>
+                              )}
+                            </p>
+                          ) : (
+                            <p className="text-lg font-bold text-primary">
+                              {formatCurrency(property.list_price_amount || property.price)}
+                            </p>
+                          )}
+                        </div>
 
-                     <div className="flex items-center justify-between mt-4">
-                       <div>
-                         <p className="text-lg font-bold text-primary">
-                           {formatCurrency(property.list_price_amount || property.price)}
-                         </p>
-                         {property.iptu && (
-                           <p className="text-sm text-gray-500">
-                             +{formatCurrency(property.iptu_amount || property.iptu)} - IPTU
-                           </p>
-                         )}
-                       </div>
+                        <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                          {property.area && property.area > 0 && (
+                            <div className="flex items-center gap-1">
+                              <Ruler size={14} />
+                              <span>{property.area}m²</span>
+                            </div>
+                          )}
+                          {property.bedroom_count != null && property.bedroom_count > 0 && (
+                            <div className="flex items-center gap-1">
+                              <Bed size={14} />
+                              <span>{property.bedroom_count}</span>
+                            </div>
+                          )}
+                          {property.bathroom_count != null && property.bathroom_count > 0 && (
+                            <div className="flex items-center gap-1">
+                              <Bath size={14} />
+                              <span>{property.bathroom_count}</span>
+                            </div>
+                          )}
+                          {property.garage_count != null && property.garage_count > 0 && (
+                            <div className="flex items-center gap-1">
+                              <Car size={14} />
+                              <span>{property.garage_count}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
 
-                       <span className="text-primary hover:text-primary/80 font-medium text-sm">Ver detalhes</span>
-                     </div>
-                   </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <Home size={48} className="text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 mb-2">
-              Nenhum imóvel disponível para {activeTab === "comprar" ? "compra" : "aluguel"}
-            </p>
-            <p className="text-gray-500 text-sm">Tente ajustar os filtros ou volte mais tarde.</p>
-          </div>
-        )}
+                      <button
+                        onClick={() => handlePropertyClick(property)}
+                        className="w-full mt-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm"
+                      >
+                        Ver detalhes
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="text-center mt-12">
+              <Link
+                href={buildListingsUrl({ operacao: activeTab, localizacao: String(cityId || 3205309) })}
+                className="inline-flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-secondary transition-colors"
+              >
+                Ver Todos os Imóveis
+                <ArrowRight size={20} />
+              </Link>
+            </div>
+          </>
+        ) : null}
       </div>
     </section>
   );
