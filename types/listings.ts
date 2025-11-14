@@ -19,11 +19,13 @@ export type Listing = {
   iptu_period?: string;
   property_administration_fee_amount?: number;
   property_administration_fee_currency?: string;
+  property_administration_fee_period?: string;
   public_id?: string;
   condominium_id?: string;
   key_location?: string;
   key_location_other?: string;
   spu?: string;
+  spu_period?: string;
 };
 
 export type Condominium = {
@@ -39,7 +41,15 @@ export type CondominiumDetails = {
   max_price?: number;
   min_area?: number;
   max_area?: number;
-  year_built?: number;
+  min_room_amount?: number | null;
+  max_room_amount?: number | null;
+  min_bathroom_count?: number | null;
+  max_bathroom_count?: number | null;
+  min_garage_count?: number | null;
+  max_garage_count?: number | null;
+  available_units?: number | null;
+  delivery_forecast?: number | string | null;
+  year_built?: number | null;
   total_units?: number;
   description?: string;
   usage_type?: string;
@@ -217,6 +227,8 @@ export type PropertyCard = Listing & ListingDetails & ListingLocation & ListingF
   forRent?: boolean;
   price?: string;
   iptu?: string;
+  rental_price_amount?: number | null;
+  rental_period?: string | null;
   media?: MediaItem[];
   participants?: ListingParticipant[];
   rooms?: ListingRoom[];
@@ -228,4 +240,7 @@ export type CondominiumCard = Condominium & CondominiumDetails & CondominiumLoca
   price?: string;
   media?: MediaItem[];
   participants?: CondominiumParticipant[];
+  city_name?: string;
+  state_name?: string;
+  state_abbreviation?: string;
 }; 

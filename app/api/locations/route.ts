@@ -1,8 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAgent } from "../../../lib/supabaseAgent";
+import type { Database } from "../../../types/database";
+
+type CityRow = Database["public"]["Tables"]["city"]["Row"];
+type EntityLocationRow = Database["public"]["Tables"]["entity_location"]["Row"];
+
+type CityResult = {
+  id: number;
+  name: string;
+  type: "city";
+  city_name: string;
+  city_id: number;
+};
+
+type NeighborhoodResult = {
+  id: number;
+  name: string;
+  type: "neighborhood";
+  city_name: string;
+  city_id: number;
+  neighborhood_name: string;
+};
 
 export async function GET(req: NextRequest) {
-  const agencyId = process.env.LOCATION_ID!;
   const { searchParams } = new URL(req.url);
   const query = searchParams.get("q");
   const locationId = searchParams.get("id");
@@ -31,158 +51,117 @@ export async function GET(req: NextRequest) {
           error: "Busca por ID de bairro não suportada - neighborhood é um campo de texto" 
         }, { status: 400 });
       }
-    } else {
-      try {
-        const { data, error } = await supabaseAgent
-          .rpc('get_locations_with_properties', {
-            p_agency_id: agencyId,
-            p_query: query
-          });
+    }
 
-        if (error) {
-          throw new Error('RPC function not available');
-        }
+    // Buscar cidades
+    const { data: cities, error: citiesError } = await supabaseAgent
+      .from("city")
+      .select("id, name")
+      .ilike("name", `${query}%`)
+      .order("name")
+      .limit(10);
 
-        if (!data || data.length === 0) {
-          return NextResponse.json({ 
-            error: `Não há locais disponíveis que começam com "${query}"` 
-          }, { status: 404 });
-        }
+    if (citiesError) {
+      return NextResponse.json({ error: citiesError.message }, { status: 500 });
+    }
 
-        const groupedData = {
-          neighborhoods: data.filter((item: { type: string }) => item.type === 'neighborhood'),
-          cities: data.filter((item: { type: string }) => item.type === 'city')
-        };
+    // Buscar bairros únicos
+    const { data: neighborhoodData, error: neighborhoodsError } = await supabaseAgent
+      .from("entity_location")
+      .select("neighborhood, city_id")
+      .not("neighborhood", "is", null)
+      .not("neighborhood", "eq", "")
+      .not("city_id", "is", null)
+      .ilike("neighborhood", `%${query}%`)
+      .limit(20);
 
-        return NextResponse.json(groupedData);
-      } catch {
+    if (neighborhoodsError) {
+      console.error("Neighborhoods query error:", neighborhoodsError);
+      // Continuar sem bairros se houver erro
+    }
+
+    let neighborhoods: NeighborhoodResult[] = [];
+
+    if (neighborhoodData && neighborhoodData.length > 0) {
+      const typedNeighborhoodData = neighborhoodData as Array<{ neighborhood: string | null; city_id: number | null }>;
+      const neighborhoodCityIds = [
+        ...new Set(
+          typedNeighborhoodData
+            .map((entry) => entry.city_id)
+            .filter((id): id is number => typeof id === "number")
+        ),
+      ];
+      const { data: neighborhoodCities, error: neighborhoodCitiesError } = await supabaseAgent
+        .from("city")
+        .select("id, name")
+        .in("id", neighborhoodCityIds);
+
+      if (neighborhoodCitiesError) {
+        console.error("Neighborhood cities query error:", neighborhoodCitiesError);
+        // Continuar sem bairros se houver erro
+      } else if (neighborhoodCities) {
+        // Processar bairros: remover duplicatas e normalizar formatação
+        const uniqueNeighborhoods = new Map<string, NeighborhoodResult>();
         
-        const { data: listings, error: listingsError } = await supabaseAgent
-          .from("listing")
-          .select("listing_id")
-          .eq("agency_id", agencyId);
+        typedNeighborhoodData.forEach((location) => {
+          if (!location.neighborhood || typeof location.city_id !== "number") {
+            return;
+          }
+          const key = `${location.neighborhood.toLowerCase()}-${location.city_id}`;
+          if (!uniqueNeighborhoods.has(key)) {
+            const normalizedName = location.neighborhood
+              .toLowerCase()
+              .split(' ')
+              .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+            
+            const cityName = neighborhoodCities.find(city => city.id === location.city_id)?.name ?? "";
+            
+            uniqueNeighborhoods.set(key, {
+              id: uniqueNeighborhoods.size + 10000,
+              name: `${normalizedName}, ${cityName}`,
+              type: "neighborhood",
+              city_name: cityName,
+              city_id: location.city_id,
+              neighborhood_name: normalizedName
+            });
+          }
+        });
 
-        if (listingsError) {
-          return NextResponse.json({ error: listingsError.message }, { status: 500 });
-        }
-
-        const { data: condominiums, error: condominiumsError } = await supabaseAgent
-          .from("condominium")
-          .select("id")
-          .eq("agency_id", agencyId);
-
-        if (condominiumsError) {
-          return NextResponse.json({ error: condominiumsError.message }, { status: 500 });
-        }
-
-        const listingIds = (listings || []).map((listing: { listing_id: string }) => listing.listing_id);
-        const condominiumIds = (condominiums || []).map((condominium: { id: string }) => condominium.id);
-
-        if (listingIds.length === 0 && condominiumIds.length === 0) {
-          return NextResponse.json({ neighborhoods: [], cities: [] });
-        }
-
-        const { data: cityLocations, error: cityLocationsError } = await supabaseAgent
-          .from("entity_location")
-          .select("city_id")
-          .in("listing_id", listingIds)
-          .eq("entity_type", "listing");
-
-        if (cityLocationsError) {
-          return NextResponse.json({ error: cityLocationsError.message }, { status: 500 });
-        }
-
-        const { data: condominiumCityLocations, error: condominiumCityLocationsError } = await supabaseAgent
-          .from("entity_location")
-          .select("city_id")
-          .in("condominium_id", condominiumIds)
-          .eq("entity_type", "condominium");
-
-        if (condominiumCityLocationsError) {
-          return NextResponse.json({ error: condominiumCityLocationsError.message }, { status: 500 });
-        }
-
-        const allCityIds = [
-          ...(cityLocations || []).map((location: { city_id: number }) => location.city_id),
-          ...(condominiumCityLocations || []).map((location: { city_id: number }) => location.city_id)
-        ];
-        const cityIds = [...new Set(allCityIds)];
-
-        const { data: cities, error: citiesError } = await supabaseAgent
-          .from("city")
-          .select("id, name")
-          .in("id", cityIds)
-          .ilike("name", `${query}%`)
-          .order("name")
-          .limit(10);
-
-        if (citiesError) {
-          return NextResponse.json({ error: citiesError.message }, { status: 500 });
-        }
-
-        const { data: neighborhoodLocations, error: neighborhoodLocationsError } = await supabaseAgent
-          .from("entity_location")
-          .select("neighborhood, city_id")
-          .in("listing_id", listingIds)
-          .eq("entity_type", "listing")
-          .not("neighborhood", "is", null)
-          .not("neighborhood", "eq", "");
-
-        if (neighborhoodLocationsError) {
-          return NextResponse.json({ error: neighborhoodLocationsError.message }, { status: 500 });
-        }
-
-        const { data: condominiumNeighborhoodLocations, error: condominiumNeighborhoodLocationsError } = await supabaseAgent
-          .from("entity_location")
-          .select("neighborhood, city_id")
-          .in("condominium_id", condominiumIds)
-          .eq("entity_type", "condominium")
-          .not("neighborhood", "is", null)
-          .not("neighborhood", "eq", "");
-
-        if (condominiumNeighborhoodLocationsError) {
-          return NextResponse.json({ error: condominiumNeighborhoodLocationsError.message }, { status: 500 });
-        }
-
-        const allNeighborhoodLocations = [
-          ...(neighborhoodLocations || []),
-          ...(condominiumNeighborhoodLocations || [])
-        ];
-
-        const uniqueNeighborhoods = [...new Set(
-          allNeighborhoodLocations
-            .map((location: { neighborhood: string }) => location.neighborhood)
-            .filter((neighborhood: string) => 
-              neighborhood && 
-              neighborhood.toLowerCase().includes(query!.toLowerCase())
-            )
-        )].sort();
-
-                 const neighborhoods = uniqueNeighborhoods
-           .slice(0, 10)
-           .map((name: string, index: number) => ({
-             id: index + 10001,
-             name: name,
-             type: 'neighborhood',
-             city_name: 'Vitória',
-             city_id: 3205309
-           }));
-
-        const groupedData = {
-          neighborhoods: neighborhoods,
-          cities: cities || []
-        };
-
-        if (groupedData.neighborhoods.length === 0 && groupedData.cities.length === 0) {
-          return NextResponse.json({ 
-            error: `Não há locais disponíveis que começam com "${query}"` 
-          }, { status: 404 });
-        }
-
-        return NextResponse.json(groupedData);
+        neighborhoods = Array.from(uniqueNeighborhoods.values())
+          .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+          .slice(0, 10);
       }
     }
-  } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+
+    // Formatar cidades com tipo
+    const typedCities = (cities ?? []) as Array<{ id: number; name: string }>;
+    const formattedCities: CityResult[] = typedCities.map((city) => ({
+      id: city.id,
+      name: city.name,
+      type: "city",
+      city_name: city.name,
+      city_id: city.id
+    }));
+
+    const result: { neighborhoods: NeighborhoodResult[]; cities: CityResult[] } = {
+      neighborhoods,
+      cities: formattedCities
+    };
+
+    if (result.neighborhoods.length === 0 && result.cities.length === 0) {
+      return NextResponse.json({ 
+        error: `Não há locais disponíveis que começam com "${query}"` 
+      }, { status: 404 });
+    }
+
+    return NextResponse.json(result);
+
+  } catch (error) {
+    console.error("Error in locations API:", error);
+    return NextResponse.json({ 
+      error: "Internal server error",
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 });
   }
 } 

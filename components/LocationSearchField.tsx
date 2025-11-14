@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { buildResultsUrl } from "../lib/navigation";
+import { buildLaunchesUrl, buildListingsUrl } from "../lib/navigation";
 import AutocompleteField from "./AutocompleteField";
 import { Button } from "./ui/button";
 import { Search } from "lucide-react";
@@ -16,13 +16,15 @@ type LocationSearchFieldProps = {
   };
   showCurrentLocation?: boolean;
   className?: string;
+  onOpenFilters?: () => void;
 };
 
 export default function LocationSearchField({ 
   currentLocation, 
   currentFilters, 
   showCurrentLocation = true,
-  className = ""
+  className = "",
+  onOpenFilters
 }: LocationSearchFieldProps) {
   const [newLocation, setNewLocation] = useState("");
   const [selectedItemType, setSelectedItemType] = useState<"city" | "neighborhood" | null>(null);
@@ -41,32 +43,20 @@ export default function LocationSearchField({
   };
 
   const handleItemSelect = (item: { name: string; type: string; id: number }) => {
-    console.log("=== LocationSearchField handleItemSelect ===");
-    console.log("selected item:", item);
-    
     setSelectedItemType(item.type as "city" | "neighborhood");
     
     if (item.type === "city") {
       setSelectedItemData({ id: item.id, name: item.name });
       setNewLocation(String(item.id)); // ID da cidade
-      console.log("City selected - ID:", item.id, "Name:", item.name);
     } else if (item.type === "neighborhood") {
       // Para bairros, o item.id já é o city_id do bairro
       setSelectedItemData({ id: item.id, name: item.name });
       setNewLocation(item.name); // Nome do bairro para exibição
-      console.log("Neighborhood selected - City ID:", item.id, "Name:", item.name);
     }
   };
 
   const handleSearch = () => {
-    console.log("=== LocationSearchField handleSearch ===");
-    console.log("isLocationValid:", isLocationValid);
-    console.log("selectedItemType:", selectedItemType);
-    console.log("selectedItemData:", selectedItemData);
-    console.log("currentFilters:", currentFilters);
-    
     if (!isLocationValid || !selectedItemType || !selectedItemData) {
-      console.log("Search blocked - missing required data");
       return;
     }
     
@@ -88,56 +78,64 @@ export default function LocationSearchField({
       })
     };
     
-    console.log("filters to be applied:", filters);
-    
-    const url = buildResultsUrl(filters as Record<string, string>);
-    console.log("built URL:", url);
+    const urlBuilder = (filters.operacao === "lancamento")
+      ? buildLaunchesUrl
+      : buildListingsUrl;
+
+    const url = urlBuilder(filters as Record<string, string | string[]>);
     
     // Navegar diretamente para a URL - sem evento
     router.push(url);
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-4 ${className}`}>
-      <div className="flex flex-col gap-4">
-        <div>
-          <h4 className="text-sm font-semibold text-gray-900 mb-3">
-            Buscar em outra localização
-          </h4>
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <AutocompleteField
-                value={newLocation}
-                onChange={handleLocationChange}
-                onValidityChange={setIsLocationValid}
-                onItemSelect={handleItemSelect}
-                placeholder="Digite o nome do bairro ou cidade"
-                label=""
-                type="location"
-                className="mb-0"
-                labelClassName="sr-only"
-              />
-            </div>
-            
-            <div className="flex-shrink-0">
-              <Button
-                onClick={handleSearch}
-                disabled={!isLocationValid || isSearching}
-                className="px-6"
-              >
-                <Search className="mr-2 h-4 w-4" />
-                {isSearching ? "Buscando..." : "Buscar"}
-              </Button>
-            </div>
+    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-1">
+            <h4 className="text-base font-semibold text-gray-900">Buscar em outra localização</h4>
+            {showCurrentLocation && (
+              <span className="text-sm text-gray-600">
+                Buscando atualmente em: <span className="font-medium">{currentLocation}</span>
+              </span>
+            )}
+          </div>
+          {onOpenFilters && (
+            <button
+              onClick={onOpenFilters}
+              className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 lg:hidden"
+            >
+              Filtros
+            </button>
+          )}
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex-1 min-w-[220px]">
+            <AutocompleteField
+              value={newLocation}
+              onChange={handleLocationChange}
+              onValidityChange={setIsLocationValid}
+              onItemSelect={handleItemSelect}
+              placeholder="Digite o nome do bairro ou cidade"
+              label=""
+              type="location"
+              className="mb-0"
+              labelClassName="sr-only"
+              inputClassName="h-11 text-base"
+            />
+          </div>
+          <div className="sm:flex-shrink-0">
+            <Button
+              onClick={handleSearch}
+              disabled={!isLocationValid || isSearching}
+              className="h-11 w-full sm:w-auto px-6"
+            >
+              <Search className="mr-2 h-4 w-4" />
+              {isSearching ? "Buscando..." : "Buscar"}
+            </Button>
           </div>
         </div>
       </div>
-      
-      {showCurrentLocation && (
-        <div className="mt-2 text-sm text-gray-600">
-          Buscando atualmente em: <span className="font-medium">{currentLocation}</span>
-        </div>
-      )}
     </div>
   );
 } 

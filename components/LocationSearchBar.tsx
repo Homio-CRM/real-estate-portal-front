@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { buildResultsUrl } from "../lib/navigation";
+import { buildLaunchesUrl, buildListingsUrl } from "../lib/navigation";
 import { Button } from "./ui/button";
 import { Search } from "lucide-react";
 
@@ -34,7 +34,8 @@ export default function LocationSearchBar({ currentLocation, currentFilters }: L
       bairro: newLocation,
     };
     
-    const url = buildResultsUrl(filters as Record<string, string>);
+    const urlBuilder = filters.operacao === "lancamento" ? buildLaunchesUrl : buildListingsUrl;
+    const url = urlBuilder(filters as Record<string, string | string[]>);
     router.push(url);
   };
 
@@ -55,7 +56,7 @@ export default function LocationSearchBar({ currentLocation, currentFilters }: L
             <div className="flex-1 relative">
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 bg-white text-gray-900 focus:outline-none focus:ring-0 focus:ring-transparent focus:border-gray-500"
                 placeholder="Digite o nome do bairro ou cidade"
                 value={newLocation}
                 onChange={handleLocationChange}

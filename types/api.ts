@@ -1,10 +1,11 @@
 export type FetchListingsParams = {
   cityId: number;
   transactionType: "sale" | "rent" | "all";
-  tipo?: "Casa" | "Apartamento" | "Condomínio";
+  tipo?: string | string[];
   bairro?: string;
   limit?: number;
   offset?: number;
+  isLaunch?: boolean;
 };
 
 export type EntityLocationResponse = {
