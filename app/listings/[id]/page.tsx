@@ -377,7 +377,7 @@ export default function ListingDetailPage() {
           </div>
 
           <div className="py-6 xl:pr-[420px]">
-            <div className="   p-6 mb-6">
+            <div className="p-6 mb-6">
               <div className="text-sm text-gray-600 mb-4">
                 {breadcrumbs.join(" / ")}
               </div>
@@ -392,7 +392,7 @@ export default function ListingDetailPage() {
                 </div>
               )}
 
-              <div >
+              <div>
                 <div className="mb-3">
                   <div className="text-sm text-gray-600 mb-1">
                     {property.forRent ? "Valor de Aluguel" : "Valor de Venda"}

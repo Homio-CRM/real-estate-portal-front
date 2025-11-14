@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { buildLaunchesUrl, buildListingsUrl } from "../lib/navigation";
 import AutocompleteField from "./AutocompleteField";
 import { Button } from "./ui/button";
@@ -32,10 +32,10 @@ export default function LocationSearchField({
   const [isLocationValid, setIsLocationValid] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const handleLocationChange = (value: string) => {
     setNewLocation(value);
-    // Resetar os estados quando o usuário digitar
     if (selectedItemType || selectedItemData) {
       setSelectedItemType(null);
       setSelectedItemData(null);
@@ -47,11 +47,10 @@ export default function LocationSearchField({
     
     if (item.type === "city") {
       setSelectedItemData({ id: item.id, name: item.name });
-      setNewLocation(String(item.id)); // ID da cidade
+      setNewLocation(String(item.id));
     } else if (item.type === "neighborhood") {
-      // Para bairros, o item.id já é o city_id do bairro
       setSelectedItemData({ id: item.id, name: item.name });
-      setNewLocation(item.name); // Nome do bairro para exibição
+      setNewLocation(item.name);
     }
   };
 
@@ -62,29 +61,48 @@ export default function LocationSearchField({
     
     setIsSearching(true);
     
-    // Determinar se é cidade ou bairro baseado no tipo selecionado
-    const filters = {
-      ...currentFilters,
-      // Se for cidade, usar como localizacao e limpar bairro
-      // Se for bairro, atualizar localizacao com city_id e bairro com nome do bairro
-      ...(selectedItemType === "city" ? {
-        localizacao: String(selectedItemData.id), // ID da cidade
-        bairro: ""
-      } : {
-        // Para bairro, precisamos do city_id do bairro selecionado
-        // O selectedItemData.id neste caso é o city_id do bairro
-        localizacao: String(selectedItemData.id), // ID da cidade do bairro
-        bairro: selectedItemData.name // Nome do bairro
-      })
-    };
+    const allFilters: Record<string, string | string[]> = {};
     
-    const urlBuilder = (filters.operacao === "lancamento")
+    searchParams.forEach((value, key) => {
+      if (key === "localizacao" || key === "bairro") {
+        return;
+      }
+      
+      if (key === "tipo") {
+        if (value.includes(",")) {
+          allFilters[key] = value.split(",").filter(t => t.trim() !== "");
+        } else {
+          allFilters[key] = value;
+        }
+      } else {
+        allFilters[key] = value;
+      }
+    });
+    
+    if (selectedItemType === "city") {
+      allFilters.localizacao = String(selectedItemData.id);
+      allFilters.bairro = "";
+    } else {
+      allFilters.localizacao = String(selectedItemData.id);
+      allFilters.bairro = selectedItemData.name;
+    }
+    
+    if (!allFilters.operacao) {
+      allFilters.operacao = currentFilters.operacao || "todos";
+    }
+    
+    if (!allFilters.tipo) {
+      if (currentFilters.tipo) {
+        allFilters.tipo = currentFilters.tipo;
+      }
+    }
+    
+    const urlBuilder = (allFilters.operacao === "lancamento")
       ? buildLaunchesUrl
       : buildListingsUrl;
 
-    const url = urlBuilder(filters as Record<string, string | string[]>);
+    const url = urlBuilder(allFilters);
     
-    // Navegar diretamente para a URL - sem evento
     router.push(url);
   };
 

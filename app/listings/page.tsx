@@ -32,8 +32,7 @@ async function getCityName(cityId: number): Promise<{ name: string; stateId: num
         };
       }
     }
-  } catch (error) {
-    console.error("Error fetching city name:", error);
+  } catch {
   }
   return null;
 }
@@ -54,7 +53,6 @@ function ListingsContent() {
   const [currentLocation, setCurrentLocation] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Filtros que disparam nova busca na API
   const [apiFilters, setApiFilters] = useState<ApiFiltersState>({
     tipo: initialFilters.tipo,
     operacao: initialFilters.operacao,
@@ -62,7 +60,6 @@ function ListingsContent() {
     localizacao: initialFilters.localizacao ?? "",
   });
 
-  // Filtros que apenas filtram os resultados já carregados
   const [clientFilters, setClientFilters] = useState({
     quartos: "",
     banheiros: "",
@@ -76,8 +73,6 @@ function ListingsContent() {
     caracteristicas: [] as string[],
   });
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-
-
 
   const performSearch = useCallback((filtersToUse: { localizacao: string; operacao: string; tipo: string | string[]; bairro: string }) => {
     const validation = validateFilters(filtersToUse);
@@ -181,7 +176,6 @@ function ListingsContent() {
               setResults(completeListings);
             })
             .catch(() => {
-              // manter os resultados já carregados
             });
         })
         .catch(() => {
@@ -213,7 +207,6 @@ function ListingsContent() {
               setResults(allListings);
             })
             .catch(() => {
-              // manter os resultados já carregados
             });
         })
         .catch(() => {
@@ -225,6 +218,10 @@ function ListingsContent() {
   }, []);
 
   useEffect(() => {
+    setResults([]);
+    setCondoResults([]);
+    setLoading(true);
+    
     const filters = {
       localizacao: initialFilters.localizacao ?? "",
       operacao: initialFilters.operacao,
@@ -255,7 +252,6 @@ function ListingsContent() {
     initialFilters.localizacao,
   ]);
 
-
   const handleApiFilterChange = (key: string, value: string | string[]) => {
     let processedValue: string | string[] = value;
 
@@ -273,7 +269,24 @@ function ListingsContent() {
     setApiFilters(newApiFilters);
 
     const urlFilters: Record<string, string | string[]> = {};
+    
+    if (newApiFilters.localizacao) {
+      urlFilters.localizacao = newApiFilters.localizacao;
+    }
+    
+    if (key === "operacao") {
+      urlFilters.operacao = (processedValue as string) || "todos";
+    } else if (newApiFilters.operacao !== undefined && newApiFilters.operacao !== null) {
+      urlFilters.operacao = newApiFilters.operacao || "todos";
+    } else if (initialFilters.operacao) {
+      urlFilters.operacao = initialFilters.operacao;
+    }
+    
     Object.entries(newApiFilters).forEach(([filterKey, filterValue]) => {
+      if (filterKey === "localizacao" || filterKey === "operacao") {
+        return;
+      }
+      
       if (Array.isArray(filterValue)) {
         if (filterValue.length > 0) {
           urlFilters[filterKey] = filterValue;
@@ -285,6 +298,9 @@ function ListingsContent() {
 
     Object.entries(initialFilters).forEach(([filterKey, filterValue]) => {
       if (urlFilters[filterKey] !== undefined) {
+        return;
+      }
+      if (filterKey === "localizacao" || filterKey === "operacao") {
         return;
       }
       if (!filterValue) {
@@ -330,10 +346,8 @@ function ListingsContent() {
       caracteristicas: [],
     });
 
-    // Atualizar a URL removendo os filtros
     const urlFilters: Record<string, string> = {};
 
-    // Copiar apenas filtros não vazios dos filtros iniciais
     Object.entries(initialFilters).forEach(([key, value]) => {
       if (!value || value === "" || key === "tipo" || key === "operacao" || key === "bairro") {
         return;
@@ -349,8 +363,6 @@ function ListingsContent() {
     });
 
     const newUrl = buildListingsUrl(urlFilters);
-
-    // Apenas navegar - o useEffect vai detectar a mudança na URL
     router.push(newUrl);
   };
 
@@ -366,6 +378,13 @@ function ListingsContent() {
     : initialFilters.tipo ?? "";
 
   const filteredResults = results.filter(property => {
+    if (apiFilters.localizacao && apiFilters.localizacao !== "") {
+      const filterCityId = Number(apiFilters.localizacao);
+      if (filterCityId && property.city_id !== filterCityId) {
+        return false;
+      }
+    }
+
     if (apiFilters.operacao === "comprar" && property.transaction_type !== "sale") {
       return false;
     }
@@ -391,7 +410,6 @@ function ListingsContent() {
       }
     }
 
-    // Aplicar filtros do cliente (sem fazer nova busca na API)
     if (clientFilters.quartos && clientFilters.quartos !== "") {
       const quartos = parseInt(clientFilters.quartos);
       if (clientFilters.quartos === "5+" && (property.bedroom_count || 0) < 5) return false;
@@ -410,11 +428,9 @@ function ListingsContent() {
       if (clientFilters.vagas !== "5+" && property.garage_count !== vagas) return false;
     }
 
-    // Filtro de preço melhorado
     if (clientFilters.precoMin && clientFilters.precoMin !== "") {
       const precoMin = parseFloat(clientFilters.precoMin);
-      if (precoMin > 0) { // Só aplica se for um valor válido
-        // Usar o valor numérico do preço se disponível, senão extrair do preço formatado
+      if (precoMin > 0) {
         let propertyPrice = 0;
         if (property.list_price_amount) {
           propertyPrice = property.list_price_amount;
@@ -428,8 +444,7 @@ function ListingsContent() {
 
     if (clientFilters.precoMax && clientFilters.precoMax !== "") {
       const precoMax = parseFloat(clientFilters.precoMax);
-      if (precoMax > 0) { // Só aplica se for um valor válido
-        // Usar o valor numérico do preço se disponível, senão extrair do preço formatado
+      if (precoMax > 0) {
         let propertyPrice = 0;
         if (property.list_price_amount) {
           propertyPrice = property.list_price_amount;
@@ -492,14 +507,12 @@ function ListingsContent() {
     return true;
   });
 
-  // Converte o tipo de propriedade do formato DB para o formato de exibição
   const displayTipo = apiFilters.tipo
     ? (Array.isArray(apiFilters.tipo)
       ? apiFilters.tipo.map(t => translatePropertyType(t))
       : translatePropertyType(apiFilters.tipo))
     : "";
 
-  // Combina os filtros para passar para o componente ResultsFilters
   const combinedFilters = {
     ...apiFilters,
     tipo: displayTipo,
@@ -512,12 +525,23 @@ function ListingsContent() {
   const isCondoFilter = selectedTipos.length > 0
     ? selectedTipos.every((tipo) => tipo === "Condomínio" || tipo === "residential_condo")
     : condoSelectedFromInitial;
-  const totalResults = isCondoFilter ? condoResults.length : filteredResults.length;
+  
+  const filteredCondoResults = condoResults.filter(condo => {
+    if (apiFilters.localizacao && apiFilters.localizacao !== "") {
+      const filterCityId = Number(apiFilters.localizacao);
+      if (filterCityId && condo.city_id !== filterCityId) {
+        return false;
+      }
+    }
+    return true;
+  });
+  
+  const totalResults = isCondoFilter ? filteredCondoResults.length : filteredResults.length;
   const totalPages = Math.ceil(totalResults / RESULTS_PER_PAGE);
   const startIndex = (currentPage - 1) * RESULTS_PER_PAGE;
   const endIndex = startIndex + RESULTS_PER_PAGE;
   const paginatedResults = isCondoFilter
-    ? condoResults.slice(startIndex, endIndex)
+    ? filteredCondoResults.slice(startIndex, endIndex)
     : filteredResults.slice(startIndex, endIndex);
 
   useEffect(() => {
@@ -587,7 +611,7 @@ function ListingsContent() {
                   onOpenFilters={() => setMobileFiltersOpen(true)}
                 />
 
-                {(initialFilters.tipo === "Condomínio" ? condoResults.length === 0 : results.length === 0) ? (
+                {(initialFilters.tipo === "Condomínio" ? filteredCondoResults.length === 0 : filteredResults.length === 0) ? (
                   <div className="w-full flex flex-col items-center justify-center py-16 text-lg text-gray-600 font-medium">
                     Nenhum imóvel encontrado para os filtros selecionados.
                   </div>

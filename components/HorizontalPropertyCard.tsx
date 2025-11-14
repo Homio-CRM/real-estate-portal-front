@@ -9,6 +9,7 @@ import { translatePropertyType } from "../lib/propertyTypes";
 import { formatCurrency } from "../lib/formatCurrency";
 import ContactForm from "./ContactForm";
 import { getStateAbbreviationById } from "../lib/brazilianStates";
+import { translateRentalPeriod } from "../lib/rentalPeriod";
 
 export default function HorizontalPropertyCard(props: PropertyCardType) {
   const router = useRouter();
@@ -29,6 +30,9 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
     neighborhood,
     city_id,
     state_id,
+    transaction_type,
+    rental_period,
+    rental_price_amount,
   } = props;
 
   const [cityName, setCityName] = useState<string | null>(null);
@@ -91,7 +95,6 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
   const propertyPriceAmount = props.list_price_amount ?? props.rental_price_amount ?? null;
   const propertyPublicId = props.public_id ?? props.listing_id ?? "";
 
-
   const displayedImage = images[currentImageIdx] ?? "/placeholder-property.jpg";
 
   const handlePreviousImage = (e: MouseEvent<HTMLButtonElement>) => {
@@ -108,7 +111,9 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
     }
   };
 
-  const priceFormatted = formatCurrency(list_price_amount ?? price);
+  const priceFormatted = transaction_type === "rent" && rental_price_amount
+    ? `${formatCurrency(rental_price_amount)}${rental_period ? ` /${translateRentalPeriod(rental_period)}` : ""}`
+    : formatCurrency(list_price_amount ?? price);
 
   const handleCardClick = () => {
     if (listing_id) {
@@ -237,7 +242,9 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
 
               <div className="mb-3">
                 <span className="text-xs text-gray-500">
-                  {translatedPropertyType} em{" "}
+                  {translatedPropertyType}{" "}
+                  {transaction_type === "rent" ? "para alugar" : transaction_type === "sale" ? "à venda" : ""}{" "}
+                  em{" "}
                 </span>
                 <span className="text-xs text-gray-600">
                   {formatAddress()}

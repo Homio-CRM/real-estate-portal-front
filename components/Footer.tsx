@@ -52,10 +52,7 @@ export default function Footer({ onOwnerLeadClick }: FooterProps) {
                 Conheça
               </h3>
               <div className="space-y-2">
-                <Link href="#" className="block text-gray-600 hover:text-primary transition-colors">
-                  Área do proprietário
-                </Link>
-                <Link href="#" className="block text-gray-600 hover:text-primary transition-colors">
+                <Link href="/launches?localizacao=3205309&operacao=lancamento" className="block text-gray-600 hover:text-primary transition-colors">
                   Lançamento
                 </Link>
               </div>
@@ -66,12 +63,9 @@ export default function Footer({ onOwnerLeadClick }: FooterProps) {
                 Contato
               </h3>
               <div className="space-y-2">
-                <div className="text-gray-600">
+                <a href="tel:+552732003029" className="text-gray-600 hover:text-primary transition-colors">
                   (27) 3200-3029
-                </div>
-                <Link href="#" className="block text-gray-600 hover:text-primary transition-colors">
-                  Fale conosco
-                </Link>
+                </a>
               </div>
             </div>
 

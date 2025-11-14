@@ -30,8 +30,7 @@ async function getCityName(cityId: number): Promise<{ name: string; stateId: num
         };
       }
     }
-  } catch (error) {
-    console.error("Error fetching city name:", error);
+  } catch {
   }
   return null;
 }
@@ -129,6 +128,9 @@ function LaunchesContent() {
   }, []);
 
   useEffect(() => {
+    setLaunchResults([]);
+    setLoading(true);
+    
     performSearch({
       localizacao: initialFilters.localizacao,
       bairro: initialFilters.bairro || "",
@@ -185,6 +187,26 @@ function LaunchesContent() {
         }
       } else if (filterValue) {
         urlFilters[filterKey] = filterValue;
+      }
+    });
+
+    Object.entries(initialFilters).forEach(([filterKey, filterValue]) => {
+      if (urlFilters[filterKey] !== undefined) {
+        return;
+      }
+      if (filterKey === "operacao" || filterKey === "localizacao") {
+        return;
+      }
+      if (!filterValue) {
+        return;
+      }
+      if (filterKey === "tipo") {
+        const tiposArray = Array.isArray(filterValue) ? filterValue : [filterValue];
+        if (tiposArray.length > 0 && tiposArray[0] !== "") {
+          urlFilters[filterKey] = tiposArray;
+        }
+      } else {
+        urlFilters[filterKey] = filterValue as string;
       }
     });
 
@@ -248,6 +270,13 @@ function LaunchesContent() {
   };
 
   const filteredResults = launchResults.filter((condo) => {
+    if (apiFilters.localizacao && apiFilters.localizacao !== "") {
+      const filterCityId = Number(apiFilters.localizacao);
+      if (filterCityId && condo.city_id !== filterCityId) {
+        return false;
+      }
+    }
+
     if (apiFilters.bairro && apiFilters.bairro !== "") {
       const condoNeighborhood = condo.neighborhood || condo.display_address || "";
       if (!condoNeighborhood || condoNeighborhood.toLowerCase() !== apiFilters.bairro.toLowerCase()) {

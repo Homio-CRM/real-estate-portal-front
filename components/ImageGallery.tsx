@@ -97,11 +97,6 @@ export function ImageGallery({ mediaItems, onClose }: ImageGalleryProps) {
                     <div className="text-sm opacity-80">
                         {currentIndex + 1} de {mediaItems.length}
                     </div>
-                    {currentImage.caption && (
-                        <div className="text-sm mt-1 opacity-60">
-                            {currentImage.caption}
-                        </div>
-                    )}
                 </div>
 
                 <div className="absolute bottom-4 left-4 flex gap-2">
