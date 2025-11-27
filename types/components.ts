@@ -17,4 +17,5 @@ export type NeighborhoodAutocomplete = {
   type: string;
   city_name: string;
   city_id?: number;
+  neighborhood_name?: string;
 }; 

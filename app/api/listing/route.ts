@@ -4,6 +4,8 @@ import { translatePropertyTypeToDB, getAllPropertyTypes } from "../../../lib/pro
 import { Database } from "../../../types/database";
 
 type ListingSearchRow = Database["public"]["Views"]["listing_search"]["Row"];
+type MediaItemRow = Pick<Database["public"]["Tables"]["media_item"]["Row"], "id" | "url" | "caption" | "is_primary" | "order">;
+type MediaItemMap = Map<string, MediaItemRow[]>;
 
 export async function GET(request: Request) {
   try {
@@ -97,7 +99,7 @@ export async function GET(request: Request) {
     const fetchItemsByAdType = async (adTypes: string[], fetchLimit: number, excludeIds: Set<string>, includeCityFilter: boolean = true): Promise<ListingSearchRow[]> => {
       const query = buildBaseQuery(adTypes, includeCityFilter)
         .order('list_price_amount', { ascending: false, nullsFirst: false })
-        .limit(fetchLimit * 2);
+        .limit(Math.min(fetchLimit + 5, 50));
       const { data } = await query;
 
       if (!data || data.length === 0) {
@@ -107,37 +109,50 @@ export async function GET(request: Request) {
       return data.filter((item: ListingSearchRow) => item.listing_id && !excludeIds.has(item.listing_id));
     };
 
-    const processItem = async (item: ListingSearchRow) => {
+    const fetchAllMedia = async (listingIds: string[]): Promise<MediaItemMap> => {
+      if (listingIds.length === 0) {
+        return new Map();
+      }
+
+      const { data: mediaData } = await supabase
+        .from('media_item')
+        .select('id, url, caption, is_primary, order, listing_id')
+        .in('listing_id', listingIds)
+        .order('order', { ascending: true });
+
+      const mediaMap: MediaItemMap = new Map();
+
+      if (mediaData) {
+        mediaData.forEach(media => {
+          if (media.listing_id) {
+            if (!mediaMap.has(media.listing_id)) {
+              mediaMap.set(media.listing_id, []);
+            }
+            mediaMap.get(media.listing_id)!.push({
+              id: media.id,
+              url: media.url,
+              caption: media.caption,
+              is_primary: media.is_primary,
+              order: media.order
+            });
+          }
+        });
+      }
+
+      return mediaMap;
+    };
+
+    const processItem = (item: ListingSearchRow, mediaMap: MediaItemMap) => {
       try {
-        let allMedia: Array<{
-          id: string;
-          url: string;
-          caption: string | null;
-          is_primary: boolean;
-          order: number | null;
-        }> = [];
+        let allMedia: MediaItemRow[] = [];
         let mediaCount = 0;
 
-        if (item.primary_media_url && item.listing_id) {
-          const { data: mediaData, error: mediaError } = await supabase
-            .from('media_item')
-            .select('id, url, caption, is_primary, order')
-            .eq('listing_id', item.listing_id)
-            .order('order', { ascending: true });
-
-          if (mediaError) {
-            allMedia = [{
-              id: 'primary',
-              url: item.primary_media_url,
-              caption: 'Imagem principal',
-              is_primary: true,
-              order: 1
-            }];
-            mediaCount = 1;
-          } else if (mediaData && mediaData.length > 0) {
-            allMedia = mediaData;
+        if (item.listing_id) {
+          const itemMedia = mediaMap.get(item.listing_id);
+          if (itemMedia && itemMedia.length > 0) {
+            allMedia = itemMedia;
             mediaCount = allMedia.length;
-          } else {
+          } else if (item.primary_media_url) {
             allMedia = [{
               id: 'primary',
               url: item.primary_media_url,
@@ -147,6 +162,15 @@ export async function GET(request: Request) {
             }];
             mediaCount = 1;
           }
+        } else if (item.primary_media_url) {
+          allMedia = [{
+            id: 'primary',
+            url: item.primary_media_url,
+            caption: 'Imagem principal',
+            is_primary: true,
+            order: 1
+          }];
+          mediaCount = 1;
         }
 
         let features = item.features;
@@ -179,7 +203,7 @@ export async function GET(request: Request) {
           bedroom_count: item.bedroom_count || null,
           garage_count: item.garage_count || null,
           suite_count: null,
-          year_built: (item as ListingSearchRow & { year_built?: number | null }).year_built || null,
+          year_built: null,
           built_area: item.built_area || null,
           land_area: item.land_area || null,
           private_area: item.private_area || null,
@@ -222,68 +246,52 @@ export async function GET(request: Request) {
     const processedIds = new Set<string>();
     let attempts = 0;
     const maxAttempts = 5;
-    let useCityFilter = true;
+    const useCityFilter = true;
 
     while (validResults.length < limit && attempts < maxAttempts) {
       attempts++;
       const remaining = limit - validResults.length;
 
       const itemsToProcess: ListingSearchRow[] = [];
+      const fetchLimit = validResults.length === 0 ? limit : remaining;
 
-      if (validResults.length === 0) {
-        const superPremiumItems = await fetchItemsByAdType(['superPremium'], limit, processedIds, useCityFilter);
-        itemsToProcess.push(...superPremiumItems);
+      const [superPremiumItems, premiumItems, standardItems] = await Promise.all([
+        fetchItemsByAdType(['superPremium'], fetchLimit, processedIds, useCityFilter),
+        fetchItemsByAdType(['premium'], fetchLimit, processedIds, useCityFilter),
+        fetchItemsByAdType(['standard'], fetchLimit, processedIds, useCityFilter)
+      ]);
 
-        const remainingAfterSuperPremium = limit - itemsToProcess.length;
-        if (remainingAfterSuperPremium > 0) {
-          const premiumItems = await fetchItemsByAdType(['premium'], remainingAfterSuperPremium, processedIds, useCityFilter);
-          itemsToProcess.push(...premiumItems);
-        }
-
-        const remainingAfterPremium = limit - itemsToProcess.length;
-        if (remainingAfterPremium > 0) {
-          const standardItems = await fetchItemsByAdType(['standard'], remainingAfterPremium, processedIds, useCityFilter);
-          itemsToProcess.push(...standardItems);
-        }
-      } else {
-        const superPremiumItems = await fetchItemsByAdType(['superPremium'], remaining, processedIds, useCityFilter);
-        itemsToProcess.push(...superPremiumItems);
-
-        const remainingAfterSuperPremium = remaining - itemsToProcess.length;
-        if (remainingAfterSuperPremium > 0) {
-          const premiumItems = await fetchItemsByAdType(['premium'], remainingAfterSuperPremium, processedIds, useCityFilter);
-          itemsToProcess.push(...premiumItems);
-        }
-
-        const remainingAfterPremium = remaining - itemsToProcess.length;
-        if (remainingAfterPremium > 0) {
-          const standardItems = await fetchItemsByAdType(['standard'], remainingAfterPremium, processedIds, useCityFilter);
-          itemsToProcess.push(...standardItems);
-        }
+      itemsToProcess.push(...superPremiumItems);
+      const remainingAfterSuperPremium = fetchLimit - itemsToProcess.length;
+      if (remainingAfterSuperPremium > 0) {
+        itemsToProcess.push(...premiumItems.slice(0, remainingAfterSuperPremium));
       }
-
-      if (itemsToProcess.length === 0 && useCityFilter) {
-        useCityFilter = false;
-        continue;
+      const remainingAfterPremium = fetchLimit - itemsToProcess.length;
+      if (remainingAfterPremium > 0) {
+        itemsToProcess.push(...standardItems.slice(0, remainingAfterPremium));
       }
 
       if (itemsToProcess.length === 0) {
         break;
       }
 
-      const processed = await Promise.all(itemsToProcess.map(item => processItem(item)));
+      const listingIds = itemsToProcess
+        .map(item => item.listing_id)
+        .filter((id): id is string => id !== null && id !== undefined);
+
+      const mediaMap = await fetchAllMedia(listingIds);
+
+      const processed = itemsToProcess.map(item => processItem(item, mediaMap));
       const newValidResults = processed.filter((r): r is NonNullable<typeof r> => r !== null);
 
       for (const result of newValidResults) {
         if (result.listing_id && !processedIds.has(result.listing_id) && validResults.length < limit) {
+          if (useCityFilter && cityId && result.city_id !== parseInt(cityId)) {
+            continue;
+          }
           validResults.push(result);
           processedIds.add(result.listing_id);
         }
-      }
-
-      if (newValidResults.length === 0 && useCityFilter) {
-        useCityFilter = false;
-        continue;
       }
 
       if (newValidResults.length === 0) {

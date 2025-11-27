@@ -35,7 +35,7 @@ export async function fetchListings(params: FetchListingsParams): Promise<Proper
   if (params.isLaunch !== undefined) {
     searchParams.append("isLaunch", params.isLaunch.toString());
   }
-  
+
   const fullUrl = `/api/listing?${searchParams.toString()}`;
   
   try {

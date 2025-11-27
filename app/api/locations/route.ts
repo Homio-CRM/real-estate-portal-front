@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAgent } from "../../../lib/supabaseAgent";
 import type { Database } from "../../../types/database";
+import { getStateAbbreviationById } from "../../../lib/brazilianStates";
 
 type CityRow = Database["public"]["Tables"]["city"]["Row"];
 type EntityLocationRow = Database["public"]["Tables"]["entity_location"]["Row"];
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
       if (type === "city") {
         const { data, error } = await supabaseAgent
           .from("city")
-          .select("id, name")
+          .select("id, name, state_id")
           .eq("id", locationId)
           .single();
 
@@ -45,10 +46,19 @@ export async function GET(req: NextRequest) {
           return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
-        return NextResponse.json(data);
+        if (data) {
+          const stateAbbrev = getStateAbbreviationById(data.state_id);
+          const cityNameWithState = stateAbbrev ? `${data.name} - ${stateAbbrev}` : data.name;
+          return NextResponse.json({
+            id: data.id,
+            name: cityNameWithState
+          });
+        }
+
+        return NextResponse.json(null);
       } else {
-        return NextResponse.json({ 
-          error: "Busca por ID de bairro não suportada - neighborhood é um campo de texto" 
+        return NextResponse.json({
+          error: "Busca por ID de bairro não suportada - neighborhood é um campo de texto"
         }, { status: 400 });
       }
     }
@@ -56,7 +66,7 @@ export async function GET(req: NextRequest) {
     // Buscar cidades
     const { data: cities, error: citiesError } = await supabaseAgent
       .from("city")
-      .select("id, name")
+      .select("id, name, state_id")
       .ilike("name", `${query}%`)
       .order("name")
       .limit(10);
@@ -93,7 +103,7 @@ export async function GET(req: NextRequest) {
       ];
       const { data: neighborhoodCities, error: neighborhoodCitiesError } = await supabaseAgent
         .from("city")
-        .select("id, name")
+        .select("id, name, state_id")
         .in("id", neighborhoodCityIds);
 
       if (neighborhoodCitiesError) {
@@ -102,7 +112,7 @@ export async function GET(req: NextRequest) {
       } else if (neighborhoodCities) {
         // Processar bairros: remover duplicatas e normalizar formatação
         const uniqueNeighborhoods = new Map<string, NeighborhoodResult>();
-        
+
         typedNeighborhoodData.forEach((location) => {
           if (!location.neighborhood || typeof location.city_id !== "number") {
             return;
@@ -114,14 +124,17 @@ export async function GET(req: NextRequest) {
               .split(' ')
               .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
               .join(' ');
-            
-            const cityName = neighborhoodCities.find(city => city.id === location.city_id)?.name ?? "";
-            
+
+            const cityData = neighborhoodCities.find(city => city.id === location.city_id);
+            const cityName = cityData?.name ?? "";
+            const stateAbbrev = cityData?.state_id ? getStateAbbreviationById(cityData.state_id) : null;
+            const cityNameWithState = stateAbbrev ? `${cityName} - ${stateAbbrev}` : cityName;
+
             uniqueNeighborhoods.set(key, {
               id: uniqueNeighborhoods.size + 10000,
-              name: `${normalizedName}, ${cityName}`,
+              name: `${normalizedName}, ${cityNameWithState}`,
               type: "neighborhood",
-              city_name: cityName,
+              city_name: cityNameWithState,
               city_id: location.city_id,
               neighborhood_name: normalizedName
             });
@@ -135,14 +148,18 @@ export async function GET(req: NextRequest) {
     }
 
     // Formatar cidades com tipo
-    const typedCities = (cities ?? []) as Array<{ id: number; name: string }>;
-    const formattedCities: CityResult[] = typedCities.map((city) => ({
-      id: city.id,
-      name: city.name,
-      type: "city",
-      city_name: city.name,
-      city_id: city.id
-    }));
+    const typedCities = (cities ?? []) as Array<{ id: number; name: string; state_id: number }>;
+    const formattedCities: CityResult[] = typedCities.map((city) => {
+      const stateAbbrev = getStateAbbreviationById(city.state_id);
+      const cityNameWithState = stateAbbrev ? `${city.name} - ${stateAbbrev}` : city.name;
+      return {
+        id: city.id,
+        name: cityNameWithState,
+        type: "city",
+        city_name: cityNameWithState,
+        city_id: city.id
+      };
+    });
 
     const result: { neighborhoods: NeighborhoodResult[]; cities: CityResult[] } = {
       neighborhoods,
@@ -150,8 +167,8 @@ export async function GET(req: NextRequest) {
     };
 
     if (result.neighborhoods.length === 0 && result.cities.length === 0) {
-      return NextResponse.json({ 
-        error: `Não há locais disponíveis que começam com "${query}"` 
+      return NextResponse.json({
+        error: `Não há locais disponíveis que começam com "${query}"`
       }, { status: 404 });
     }
 
@@ -159,7 +176,7 @@ export async function GET(req: NextRequest) {
 
   } catch (error) {
     console.error("Error in locations API:", error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: "Internal server error",
       details: error instanceof Error ? error.message : String(error)
     }, { status: 500 });

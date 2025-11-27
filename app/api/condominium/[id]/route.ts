@@ -385,9 +385,15 @@ export async function GET(
       .from("listing")
       .select("*")
       .eq("condominium_id", id)
-      .eq("property_type", "apartment");
+      .eq("property_type", "residential_apartment");
 
-    type ApartmentSummary = ListingRow &
+    const { data: plantListings } = await supabaseAgent
+      .from("listing")
+      .select("*")
+      .eq("condominium_id", id)
+      .eq("property_type", "plant");
+
+    type ListingSummary = ListingRow &
       Partial<ListingDetailsRow> &
       Partial<EntityLocationRow> &
       Partial<ListingFeaturesRow> & {
@@ -398,9 +404,12 @@ export async function GET(
         image: string;
       };
 
-    const apartments: ApartmentSummary[] = [];
-    if (apartmentListings && apartmentListings.length > 0) {
-      const listingIds = apartmentListings.map(l => l.listing_id);
+    const processListings = async (listings: ListingRow[]): Promise<ListingSummary[]> => {
+      if (!listings || listings.length === 0) {
+        return [];
+      }
+
+      const listingIds = listings.map(l => l.listing_id);
 
       const [{ data: detailsList }, { data: locationsList }, { data: featuresList }, { data: mediaList }] = await Promise.all([
         supabaseAgent.from("listing_details").select("*").in("listing_id", listingIds),
@@ -423,7 +432,7 @@ export async function GET(
         mediaById.set(key, arr);
       });
 
-      for (const listing of apartmentListings) {
+      return listings.map(listing => {
         const details = detailsById.get(listing.listing_id) ?? null;
         const loc = locationById.get(listing.listing_id) ?? null;
         const feat = featuresById.get(listing.listing_id) ?? null;
@@ -431,8 +440,8 @@ export async function GET(
 
         const price =
           listing.transaction_type === "rent"
-            ? details?.rental_price_amount
-              ? `R$ ${(Number(details.rental_price_amount) / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+            ? listing.rental_price_amount
+              ? `R$ ${(Number(listing.rental_price_amount) / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
               : "Preço sob consulta"
             : listing.list_price_amount
               ? `R$ ${(Number(listing.list_price_amount) / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
@@ -443,7 +452,7 @@ export async function GET(
             ? `R$ ${(Number(details.iptu_amount) / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
             : undefined;
 
-        apartments.push({
+        return {
           ...listing,
           ...(details ?? {}),
           ...(loc ?? {}),
@@ -453,22 +462,25 @@ export async function GET(
           price,
           iptu: iptuFormatted,
           image: listingMedia.find(mediaItem => mediaItem.is_primary)?.url || "/placeholder-property.jpg",
-        });
-      }
-    }
+        };
+      });
+    };
+
+    const [apartments, plants] = await Promise.all([
+      processListings(apartmentListings || []),
+      processListings(plantListings || []),
+    ]);
 
     return NextResponse.json({
       ...condoResponse,
       apartments,
+      plants,
     });
   } catch (error) {
-    console.error("Error fetching condominium:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     );
   }
 }
-
-
 

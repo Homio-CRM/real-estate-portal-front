@@ -1312,7 +1312,9 @@ export type Database = {
           title: string | null
           tower: string | null
           transaction_status: Database["public"]["Enums"]["transaction_status_enum"]
-          transaction_type: Database["public"]["Enums"]["transaction_enum"]
+          transaction_type:
+            | Database["public"]["Enums"]["transaction_enum"]
+            | null
           unity: string | null
           updated_at: string | null
           usage_type: string | null
@@ -1353,7 +1355,9 @@ export type Database = {
           title?: string | null
           tower?: string | null
           transaction_status?: Database["public"]["Enums"]["transaction_status_enum"]
-          transaction_type: Database["public"]["Enums"]["transaction_enum"]
+          transaction_type?:
+            | Database["public"]["Enums"]["transaction_enum"]
+            | null
           unity?: string | null
           updated_at?: string | null
           usage_type?: string | null
@@ -1394,7 +1398,9 @@ export type Database = {
           title?: string | null
           tower?: string | null
           transaction_status?: Database["public"]["Enums"]["transaction_status_enum"]
-          transaction_type?: Database["public"]["Enums"]["transaction_enum"]
+          transaction_type?:
+            | Database["public"]["Enums"]["transaction_enum"]
+            | null
           unity?: string | null
           updated_at?: string | null
           usage_type?: string | null
@@ -3392,7 +3398,7 @@ export type Database = {
         | "laminate"
         | "parquet"
         | "other"
-      key_location_enum: "owner" | "company" | "other"
+      key_location_enum: "owner" | "company" | "lobby" | "other"
       occupation_status_enum: "occupied" | "vacant"
       ocupation_regiment_enum:
         | "freehold"
@@ -3426,7 +3432,9 @@ export type Database = {
         | "commercial_studio"
         | "commercial_office"
         | "commercial_edificio_comercial"
+        | "plant"
       solar_position_enum: "morning" | "afternoon" | "partial"
+      taxes_period: "monthly" | "yearly"
       transaction_enum: "sale" | "rent" | "both"
       transaction_status_enum:
         | "success"
@@ -3594,7 +3602,7 @@ export const Constants = {
         "parquet",
         "other",
       ],
-      key_location_enum: ["owner", "company", "other"],
+      key_location_enum: ["owner", "company", "lobby", "other"],
       occupation_status_enum: ["occupied", "vacant"],
       ocupation_regiment_enum: [
         "freehold",
@@ -3629,8 +3637,10 @@ export const Constants = {
         "commercial_studio",
         "commercial_office",
         "commercial_edificio_comercial",
+        "plant",
       ],
       solar_position_enum: ["morning", "afternoon", "partial"],
+      taxes_period: ["monthly", "yearly"],
       transaction_enum: ["sale", "rent", "both"],
       transaction_status_enum: [
         "success",

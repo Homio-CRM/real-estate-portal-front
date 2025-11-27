@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -15,10 +15,17 @@ interface MediaItem {
 interface ImageGalleryProps {
     mediaItems: MediaItem[]
     onClose?: () => void
+    initialIndex?: number
 }
 
-export function ImageGallery({ mediaItems, onClose }: ImageGalleryProps) {
-    const [currentIndex, setCurrentIndex] = useState(0)
+export function ImageGallery({ mediaItems, onClose, initialIndex = 0 }: ImageGalleryProps) {
+    const [currentIndex, setCurrentIndex] = useState(initialIndex)
+
+    useEffect(() => {
+        if (initialIndex >= 0 && initialIndex < mediaItems.length) {
+            setCurrentIndex(initialIndex)
+        }
+    }, [initialIndex, mediaItems.length])
 
     const goToPrevious = () => {
         setCurrentIndex((prevIndex) =>

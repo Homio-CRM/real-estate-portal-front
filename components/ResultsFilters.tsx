@@ -113,7 +113,7 @@ export default function ResultsFilters({ filters, onFilterChange, onClearFilters
   };
 
   return (
-    <div className="space-y-4 w-96">
+    <div className="space-y-4 w-96 max-h-[calc(100vh-8rem)] overflow-y-auto pr-2">
       {filters.operacao !== "lancamento" && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <h4 className="text-sm font-semibold text-gray-900 mb-3">Tipo de Transação</h4>

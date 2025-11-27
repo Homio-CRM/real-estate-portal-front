@@ -20,16 +20,24 @@ import { buildListingsUrl } from "../../lib/navigation";
 import { getStateAbbreviationById } from "../../lib/brazilianStates";
 import { translatePropertyType, getDBTypesForDisplayTypes } from "../../lib/propertyTypes";
 
+const cityNameCache = new Map<number, { name: string; stateId: number }>();
+
 async function getCityName(cityId: number): Promise<{ name: string; stateId: number } | null> {
+  if (cityNameCache.has(cityId)) {
+    return cityNameCache.get(cityId)!;
+  }
+
   try {
     const response = await fetch(`/api/cities?id=${cityId}`);
     if (response.ok) {
       const city = await response.json();
       if (city) {
-        return {
+        const cityInfo = {
           name: city.name,
           stateId: city.state_id
         };
+        cityNameCache.set(cityId, cityInfo);
+        return cityInfo;
       }
     }
   } catch {
@@ -109,6 +117,12 @@ function ListingsContent() {
     const tipoParam = tiposArray.length > 0 ? tiposArray : undefined;
     const bairroParam = filtersToUse.bairro && filtersToUse.bairro !== "" ? filtersToUse.bairro : undefined;
 
+    const baseParams = {
+      cityId: validation.cityId!,
+      tipo: tipoParam,
+      bairro: bairroParam,
+    };
+
     setLoading(true);
 
     if (isOnlyCondoSelection) {
@@ -129,12 +143,6 @@ function ListingsContent() {
         });
       return;
     }
-
-    const baseParams = {
-      cityId: validation.cityId!,
-      tipo: tipoParam,
-      bairro: bairroParam,
-    };
 
     if (transactionType === "all") {
       Promise.all([
@@ -218,10 +226,18 @@ function ListingsContent() {
   }, []);
 
   useEffect(() => {
+    const newApiFilters = {
+      tipo: initialFilters.tipo,
+      operacao: initialFilters.operacao,
+      bairro: initialFilters.bairro ?? "",
+      localizacao: initialFilters.localizacao ?? "",
+    };
+    setApiFilters(newApiFilters);
+
     setResults([]);
     setCondoResults([]);
     setLoading(true);
-    
+
     const filters = {
       localizacao: initialFilters.localizacao ?? "",
       operacao: initialFilters.operacao,
@@ -236,20 +252,6 @@ function ListingsContent() {
     Array.isArray(initialFilters.tipo) ? initialFilters.tipo.join(",") : initialFilters.tipo,
     initialFilters.bairro,
     performSearch,
-  ]);
-
-  useEffect(() => {
-    setApiFilters({
-      tipo: initialFilters.tipo,
-      operacao: initialFilters.operacao,
-      bairro: initialFilters.bairro ?? "",
-      localizacao: initialFilters.localizacao ?? "",
-    });
-  }, [
-    initialFilters.tipo,
-    initialFilters.operacao,
-    initialFilters.bairro,
-    initialFilters.localizacao,
   ]);
 
   const handleApiFilterChange = (key: string, value: string | string[]) => {
@@ -269,11 +271,11 @@ function ListingsContent() {
     setApiFilters(newApiFilters);
 
     const urlFilters: Record<string, string | string[]> = {};
-    
+
     if (newApiFilters.localizacao) {
       urlFilters.localizacao = newApiFilters.localizacao;
     }
-    
+
     if (key === "operacao") {
       urlFilters.operacao = (processedValue as string) || "todos";
     } else if (newApiFilters.operacao !== undefined && newApiFilters.operacao !== null) {
@@ -281,12 +283,12 @@ function ListingsContent() {
     } else if (initialFilters.operacao) {
       urlFilters.operacao = initialFilters.operacao;
     }
-    
+
     Object.entries(newApiFilters).forEach(([filterKey, filterValue]) => {
       if (filterKey === "localizacao" || filterKey === "operacao") {
         return;
       }
-      
+
       if (Array.isArray(filterValue)) {
         if (filterValue.length > 0) {
           urlFilters[filterKey] = filterValue;
@@ -366,146 +368,135 @@ function ListingsContent() {
     router.push(newUrl);
   };
 
-  const selectedTipos = Array.isArray(apiFilters.tipo)
-    ? apiFilters.tipo.filter((tipo) => tipo && tipo !== "")
-    : apiFilters.tipo
-      ? [apiFilters.tipo]
-      : [];
+  const selectedTipos = useMemo(() => {
+    return Array.isArray(apiFilters.tipo)
+      ? apiFilters.tipo.filter((tipo) => tipo && tipo !== "")
+      : apiFilters.tipo
+        ? [apiFilters.tipo]
+        : [];
+  }, [apiFilters.tipo]);
 
-  const selectedTipoDbValues = selectedTipos.length > 0 ? getDBTypesForDisplayTypes(selectedTipos) : [];
-  const locationSearchTipo = Array.isArray(initialFilters.tipo)
-    ? initialFilters.tipo[0] ?? ""
-    : initialFilters.tipo ?? "";
+  const selectedTipoDbValues = useMemo(() => {
+    return selectedTipos.length > 0 ? getDBTypesForDisplayTypes(selectedTipos) : [];
+  }, [selectedTipos]);
 
-  const filteredResults = results.filter(property => {
-    if (apiFilters.localizacao && apiFilters.localizacao !== "") {
-      const filterCityId = Number(apiFilters.localizacao);
-      if (filterCityId && property.city_id !== filterCityId) {
-        return false;
+  const locationSearchTipo = useMemo(() => {
+    return Array.isArray(initialFilters.tipo)
+      ? initialFilters.tipo[0] ?? ""
+      : initialFilters.tipo ?? "";
+  }, [initialFilters.tipo]);
+
+  const filteredResults = useMemo(() => {
+    return results.filter(property => {
+      if (clientFilters.quartos && clientFilters.quartos !== "") {
+        const quartos = parseInt(clientFilters.quartos);
+        if (clientFilters.quartos === "5+" && (property.bedroom_count || 0) < 5) return false;
+        if (clientFilters.quartos !== "5+" && property.bedroom_count !== quartos) return false;
       }
-    }
 
-    if (apiFilters.operacao === "comprar" && property.transaction_type !== "sale") {
-      return false;
-    }
-
-    if (apiFilters.operacao === "alugar" && property.transaction_type !== "rent") {
-      return false;
-    }
-
-    if (apiFilters.bairro && apiFilters.bairro !== "") {
-      const propertyNeighborhood = property.neighborhood || property.address || "";
-      if (!propertyNeighborhood || propertyNeighborhood.toLowerCase() !== apiFilters.bairro.toLowerCase()) {
-        return false;
+      if (clientFilters.banheiros && clientFilters.banheiros !== "") {
+        const banheiros = parseInt(clientFilters.banheiros);
+        if (clientFilters.banheiros === "5+" && (property.bathroom_count || 0) < 5) return false;
+        if (clientFilters.banheiros !== "5+" && property.bathroom_count !== banheiros) return false;
       }
-    }
 
-    if (selectedTipos.length > 0) {
-      const propertyType = property.property_type || "";
-      const displayType = translatePropertyType(propertyType);
-      const matchesDisplay = selectedTipos.includes(displayType);
-      const matchesDb = selectedTipoDbValues.includes(propertyType);
-      if (!matchesDisplay && !matchesDb) {
-        return false;
+      if (clientFilters.vagas && clientFilters.vagas !== "") {
+        const vagas = parseInt(clientFilters.vagas);
+        if (clientFilters.vagas === "5+" && (property.garage_count || 0) < 5) return false;
+        if (clientFilters.vagas !== "5+" && property.garage_count !== vagas) return false;
       }
-    }
 
-    if (clientFilters.quartos && clientFilters.quartos !== "") {
-      const quartos = parseInt(clientFilters.quartos);
-      if (clientFilters.quartos === "5+" && (property.bedroom_count || 0) < 5) return false;
-      if (clientFilters.quartos !== "5+" && property.bedroom_count !== quartos) return false;
-    }
-
-    if (clientFilters.banheiros && clientFilters.banheiros !== "") {
-      const banheiros = parseInt(clientFilters.banheiros);
-      if (clientFilters.banheiros === "5+" && (property.bathroom_count || 0) < 5) return false;
-      if (clientFilters.banheiros !== "5+" && property.bathroom_count !== banheiros) return false;
-    }
-
-    if (clientFilters.vagas && clientFilters.vagas !== "") {
-      const vagas = parseInt(clientFilters.vagas);
-      if (clientFilters.vagas === "5+" && (property.garage_count || 0) < 5) return false;
-      if (clientFilters.vagas !== "5+" && property.garage_count !== vagas) return false;
-    }
-
-    if (clientFilters.precoMin && clientFilters.precoMin !== "") {
-      const precoMin = parseFloat(clientFilters.precoMin);
-      if (precoMin > 0) {
-        let propertyPrice = 0;
-        if (property.list_price_amount) {
-          propertyPrice = property.list_price_amount;
-        } else if (property.price && property.price !== "Preço sob consulta") {
-          const priceMatch = property.price.match(/R\$\s*([\d.,]+)/);
-          propertyPrice = priceMatch ? parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.')) : 0;
-        }
-        if (!propertyPrice || propertyPrice < precoMin) return false;
-      }
-    }
-
-    if (clientFilters.precoMax && clientFilters.precoMax !== "") {
-      const precoMax = parseFloat(clientFilters.precoMax);
-      if (precoMax > 0) {
-        let propertyPrice = 0;
-        if (property.list_price_amount) {
-          propertyPrice = property.list_price_amount;
-        } else if (property.price && property.price !== "Preço sob consulta") {
-          const priceMatch = property.price.match(/R\$\s*([\d.,]+)/);
-          propertyPrice = priceMatch ? parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.')) : 0;
-        }
-        if (!propertyPrice || propertyPrice > precoMax) return false;
-      }
-    }
-
-    if (clientFilters.areaMin && clientFilters.areaMin !== "") {
-      const areaMin = parseFloat(clientFilters.areaMin);
-      if (!property.area || property.area < areaMin) return false;
-    }
-
-    if (clientFilters.areaMax && clientFilters.areaMax !== "") {
-      const areaMax = parseFloat(clientFilters.areaMax);
-      if (!property.area || property.area > areaMax) return false;
-    }
-
-    if (clientFilters.anoMin && clientFilters.anoMin !== "") {
-      const anoMin = parseInt(clientFilters.anoMin);
-      if (!property.year_built || property.year_built < anoMin) return false;
-    }
-
-    if (clientFilters.anoMax && clientFilters.anoMax !== "") {
-      const anoMax = parseInt(clientFilters.anoMax);
-      if (!property.year_built || property.year_built > anoMax) return false;
-    }
-
-    if (clientFilters.caracteristicas.length > 0) {
-      const hasAllFeatures = clientFilters.caracteristicas.every(feature => {
-        const featureKey = feature.toLowerCase().replace(/\s+/g, '_');
-
-        const propertyWithFeatures = property as PropertyCardType & { features?: unknown };
-        let featuresObj: Record<string, unknown> | null = null;
-        if (propertyWithFeatures.features) {
-          if (typeof propertyWithFeatures.features === 'string') {
-            try {
-              const parsed = JSON.parse(propertyWithFeatures.features);
-              featuresObj = typeof parsed === 'object' && parsed !== null ? parsed as Record<string, unknown> : null;
-            } catch {
-              featuresObj = null;
-            }
-          } else if (typeof propertyWithFeatures.features === 'object' && propertyWithFeatures.features !== null) {
-            featuresObj = propertyWithFeatures.features as Record<string, unknown>;
+      if (clientFilters.precoMin && clientFilters.precoMin !== "") {
+        const precoMin = parseFloat(clientFilters.precoMin);
+        if (precoMin > 0) {
+          let propertyPrice = 0;
+          if (property.list_price_amount) {
+            propertyPrice = property.list_price_amount;
+          } else if (property.price && property.price !== "Preço sob consulta") {
+            const priceMatch = property.price.match(/R\$\s*([\d.,]+)/);
+            propertyPrice = priceMatch ? parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.')) : 0;
           }
+          if (!propertyPrice || propertyPrice < precoMin) return false;
         }
+      }
 
-        if (featuresObj && typeof featuresObj === 'object' && !Array.isArray(featuresObj)) {
-          return featuresObj[featureKey] === true;
+      if (clientFilters.precoMax && clientFilters.precoMax !== "") {
+        const precoMax = parseFloat(clientFilters.precoMax);
+        if (precoMax > 0) {
+          let propertyPrice = 0;
+          if (property.list_price_amount) {
+            propertyPrice = property.list_price_amount;
+          } else if (property.price && property.price !== "Preço sob consulta") {
+            const priceMatch = property.price.match(/R\$\s*([\d.,]+)/);
+            propertyPrice = priceMatch ? parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.')) : 0;
+          }
+          if (!propertyPrice || propertyPrice > precoMax) return false;
         }
+      }
 
-        return false;
-      });
-      if (!hasAllFeatures) return false;
-    }
+      if (clientFilters.areaMin && clientFilters.areaMin !== "") {
+        const areaMin = parseFloat(clientFilters.areaMin);
+        if (!property.area || property.area < areaMin) return false;
+      }
 
-    return true;
-  });
+      if (clientFilters.areaMax && clientFilters.areaMax !== "") {
+        const areaMax = parseFloat(clientFilters.areaMax);
+        if (!property.area || property.area > areaMax) return false;
+      }
+
+      if (clientFilters.anoMin && clientFilters.anoMin !== "") {
+        const anoMin = parseInt(clientFilters.anoMin);
+        if (!property.year_built || property.year_built < anoMin) return false;
+      }
+
+      if (clientFilters.anoMax && clientFilters.anoMax !== "") {
+        const anoMax = parseInt(clientFilters.anoMax);
+        if (!property.year_built || property.year_built > anoMax) return false;
+      }
+
+      if (clientFilters.caracteristicas.length > 0) {
+        const hasAllFeatures = clientFilters.caracteristicas.every(feature => {
+          const featureKey = feature.toLowerCase().replace(/\s+/g, '_');
+
+          const propertyWithFeatures = property as PropertyCardType & { features?: unknown };
+          let featuresObj: Record<string, unknown> | null = null;
+          if (propertyWithFeatures.features) {
+            if (typeof propertyWithFeatures.features === 'string') {
+              try {
+                const parsed = JSON.parse(propertyWithFeatures.features);
+                featuresObj = typeof parsed === 'object' && parsed !== null ? parsed as Record<string, unknown> : null;
+              } catch {
+                featuresObj = null;
+              }
+            } else if (typeof propertyWithFeatures.features === 'object' && propertyWithFeatures.features !== null) {
+              featuresObj = propertyWithFeatures.features as Record<string, unknown>;
+            }
+          }
+
+          if (featuresObj && typeof featuresObj === 'object' && !Array.isArray(featuresObj)) {
+            return featuresObj[featureKey] === true;
+          }
+
+          return false;
+        });
+        if (!hasAllFeatures) return false;
+      }
+
+      return true;
+    });
+  }, [
+    results,
+    clientFilters.quartos,
+    clientFilters.banheiros,
+    clientFilters.vagas,
+    clientFilters.precoMin,
+    clientFilters.precoMax,
+    clientFilters.areaMin,
+    clientFilters.areaMax,
+    clientFilters.anoMin,
+    clientFilters.anoMax,
+    clientFilters.caracteristicas,
+  ]);
 
   const displayTipo = apiFilters.tipo
     ? (Array.isArray(apiFilters.tipo)
@@ -520,22 +511,32 @@ function ListingsContent() {
   };
 
   const RESULTS_PER_PAGE = 15;
-  const initialTiposArray = Array.isArray(initialFilters.tipo) ? initialFilters.tipo : (initialFilters.tipo ? [initialFilters.tipo] : []);
-  const condoSelectedFromInitial = initialTiposArray.includes("Condomínio") || initialTiposArray.includes("residential_condo");
-  const isCondoFilter = selectedTipos.length > 0
-    ? selectedTipos.every((tipo) => tipo === "Condomínio" || tipo === "residential_condo")
-    : condoSelectedFromInitial;
-  
-  const filteredCondoResults = condoResults.filter(condo => {
-    if (apiFilters.localizacao && apiFilters.localizacao !== "") {
-      const filterCityId = Number(apiFilters.localizacao);
-      if (filterCityId && condo.city_id !== filterCityId) {
-        return false;
+  const initialTiposArray = useMemo(() => {
+    return Array.isArray(initialFilters.tipo) ? initialFilters.tipo : (initialFilters.tipo ? [initialFilters.tipo] : []);
+  }, [initialFilters.tipo]);
+
+  const condoSelectedFromInitial = useMemo(() => {
+    return initialTiposArray.includes("Condomínio") || initialTiposArray.includes("residential_condo");
+  }, [initialTiposArray]);
+
+  const isCondoFilter = useMemo(() => {
+    return selectedTipos.length > 0
+      ? selectedTipos.every((tipo) => tipo === "Condomínio" || tipo === "residential_condo")
+      : condoSelectedFromInitial;
+  }, [selectedTipos, condoSelectedFromInitial]);
+
+  const filteredCondoResults = useMemo(() => {
+    return condoResults.filter(condo => {
+      if (apiFilters.localizacao && apiFilters.localizacao !== "") {
+        const filterCityId = Number(apiFilters.localizacao);
+        if (filterCityId && condo.city_id !== filterCityId) {
+          return false;
+        }
       }
-    }
-    return true;
-  });
-  
+      return true;
+    });
+  }, [condoResults, apiFilters.localizacao]);
+
   const totalResults = isCondoFilter ? filteredCondoResults.length : filteredResults.length;
   const totalPages = Math.ceil(totalResults / RESULTS_PER_PAGE);
   const startIndex = (currentPage - 1) * RESULTS_PER_PAGE;

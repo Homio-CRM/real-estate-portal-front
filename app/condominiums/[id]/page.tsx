@@ -20,6 +20,7 @@ import { CondominiumCard, PropertyCard } from "../../../types/listings";
 import HorizontalPropertyCard from "../../../components/HorizontalPropertyCard";
 import Footer from "../../../components/Footer";
 import ContactForm from "../../../components/ContactForm";
+import PlantTabs from "../../../components/PlantTabs";
 import { cleanHtmlText } from "../../../lib/utils";
 import { ImageGallery } from "../../../components/ImageGallery";
 import { DetailMediaCarousel } from "../../../components/DetailMediaCarousel";
@@ -29,6 +30,7 @@ import { getStateAbbreviationById } from "../../../lib/brazilianStates";
 
 type CondominiumDetail = CondominiumCard & {
   apartments?: PropertyCard[];
+  plants?: PropertyCard[];
 };
 
 type CondominiumStats = {
@@ -654,6 +656,28 @@ export default function CondominiumDetailPage() {
                 </div>
               )}
             </div>
+
+            {Array.isArray(condo.plants) && condo.plants.length > 0 && (
+              <div className="mt-6">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                  <div className="p-6 pb-0">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6">Plantas do Lançamento</h3>
+                  </div>
+                  <PlantTabs plants={condo.plants} />
+                </div>
+              </div>
+            )}
+
+            {Array.isArray(condo.apartments) && condo.apartments.length > 0 && (
+              <div className="mt-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Apartamentos Disponíveis neste Condomínio</h2>
+                <div className="space-y-4">
+                  {condo.apartments.map((apartment) => (
+                    <HorizontalPropertyCard key={apartment.listing_id} {...apartment} />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="xl:hidden mb-6">
@@ -667,17 +691,6 @@ export default function CondominiumDetailPage() {
               />
             </div>
           </div>
-
-          {Array.isArray(condo.apartments) && condo.apartments.length > 0 && (
-            <div className="mt-12 pb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Apartamentos Disponíveis neste Condomínio</h2>
-              <div className="space-y-4">
-                {condo.apartments.map((apartment) => (
-                  <HorizontalPropertyCard key={apartment.listing_id} {...apartment} />
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

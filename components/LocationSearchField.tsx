@@ -50,7 +50,7 @@ export default function LocationSearchField({
       setNewLocation(String(item.id));
     } else if (item.type === "neighborhood") {
       setSelectedItemData({ id: item.id, name: item.name });
-      setNewLocation(item.name);
+      setNewLocation(String(item.id));
     }
   };
 
@@ -82,9 +82,10 @@ export default function LocationSearchField({
     if (selectedItemType === "city") {
       allFilters.localizacao = String(selectedItemData.id);
       allFilters.bairro = "";
-    } else {
+    } else if (selectedItemType === "neighborhood") {
       allFilters.localizacao = String(selectedItemData.id);
-      allFilters.bairro = selectedItemData.name;
+      const neighborhoodName = selectedItemData.name.split(',')[0].trim();
+      allFilters.bairro = neighborhoodName;
     }
     
     if (!allFilters.operacao) {
