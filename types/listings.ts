@@ -50,9 +50,12 @@ export type CondominiumDetails = {
   available_units?: number | null;
   delivery_forecast?: number | string | null;
   year_built?: number | null;
+  month_build?: string | null;
   total_units?: number;
   description?: string;
   usage_type?: string;
+  reference_unity?: string | null;
+  price_date?: string | null;
 };
 
 export type ListingDetails = {

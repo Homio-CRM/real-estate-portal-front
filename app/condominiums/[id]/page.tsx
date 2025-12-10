@@ -1,6 +1,7 @@
 "use client";
 import { ComponentType, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Bath,
   Bed,
@@ -25,12 +26,17 @@ import { cleanHtmlText } from "../../../lib/utils";
 import { ImageGallery } from "../../../components/ImageGallery";
 import { DetailMediaCarousel } from "../../../components/DetailMediaCarousel";
 import { getAmenityIcon, getFeatureInfo } from "../../../lib/detailFeatures";
-import { formatPrice, toSentenceCase } from "../../../lib/detailFormatters";
+import { formatPrice, toSentenceCase, translateMonth } from "../../../lib/detailFormatters";
 import { getStateAbbreviationById } from "../../../lib/brazilianStates";
 
 type CondominiumDetail = CondominiumCard & {
   apartments?: PropertyCard[];
   plants?: PropertyCard[];
+  reference_unit?: {
+    listing_id: string;
+    title: string | null;
+    public_id: string | null;
+  } | null;
 };
 
 type CondominiumStats = {
@@ -403,29 +409,29 @@ export default function CondominiumDetailPage() {
 
     const addressParts: string[] = [];
 
-    const hasValidNeighborhood = condo?.neighborhood && 
-      condo.neighborhood.trim() !== "" && 
+    const hasValidNeighborhood = condo?.neighborhood &&
+      condo.neighborhood.trim() !== "" &&
       condo.neighborhood.toLowerCase() !== "bairro não informado" &&
       condo.neighborhood.toLowerCase() !== "bairro nao informado";
-    
+
     let neighborhoodToUse = null;
-    
+
     if (hasValidNeighborhood) {
       neighborhoodToUse = condo.neighborhood;
     } else if (condo.display_address) {
       const displayAddressParts = condo.display_address.split(",").map(part => part.trim());
       for (let i = 1; i < displayAddressParts.length; i++) {
         const potentialNeighborhood = displayAddressParts[i];
-        if (potentialNeighborhood && 
-            potentialNeighborhood.toLowerCase() !== cityName?.toLowerCase() &&
-            potentialNeighborhood.toLowerCase() !== stateAbbrev?.toLowerCase() &&
-            !potentialNeighborhood.match(/^\d{5}-?\d{3}$/)) {
+        if (potentialNeighborhood &&
+          potentialNeighborhood.toLowerCase() !== cityName?.toLowerCase() &&
+          potentialNeighborhood.toLowerCase() !== stateAbbrev?.toLowerCase() &&
+          !potentialNeighborhood.match(/^\d{5}-?\d{3}$/)) {
           neighborhoodToUse = potentialNeighborhood;
           break;
         }
       }
     }
-    
+
     if (neighborhoodToUse) {
       addressParts.push(toSentenceCase(neighborhoodToUse));
     }
@@ -499,12 +505,23 @@ export default function CondominiumDetailPage() {
   const areaText = formatAreaRange();
   const deliveryForecastRaw = (condo && "delivery_forecast" in condo ? (condo as CondominiumDetail & { delivery_forecast?: unknown }).delivery_forecast : null) ?? condo.year_built ?? null;
   const deliveryForecastNumeric = parseNumeric(deliveryForecastRaw);
-  const deliveryForecastValue =
-    deliveryForecastNumeric !== null
-      ? `${deliveryForecastNumeric}`
-      : typeof deliveryForecastRaw === "string" && deliveryForecastRaw.trim().length > 0
-        ? deliveryForecastRaw.trim()
-        : null;
+  const monthBuild = condo.month_build ? translateMonth(condo.month_build) : null;
+
+  const deliveryForecastValue = (() => {
+    const yearValue = deliveryForecastNumeric !== null ? String(deliveryForecastNumeric) :
+      (typeof deliveryForecastRaw === "string" && deliveryForecastRaw.trim().length > 0 ? deliveryForecastRaw.trim() : null);
+
+    if (yearValue && monthBuild) {
+      return `${monthBuild} de ${yearValue}`;
+    }
+    if (yearValue) {
+      return yearValue;
+    }
+    if (monthBuild) {
+      return monthBuild;
+    }
+    return null;
+  })();
   const condoAvailableUnits = parseNumeric(condo.available_units);
   const statsAvailableUnits = parseNumeric(statsAny?.available_units);
   const fallbackAvailableUnits = apartments.length > 0 ? apartments.length : null;
@@ -540,10 +557,6 @@ export default function CondominiumDetailPage() {
 
   if (parkingRange) {
     statsItems.push({ icon: Car, label: "Vagas de garagem", value: parkingRange });
-  }
-
-  if (deliveryForecastValue) {
-    statsItems.push({ icon: Calendar, label: "Previsão de entrega", value: deliveryForecastValue });
   }
 
   if (availableUnits !== null && availableUnits !== undefined) {
@@ -607,6 +620,44 @@ export default function CondominiumDetailPage() {
                     </div>
                   )}
                 </div>
+                {condo.reference_unit && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <p className="text-sm text-gray-600">
+                      Os preços são baseados na{" "}
+                      {condo.reference_unit.title ? (
+                        <Link
+                          href={`/listings/${condo.reference_unit.public_id || condo.reference_unit.listing_id}`}
+                          className="text-primary hover:underline font-medium"
+                        >
+                          {condo.reference_unit.title}
+                        </Link>
+                      ) : (
+                        "unidade de referência"
+                      )}
+                      {condo.price_date && (() => {
+                        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                        try {
+                          const dateStr = condo.price_date.trim();
+                          const parts = dateStr.split("-");
+                          if (parts.length >= 2) {
+                            const year = parseInt(parts[0], 10);
+                            const monthIndex = parseInt(parts[1], 10) - 1;
+                            if (!Number.isNaN(year) && !Number.isNaN(monthIndex) && monthIndex >= 0 && monthIndex < 12) {
+                              return ` (${translateMonth(monthNames[monthIndex])} de ${year})`;
+                            }
+                          }
+                          const date = new Date(dateStr);
+                          if (!Number.isNaN(date.getTime())) {
+                            return ` (${translateMonth(monthNames[date.getMonth()])} de ${date.getFullYear()})`;
+                          }
+                        } catch {
+                        }
+                        return null;
+                      })()}
+                      , e os preços podem estar sujeitos a reajuste de acordo com a disponibilidade.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">

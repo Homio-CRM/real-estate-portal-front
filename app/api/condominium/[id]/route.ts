@@ -137,7 +137,7 @@ export async function GET(
   try {
     const { data: condominium, error: condominiumError } = await supabaseAgent
       .from("condominium")
-      .select("*")
+      .select("id, name, agency_id, year_built, month_build, description, usage_type, reference_unity, price_date, min_price, max_price, min_area, max_area, min_room_amount, max_room_amount, min_bathroom_count, max_bathroom_count, min_garage_count, max_garage_count, available_units")
       .eq("id", id)
       .single();
 
@@ -179,6 +179,8 @@ export async function GET(
       available_units: launchSearch?.available_units ?? condominium.available_units,
       delivery_forecast: deliveryForecast,
       display_address: launchDisplayAddress ?? condoDisplayAddress ?? null,
+      reference_unity: condominium.reference_unity ?? null,
+      price_date: condominium.price_date ?? null,
       ...(launchLocation ?? {}),
     };
 
@@ -471,10 +473,28 @@ export async function GET(
       processListings(plantListings || []),
     ]);
 
+    let referenceUnit = null;
+    if (condominium.reference_unity) {
+      const { data: referenceListing } = await supabaseAgent
+        .from("listing")
+        .select("listing_id, title, public_id")
+        .eq("listing_id", condominium.reference_unity)
+        .single();
+
+      if (referenceListing) {
+        referenceUnit = {
+          listing_id: referenceListing.listing_id,
+          title: referenceListing.title,
+          public_id: referenceListing.public_id,
+        };
+      }
+    }
+
     return NextResponse.json({
       ...condoResponse,
       apartments,
       plants,
+      ...(referenceUnit ? { reference_unit: referenceUnit } : {}),
     });
   } catch (error) {
     return NextResponse.json(
