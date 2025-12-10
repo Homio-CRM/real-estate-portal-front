@@ -10,14 +10,11 @@ import {
   Car,
   MapPin,
   MoreHorizontal,
-  Phone,
-  Mail,
-  Ruler,
-  User
+  Ruler
 } from "lucide-react";
 import Header from "../../../components/Header";
 import ListingDetailSkeleton from "../../../components/ListingDetailSkeleton";
-import { CondominiumCard, PropertyCard } from "../../../types/listings";
+import { CondominiumCard, Listing, PropertyCard } from "../../../types/listings";
 import HorizontalPropertyCard from "../../../components/HorizontalPropertyCard";
 import Footer from "../../../components/Footer";
 import ContactForm from "../../../components/ContactForm";
@@ -32,11 +29,7 @@ import { getStateAbbreviationById } from "../../../lib/brazilianStates";
 type CondominiumDetail = CondominiumCard & {
   apartments?: PropertyCard[];
   plants?: PropertyCard[];
-  reference_unit?: {
-    listing_id: string;
-    title: string | null;
-    public_id: string | null;
-  } | null;
+  reference_unit?: Pick<Listing, "listing_id" | "title" | "public_id"> | null;
 };
 
 type CondominiumStats = {
@@ -338,23 +331,12 @@ export default function CondominiumDetailPage() {
     (apartment) => apartment.garage_count
   );
 
-  const normalizePriceValue = (value?: number | null) => {
+  const formatPriceFromCents = (value?: number | null) => {
     if (typeof value !== "number") {
       return null;
     }
-    if (value >= 1000000) {
-      return value / 100;
-    }
-    if (value < 10000) {
-      return value * 100;
-    }
-    return value;
-  };
-
-  const formatPriceFromCents = (value?: number | null) => {
-    const normalized = normalizePriceValue(value);
-    if (normalized === null) return null;
-    return formatPrice(normalized);
+    const valueInReais = value / 100;
+    return formatPrice(valueInReais);
   };
 
   const formatPriceRange = () => {
@@ -529,11 +511,10 @@ export default function CondominiumDetailPage() {
 
   const dealType = "launch" as const;
   const priceFromCents = (value?: number | null) => {
-    const normalized = normalizePriceValue(value);
-    if (normalized === null) {
+    if (typeof value !== "number") {
       return null;
     }
-    return normalized;
+    return value / 100;
   };
   const propertyPriceValue = priceFromCents(condo.max_price ?? condo.min_price ?? null);
   const propertyPublicId =
@@ -557,6 +538,10 @@ export default function CondominiumDetailPage() {
 
   if (parkingRange) {
     statsItems.push({ icon: Car, label: "Vagas de garagem", value: parkingRange });
+  }
+
+  if (deliveryForecastValue) {
+    statsItems.push({ icon: Calendar, label: "Previsão de entrega", value: deliveryForecastValue });
   }
 
   if (availableUnits !== null && availableUnits !== undefined) {

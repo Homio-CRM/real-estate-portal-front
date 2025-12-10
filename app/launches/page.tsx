@@ -332,8 +332,9 @@ function LaunchesContent() {
     if (clientFilters.precoMin && clientFilters.precoMin !== "") {
       const precoMin = parseFloat(clientFilters.precoMin);
       if (precoMin > 0) {
+        const precoMinInCents = precoMin * 100;
         const maxPrice = condo.max_price ?? condo.min_price ?? null;
-        if (!maxPrice || maxPrice < precoMin) {
+        if (!maxPrice || maxPrice < precoMinInCents) {
           return false;
         }
       }
@@ -342,8 +343,9 @@ function LaunchesContent() {
     if (clientFilters.precoMax && clientFilters.precoMax !== "") {
       const precoMax = parseFloat(clientFilters.precoMax);
       if (precoMax > 0) {
+        const precoMaxInCents = precoMax * 100;
         const minPrice = condo.min_price ?? condo.max_price ?? null;
-        if (!minPrice || minPrice > precoMax) {
+        if (!minPrice || minPrice > precoMaxInCents) {
           return false;
         }
       }

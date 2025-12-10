@@ -156,21 +156,8 @@ export default function HorizontalCondominiumCard(props: CondominiumCardType) {
   const garageText = formatRange(min_garage_count, max_garage_count);
   const areaText = formatAreaRange();
 
-  const normalizePrice = (value?: number | null) => {
-    if (typeof value !== "number") {
-      return null;
-    }
-    if (value >= 1000000) {
-      return value / 100;
-    }
-    if (value < 10000) {
-      return value * 100;
-    }
-    return value;
-  };
-
-  const priceMin = normalizePrice(min_price);
-  const priceMax = normalizePrice(max_price);
+  const priceMin = typeof min_price === "number" ? min_price / 100 : null;
+  const priceMax = typeof max_price === "number" ? max_price / 100 : null;
 
   const formatPriceRange = () => {
     if (priceMin !== null && priceMax !== null && priceMin === priceMax) {

@@ -166,17 +166,17 @@ export async function GET(
 
     const mergedCondominium = {
       ...condominium,
-      min_price: launchSearch?.min_price ?? condominium.min_price,
-      max_price: launchSearch?.max_price ?? condominium.max_price,
-      min_area: launchSearch?.min_area ?? condominium.min_area,
-      max_area: launchSearch?.max_area ?? condominium.max_area,
-      min_room_amount: launchSearch?.min_room_amount ?? condominium.min_room_amount,
-      max_room_amount: launchSearch?.max_room_amount ?? condominium.max_room_amount,
-      min_bathroom_count: launchSearch?.min_bathroom_count ?? condominium.min_bathroom_count,
-      max_bathroom_count: launchSearch?.max_bathroom_count ?? condominium.max_bathroom_count,
-      min_garage_count: launchSearch?.min_garage_count ?? condominium.min_garage_count,
-      max_garage_count: launchSearch?.max_garage_count ?? condominium.max_garage_count,
-      available_units: launchSearch?.available_units ?? condominium.available_units,
+      min_price: launchSearch?.min_price !== undefined ? launchSearch.min_price : condominium.min_price,
+      max_price: launchSearch?.max_price !== undefined ? launchSearch.max_price : condominium.max_price,
+      min_area: launchSearch?.min_area !== undefined ? launchSearch.min_area : condominium.min_area,
+      max_area: launchSearch?.max_area !== undefined ? launchSearch.max_area : condominium.max_area,
+      min_room_amount: launchSearch?.min_room_amount !== undefined ? launchSearch.min_room_amount : condominium.min_room_amount,
+      max_room_amount: launchSearch?.max_room_amount !== undefined ? launchSearch.max_room_amount : condominium.max_room_amount,
+      min_bathroom_count: launchSearch?.min_bathroom_count !== undefined ? launchSearch.min_bathroom_count : condominium.min_bathroom_count,
+      max_bathroom_count: launchSearch?.max_bathroom_count !== undefined ? launchSearch.max_bathroom_count : condominium.max_bathroom_count,
+      min_garage_count: launchSearch?.min_garage_count !== undefined ? launchSearch.min_garage_count : condominium.min_garage_count,
+      max_garage_count: launchSearch?.max_garage_count !== undefined ? launchSearch.max_garage_count : condominium.max_garage_count,
+      available_units: launchSearch?.available_units !== undefined ? launchSearch.available_units : condominium.available_units,
       delivery_forecast: deliveryForecast,
       display_address: launchDisplayAddress ?? condoDisplayAddress ?? null,
       reference_unity: condominium.reference_unity ?? null,
@@ -281,40 +281,40 @@ export async function GET(
 
     const existingNeighborhood = normalizeString(
       getStringField(mergedRecord, "neighborhood") ??
-        location?.neighborhood ??
-        getStringField(locationRecord, "neighborhood") ??
-        launchLocation?.neighborhood ??
-        null
+      location?.neighborhood ??
+      getStringField(locationRecord, "neighborhood") ??
+      launchLocation?.neighborhood ??
+      null
     );
 
     const existingCityName = normalizeString(
       getStringField(mergedRecord, "city_name") ??
-        getStringField(locationRecord, "city_name") ??
-        cityMetadata.city_name ??
-        null
+      getStringField(locationRecord, "city_name") ??
+      cityMetadata.city_name ??
+      null
     );
 
     const existingStateName = normalizeString(
       getStringField(mergedRecord, "state_name") ??
-        getStringField(locationRecord, "state_name") ??
-        cityMetadata.state_name ??
-        null
+      getStringField(locationRecord, "state_name") ??
+      cityMetadata.state_name ??
+      null
     );
 
     const existingStateAbbreviationRaw = normalizeString(
       getStringField(mergedRecord, "state_abbreviation") ??
-        getStringField(locationRecord, "state_abbreviation") ??
-        cityMetadata.state_abbreviation ??
-        null
+      getStringField(locationRecord, "state_abbreviation") ??
+      cityMetadata.state_abbreviation ??
+      null
     );
     const existingStateAbbreviation = existingStateAbbreviationRaw ? existingStateAbbreviationRaw.toUpperCase() : null;
 
     const existingPostalCode = normalizePostalCode(
       getStringField(mergedRecord, "postal_code") ??
-        location?.postal_code ??
-        getStringField(locationRecord, "postal_code") ??
-        launchLocation?.postal_code ??
-        null
+      location?.postal_code ??
+      getStringField(locationRecord, "postal_code") ??
+      launchLocation?.postal_code ??
+      null
     );
 
     const displayAddressFinal = streetFromIbge ?? normalizeString(displayAddress);
@@ -332,15 +332,15 @@ export async function GET(
 
     const sanitizedDisplayAddress =
       displayAddressFinal &&
-      cityNameFinal &&
-      displayAddressFinal.toLocaleLowerCase("pt-BR") === cityNameFinal.toLocaleLowerCase("pt-BR")
+        cityNameFinal &&
+        displayAddressFinal.toLocaleLowerCase("pt-BR") === cityNameFinal.toLocaleLowerCase("pt-BR")
         ? null
         : displayAddressFinal;
 
     const sanitizedNeighborhood =
       neighborhoodFinal &&
-      cityNameFinal &&
-      neighborhoodFinal.toLocaleLowerCase("pt-BR") === cityNameFinal.toLocaleLowerCase("pt-BR")
+        cityNameFinal &&
+        neighborhoodFinal.toLocaleLowerCase("pt-BR") === cityNameFinal.toLocaleLowerCase("pt-BR")
         ? null
         : neighborhoodFinal;
 
