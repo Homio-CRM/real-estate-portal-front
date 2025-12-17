@@ -35,7 +35,7 @@ export default function Footer({ onOwnerLeadClick }: FooterProps) {
             <div className="space-y-4 text-center">
               <div>
                 <Image
-                  src="/logomarca_vitoria_imoveis_11667839493275.png"
+                  src="/vitória_imoveis_logo.svg"
                   alt="Vitória Imóveis"
                   width={200}
                   height={48}

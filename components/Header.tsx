@@ -15,7 +15,7 @@ export default function Header({ showLogo = true }: HeaderProps) {
       <div className="flex items-center">
         <Link href="/">
           <Image
-            src="/logomarca_vitoria_imoveis_11667839493275.png"
+            src="/vitória_imoveis_logo.svg"
             alt="Vitória Imóveis"
             width={200}
             height={64}
