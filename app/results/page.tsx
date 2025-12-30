@@ -1,6 +1,6 @@
 "use client";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState, useMemo, Suspense } from "react";
+import { useEffect, useState, useMemo, Suspense, useCallback } from "react";
 import Header from "../../components/Header";
 import PropertyCardSkeleton from "../../components/PropertyCardSkeleton";
 import BackToSearchButton from "../../components/BackToSearchButton";
@@ -43,7 +43,7 @@ function ResultadosContent() {
     caracteristicas: [] as string[],
   });
 
-  const fetchResults = async (currentApiFilters = apiFilters) => {
+  const fetchResults = useCallback(async (currentApiFilters = apiFilters) => {
     setLoading(true);
     const validation = validateFilters(initialFilters);
     if (!validation.isValid) {
@@ -79,11 +79,11 @@ function ResultadosContent() {
     setCondoResults([]);
     setResults(listings);
     setLoading(false);
-  };
+  }, [apiFilters, initialFilters]);
 
   useEffect(() => {
     fetchResults();
-  }, [initialFilters]);
+  }, [fetchResults]);
 
   const handleApiFilterChange = (key: string, value: string) => {
     const newApiFilters = { ...apiFilters, [key]: value };
@@ -138,10 +138,6 @@ function ResultadosContent() {
 
     const newUrl = buildResultsUrl(urlFilters);
     router.push(newUrl);
-  };
-
-  const handleLocationChange = (location: string) => {
-    handleApiFilterChange("bairro", location);
   };
 
   const filteredResults = results.filter(property => {
@@ -260,7 +256,6 @@ function ResultadosContent() {
                       }
                     }}
                     onClearFilters={handleClearFilters}
-                    onSearch={() => { }}
                   />
                 </div>
               </div>

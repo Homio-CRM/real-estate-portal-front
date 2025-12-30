@@ -11,11 +11,8 @@ type EnrichedAddress = {
   formattedCep?: string;
 };
 
-type CondominiumRow = Tables<"condominium">;
 type LaunchSearchRow = Tables<"launch_search">;
 type EntityLocationRow = Tables<"entity_location">;
-type CityRow = Tables<"city">;
-type StateRow = Tables<"state">;
 type MediaRow = Tables<"media_item">;
 type ListingRow = Tables<"listing">;
 type ListingDetailsRow = Tables<"listing_details">;
@@ -496,7 +493,7 @@ export async function GET(
       plants,
       ...(referenceUnit ? { reference_unit: referenceUnit } : {}),
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

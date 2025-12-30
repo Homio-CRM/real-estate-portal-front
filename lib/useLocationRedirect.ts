@@ -78,14 +78,17 @@ export function useLocationRedirect() {
     }
 
     hasInitialized.current = true;
-    const storedLocation = parseStoredLocation(localStorage.getItem("userLocation"));
 
-    if (storedLocation) {
-      setUserLocation(storedLocation);
-      return;
-    }
+    setTimeout(() => {
+      const storedLocation = parseStoredLocation(localStorage.getItem("userLocation"));
 
-    void requestLocationPermission();
+      if (storedLocation) {
+        setUserLocation(storedLocation);
+        return;
+      }
+
+      void requestLocationPermission();
+    }, 0);
   }, [requestLocationPermission]);
 
   const closePopup = useCallback(() => {

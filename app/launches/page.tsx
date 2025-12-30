@@ -477,7 +477,6 @@ function LaunchesContent() {
                       }
                     }}
                     onClearFilters={handleClearFilters}
-                    onSearch={() => {}}
                   />
                 </div>
               </div>
@@ -602,7 +601,6 @@ function LaunchesContent() {
                 onClearFilters={() => {
                   handleClearFilters();
                 }}
-                onSearch={() => {}}
               />
             </div>
           </div>

@@ -18,7 +18,7 @@ import { PropertyCard as PropertyCardType, CondominiumCard as CondominiumCardTyp
 import { parseFiltersFromSearchParams, validateFilters, getTransactionType } from "../../lib/filters";
 import { buildListingsUrl } from "../../lib/navigation";
 import { getStateAbbreviationById } from "../../lib/brazilianStates";
-import { translatePropertyType, getDBTypesForDisplayTypes } from "../../lib/propertyTypes";
+import { translatePropertyType } from "../../lib/propertyTypes";
 
 const cityNameCache = new Map<number, { name: string; stateId: number }>();
 
@@ -225,6 +225,10 @@ function ListingsContent() {
     }
   }, []);
 
+  const tipoString = useMemo(() => {
+    return Array.isArray(initialFilters.tipo) ? initialFilters.tipo.join(",") : initialFilters.tipo;
+  }, [initialFilters.tipo]);
+
   useEffect(() => {
     const newApiFilters = {
       tipo: initialFilters.tipo,
@@ -249,7 +253,8 @@ function ListingsContent() {
   }, [
     initialFilters.localizacao,
     initialFilters.operacao,
-    Array.isArray(initialFilters.tipo) ? initialFilters.tipo.join(",") : initialFilters.tipo,
+    initialFilters.tipo,
+    tipoString,
     initialFilters.bairro,
     performSearch,
   ]);
@@ -376,9 +381,6 @@ function ListingsContent() {
         : [];
   }, [apiFilters.tipo]);
 
-  const selectedTipoDbValues = useMemo(() => {
-    return selectedTipos.length > 0 ? getDBTypesForDisplayTypes(selectedTipos) : [];
-  }, [selectedTipos]);
 
   const locationSearchTipo = useMemo(() => {
     return Array.isArray(initialFilters.tipo)
@@ -548,7 +550,7 @@ function ListingsContent() {
   useEffect(() => {
     setCurrentPage(1);
   }, [
-    Array.isArray(initialFilters.tipo) ? initialFilters.tipo.join(",") : initialFilters.tipo,
+    tipoString,
     initialFilters.operacao,
     initialFilters.localizacao,
     initialFilters.bairro
@@ -596,7 +598,6 @@ function ListingsContent() {
                       }
                     }}
                     onClearFilters={handleClearFilters}
-                    onSearch={() => { }}
                   />
                 </div>
               </div>
@@ -725,7 +726,6 @@ function ListingsContent() {
                 onClearFilters={() => {
                   handleClearFilters();
                 }}
-                onSearch={() => { }}
               />
             </div>
           </div>

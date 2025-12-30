@@ -6,7 +6,6 @@ import AutocompleteField from "./AutocompleteField";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Button } from "./ui/button";
 import { Search } from "lucide-react";
-import { useTransactionType } from "../lib/useTransactionType";
 import { propertyCache } from "../lib/propertyCache";
 
 export default function HeroSearchBar({ filters, onFilterChange, onSearch }: PropertyFiltersProps) {

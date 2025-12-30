@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchListings } from "../lib/fetchListings";
 import { PropertyCard } from "../types/listings";
-import { Building, Home, ChevronLeft, ChevronRight, Camera, Ruler, Bed, Bath, Car, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight, Camera, Ruler, Bed, Bath, Car, MapPin } from "lucide-react";
 import { formatCurrency } from "../lib/formatCurrency";
 import PropertyCardSkeleton from "./PropertyCardSkeleton";
 import { getStateAbbreviationById } from "../lib/brazilianStates";
@@ -109,7 +109,7 @@ export default function FeaturedProperties({
           return city.name;
         }
       }
-    } catch (error) {
+    } catch {
     }
     return null;
   };
@@ -199,7 +199,7 @@ export default function FeaturedProperties({
           activeTab: activeTabRef.current,
           timestamp: Date.now(),
         });
-      } catch (err) {
+      } catch {
         if (!isMounted) {
           return;
         }
@@ -281,7 +281,7 @@ export default function FeaturedProperties({
 
   const prevSlide = (property: PropertyCard) => {
     const id = String(property.listing_id || property.title);
-    const slides = buildSlides(property);
+    buildSlides(property);
     setCurrentIdx((s) => {
       const curr = s[id] ?? 0;
       const next = curr === 0 ? 0 : curr - 1;

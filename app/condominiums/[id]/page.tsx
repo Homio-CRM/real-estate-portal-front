@@ -22,7 +22,7 @@ import PlantTabs from "../../../components/PlantTabs";
 import { cleanHtmlText } from "../../../lib/utils";
 import { ImageGallery } from "../../../components/ImageGallery";
 import { DetailMediaCarousel } from "../../../components/DetailMediaCarousel";
-import { getAmenityIcon, getFeatureInfo } from "../../../lib/detailFeatures";
+import { getFeatureInfo } from "../../../lib/detailFeatures";
 import { formatPrice, toSentenceCase, translateMonth } from "../../../lib/detailFormatters";
 import { getStateAbbreviationById } from "../../../lib/brazilianStates";
 
@@ -67,11 +67,21 @@ export default function CondominiumDetailPage() {
         const cachedRaw = sessionStorage.getItem(`condominium_${condoId}`);
         if (cachedRaw) {
           try {
-            const cachedData = JSON.parse(cachedRaw) as CondominiumDetail;
-            hadCached = true;
-            if (isMounted) {
-              setCondo(cachedData);
-              setLoading(false);
+            const cachedData = await new Promise<CondominiumDetail | null>((resolve) => {
+              setTimeout(() => {
+                try {
+                  resolve(JSON.parse(cachedRaw) as CondominiumDetail);
+                } catch {
+                  resolve(null);
+                }
+              }, 0);
+            });
+            if (cachedData) {
+              hadCached = true;
+              if (isMounted) {
+                setCondo(cachedData);
+                setLoading(false);
+              }
             }
           } catch {
           }

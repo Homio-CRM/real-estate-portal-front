@@ -46,7 +46,7 @@ export default function FeaturedProperties({ cityId }: FeaturedPropertiesProps) 
 
         setSaleProperties(sortedSaleResults.slice(0, 6));
         setRentProperties(rentResults.slice(0, 6));
-      } catch (err) {
+      } catch {
         setError("Erro ao carregar imóveis em destaque");
       } finally {
         setLoading(false);

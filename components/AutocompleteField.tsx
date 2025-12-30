@@ -127,7 +127,7 @@ export default function AutocompleteField({
         cachedDataRef.current = result;
         hasInitialDataRef.current = true;
         setShowOptions(true);
-      } catch (err) {
+      } catch {
         setError("Erro ao buscar localizações");
         setLocationData({ neighborhoods: [], cities: [] });
       } finally {

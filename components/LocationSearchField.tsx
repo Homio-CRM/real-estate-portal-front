@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { buildLaunchesUrl, buildListingsUrl } from "../lib/navigation";
 import AutocompleteField from "./AutocompleteField";

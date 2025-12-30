@@ -102,15 +102,22 @@ export default function ListingDetailPage() {
         const cachedData = sessionStorage.getItem(`listing_${listingId}`);
         if (cachedData) {
           try {
-            const parsedData = JSON.parse(cachedData);
-            setProperty(parsedData);
-            setLoading(false);
+            const parsedData = await new Promise<PropertyCardType | null>((resolve: (value: PropertyCardType | null) => void) => {
+              setTimeout(() => {
+                try {
+                  resolve(JSON.parse(cachedData) as PropertyCardType);
+                } catch {
+                  resolve(null);
+                }
+              }, 0);
+            });
+            if (parsedData) {
+              setProperty(parsedData);
+              setLoading(false);
 
-            if (!parsedData) return;
+              const txType = parsedData.transaction_type === "rental" ? "rent" : "sale";
 
-            const txType = parsedData.transaction_type === "rental" ? "rent" : "sale";
-
-            if (parsedData.property_type === "apartment" && parsedData.condominium_id) {
+              if (parsedData.property_type === "apartment" && parsedData.condominium_id) {
               try {
                 const res = await fetch(`/api/condominium/${parsedData.condominium_id}`);
                 if (res.ok) {
@@ -134,9 +141,9 @@ export default function ListingDetailPage() {
                   }
                 }
               } catch { }
-            }
+              }
 
-            if (parsedData.neighborhood) {
+              if (parsedData.neighborhood) {
               try {
                 const byNeighborhood = await fetchListings({
                   cityId: parsedData.city_id,
@@ -152,23 +159,24 @@ export default function ListingDetailPage() {
                   return;
                 }
               } catch { }
-            }
+              }
 
-            try {
-              const byCity = await fetchListings({
-                cityId: parsedData.city_id,
-                transactionType: txType,
-                tipo: parsedData.property_type === "apartment" ? "Apartamento" : "Casa",
-                limit: 6,
-                offset: 0,
-              });
-              const filtered = byCity.filter((p: PropertyCardType) => p.listing_id !== parsedData.listing_id).slice(0, 3);
-              setSimilarProperties(filtered);
-            } catch {
-              setSimilarProperties([]);
-            }
+              try {
+                const byCity = await fetchListings({
+                  cityId: parsedData.city_id,
+                  transactionType: txType,
+                  tipo: parsedData.property_type === "apartment" ? "Apartamento" : "Casa",
+                  limit: 6,
+                  offset: 0,
+                });
+                const filtered = byCity.filter((p: PropertyCardType) => p.listing_id !== parsedData.listing_id).slice(0, 3);
+                setSimilarProperties(filtered);
+              } catch {
+                setSimilarProperties([]);
+              }
 
-            return;
+              return;
+            }
           } catch { }
         }
       }
@@ -321,27 +329,6 @@ export default function ListingDetailPage() {
     }
 
     return breadcrumbs;
-  };
-
-  const formatDisplayAddress = () => {
-    const parts: string[] = [];
-
-    if (property.neighborhood) {
-      parts.push(toSentenceCase(property.neighborhood));
-    }
-
-    if (cityName) {
-      parts.push(toSentenceCase(cityName));
-    }
-
-    if (property.state_id) {
-      const stateAbbrev = getStateAbbreviationById(property.state_id);
-      if (stateAbbrev) {
-        parts.push(stateAbbrev.toUpperCase());
-      }
-    }
-
-    return parts.length > 0 ? parts.join(", ") : property.display_address || "Endereço não informado";
   };
 
   const breadcrumbs = buildBreadcrumbs();
@@ -559,7 +546,7 @@ export default function ListingDetailPage() {
                 const othersLabel = typeof othersLabelRaw === "string" ? othersLabelRaw : null;
 
                 const activeFeatures = Object.entries(resolvedFeatures)
-                  .filter(([_, v]) => v === true)
+                  .filter(([, v]) => v === true)
                   .map(([k]) => k)
                   .filter(k =>
                     k !== "others_label" &&

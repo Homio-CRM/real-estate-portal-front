@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAgent } from "../../../lib/supabaseAgent";
-import type { Database } from "../../../types/database";
 import { getStateAbbreviationById } from "../../../lib/brazilianStates";
-
-type CityRow = Database["public"]["Tables"]["city"]["Row"];
-type EntityLocationRow = Database["public"]["Tables"]["entity_location"]["Row"];
 
 type CityResult = {
   id: number;

@@ -292,17 +292,6 @@ export default function ContactForm({
         throw new Error(hint);
       }
 
-      const parsedOpportunity = opportunityData as Record<string, unknown> | null;
-      const extractedOpportunityId =
-        parsedOpportunity?.opportunityId ??
-        (parsedOpportunity?.opportunity as Record<string, unknown> | undefined)?.id ??
-        (parsedOpportunity?.data as Record<string, unknown> | undefined)?.id ??
-        (Array.isArray(parsedOpportunity?.data) &&
-          parsedOpportunity?.data?.[0] &&
-          typeof parsedOpportunity.data[0] === "object"
-          ? (parsedOpportunity.data[0] as Record<string, unknown>).id
-          : undefined);
-
       setSuccessMessage("Muito obrigado por entrar em contato! Nosso time retornará com você em breve.");
       setIsSubmitting(false);
     } catch (error) {

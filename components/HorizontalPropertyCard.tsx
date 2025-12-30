@@ -26,7 +26,6 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
     listing_id,
     media,
     list_price_amount,
-    condominium_id,
     neighborhood,
     city_id,
     state_id,
