@@ -212,12 +212,12 @@ function HomeContent() {
         
         <Header />
         
-        <div className="relative z-20 flex flex-col items-center justify-center h-screen md:min-h-screen px-4 py-8">
-          <div className="text-center mb-8 md:mb-12">
-            <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-8xl font-extrabold text-white mb-3 md:mb-4 leading-none">
+        <div className="relative z-20 flex flex-col items-center justify-center h-screen md:min-h-screen px-4 py-8 pt-28 md:pt-44">
+          <div className="text-center mb-6 sm:mb-8 md:mb-12">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold text-white mb-2 sm:mb-3 md:mb-4 leading-tight">
               Para você morar bem
             </h1>
-            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/90 max-w-2xl mx-auto px-2">
+            <p className="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-white/90 max-w-2xl mx-auto px-2 mt-2 sm:mt-3">
               Compre ou alugue com agilidade, segurança e sem burocracia
             </p>
           </div>

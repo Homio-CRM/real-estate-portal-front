@@ -175,14 +175,17 @@ export default function CondominiumDetailPage() {
     }
   };
 
-  const { allowNavigation, dismissPopup } = useBackButtonRedirect(
+  const { dismissPopup, hasShown } = useBackButtonRedirect(
     handleBackAttempt,
     suggestedProperties.length > 0 && !!condo
   );
 
   const handleContinueBack = () => {
     setShowBackRedirectModal(false);
-    allowNavigation();
+    dismissPopup();
+    setTimeout(() => {
+      router.back();
+    }, 100);
   };
 
   const handleDismissModal = () => {
@@ -191,7 +194,9 @@ export default function CondominiumDetailPage() {
   };
 
   const handleBackButton = () => {
-    if (suggestedProperties.length > 0 && !!condo) {
+    if (showBackRedirectModal || hasShown()) {
+      router.back();
+    } else if (suggestedProperties.length > 0 && !!condo) {
       handleBackAttempt();
     } else {
       router.back();

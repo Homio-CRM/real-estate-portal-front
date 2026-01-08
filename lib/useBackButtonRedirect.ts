@@ -1,11 +1,9 @@
 import { useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
 
 export function useBackButtonRedirect(
   onBackAttempt: () => void,
   enabled: boolean = true
 ) {
-  const router = useRouter();
   const hasShownPopup = useRef(false);
   const isEnabled = useRef(enabled);
   const historyStateAdded = useRef(false);
@@ -27,6 +25,10 @@ export function useBackButtonRedirect(
       return;
     }
 
+    if (hasShownPopup.current) {
+      return;
+    }
+
     if (!historyStateAdded.current) {
       try {
         window.history.pushState({ preventBack: true }, "", window.location.href);
@@ -38,12 +40,6 @@ export function useBackButtonRedirect(
 
     const handlePopState = (event: PopStateEvent) => {
       if (shouldAllowBack.current) {
-        fakeStatesCount.current = Math.max(0, fakeStatesCount.current - 1);
-        if (fakeStatesCount.current <= 0) {
-          shouldAllowBack.current = false;
-          historyStateAdded.current = false;
-          fakeStatesCount.current = 0;
-        }
         return;
       }
 
@@ -77,48 +73,39 @@ export function useBackButtonRedirect(
       }, 100);
     };
 
-    window.addEventListener("popstate", handlePopState, { passive: true });
+    const handlePopStateRef = handlePopState;
+    window.addEventListener("popstate", handlePopStateRef, { passive: true });
 
     return () => {
-      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("popstate", handlePopStateRef);
     };
   }, [enabled]);
 
-  const allowNavigation = useCallback(() => {
-    hasShownPopup.current = true;
-    shouldAllowBack.current = true;
-    isEnabled.current = false;
-    
-    const cleanup = () => {
-      shouldAllowBack.current = false;
-      historyStateAdded.current = false;
-      fakeStatesCount.current = 0;
-      isEnabled.current = enabled;
-    };
-    
-    if (typeof window !== "undefined" && historyStateAdded.current && fakeStatesCount.current > 0) {
-      const totalStatesToGoBack = fakeStatesCount.current + 1;
-      
-      try {
-        window.history.go(-totalStatesToGoBack);
-        setTimeout(cleanup, 500);
-      } catch {
-        cleanup();
-        router.back();
-      }
-    } else {
-      cleanup();
-      router.back();
-    }
-  }, [router, enabled]);
-
   const dismissPopup = useCallback(() => {
     hasShownPopup.current = true;
+    isEnabled.current = false;
+    shouldAllowBack.current = true;
+    
+    if (typeof window !== "undefined" && historyStateAdded.current && fakeStatesCount.current > 0) {
+      const totalStatesToGoBack = fakeStatesCount.current;
+      try {
+        window.history.go(-totalStatesToGoBack);
+        historyStateAdded.current = false;
+        fakeStatesCount.current = 0;
+      } catch {
+        historyStateAdded.current = false;
+        fakeStatesCount.current = 0;
+      }
+    }
+  }, []);
+
+  const hasShown = useCallback(() => {
+    return hasShownPopup.current;
   }, []);
 
   return {
-    allowNavigation,
     dismissPopup,
+    hasShown,
   };
 }
 

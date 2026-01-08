@@ -103,14 +103,17 @@ export default function ListingDetailPage() {
     }
   };
 
-  const { allowNavigation, dismissPopup } = useBackButtonRedirect(
+  const { dismissPopup, hasShown } = useBackButtonRedirect(
     handleBackAttempt,
     similarProperties.length > 0
   );
 
   const handleContinueBack = () => {
     setShowBackRedirectModal(false);
-    allowNavigation();
+    dismissPopup();
+    setTimeout(() => {
+      router.back();
+    }, 100);
   };
 
   const handleDismissModal = () => {
@@ -119,11 +122,65 @@ export default function ListingDetailPage() {
   };
 
   const handleBackButton = () => {
-    if (similarProperties.length > 0) {
+    if (showBackRedirectModal || hasShown()) {
+      router.back();
+    } else if (similarProperties.length > 0) {
       handleBackAttempt();
     } else {
       router.back();
     }
+  };
+
+  const getTransactionTypeForAPI = (transactionType: string | undefined): "rent" | "sale" => {
+    if (!transactionType) return "sale";
+    const normalized = transactionType.toLowerCase();
+    return normalized === "rental" || normalized === "rent" ? "rent" : "sale";
+  };
+
+  const normalizeTransactionType = (p: PropertyCardType): string => {
+    if (p.forRent !== undefined) {
+      return p.forRent ? "rent" : "sale";
+    }
+    if (p.rental_price_amount && !p.list_price_amount) {
+      return "rent";
+    }
+    if (p.list_price_amount && !p.rental_price_amount) {
+      return "sale";
+    }
+    const type = p.transaction_type;
+    if (!type) return "";
+    const normalized = type.toLowerCase();
+    return normalized === "rental" || normalized === "rent" ? "rent" : "sale";
+  };
+
+  const normalizeUsageType = (p: PropertyCardType): string | null => {
+    if (p.usage_type) {
+      const normalized = p.usage_type.toLowerCase();
+      if (normalized === "residential" || normalized === "residencial") {
+        return "residential";
+      }
+      if (normalized === "commercial" || normalized === "comercial") {
+        return "commercial";
+      }
+      return normalized;
+    }
+    if (p.property_type) {
+      const propType = p.property_type.toLowerCase();
+      if (propType.startsWith("residential_")) {
+        return "residential";
+      }
+      if (propType.startsWith("commercial_")) {
+        return "commercial";
+      }
+    }
+    return null;
+  };
+
+  const matchesUsageType = (p1: PropertyCardType, p2: PropertyCardType): boolean => {
+    const usage1 = normalizeUsageType(p1);
+    const usage2 = normalizeUsageType(p2);
+    if (!usage1 || !usage2) return true;
+    return usage1 === usage2;
   };
 
   useEffect(() => {
@@ -149,7 +206,8 @@ export default function ListingDetailPage() {
               setProperty(parsedData);
               setLoading(false);
 
-              const txType = parsedData.transaction_type === "rental" ? "rent" : "sale";
+              const txType = getTransactionTypeForAPI(parsedData.transaction_type);
+              const currentTxType = normalizeTransactionType(parsedData);
 
               if (parsedData.property_type === "apartment" && parsedData.condominium_id) {
               try {
@@ -167,10 +225,25 @@ export default function ListingDetailPage() {
                     features: condoFeatures,
                   });
                   const inSameCondo: PropertyCardType[] = (Array.isArray(condo.apartments) ? condo.apartments : [])
-                    .filter((p: PropertyCardType) => p.listing_id !== parsedData.listing_id)
+                    .filter((p: PropertyCardType) => 
+                      p.listing_id !== parsedData.listing_id && 
+                      normalizeTransactionType(p) === currentTxType &&
+                      matchesUsageType(p, parsedData)
+                    )
                     .slice(0, 3);
                   if (inSameCondo.length > 0) {
                     setSimilarProperties(inSameCondo);
+                    return;
+                  }
+                  
+                  const inSameCondoFallback: PropertyCardType[] = (Array.isArray(condo.apartments) ? condo.apartments : [])
+                    .filter((p: PropertyCardType) => 
+                      p.listing_id !== parsedData.listing_id && 
+                      normalizeTransactionType(p) === currentTxType
+                    )
+                    .slice(0, 3);
+                  if (inSameCondoFallback.length > 0) {
+                    setSimilarProperties(inSameCondoFallback);
                     return;
                   }
                 }
@@ -187,9 +260,22 @@ export default function ListingDetailPage() {
                   limit: 6,
                   offset: 0,
                 });
-                const filtered = byNeighborhood.filter((p: PropertyCardType) => p.listing_id !== parsedData.listing_id).slice(0, 3);
+                const filtered = byNeighborhood.filter((p: PropertyCardType) => 
+                  p.listing_id !== parsedData.listing_id && 
+                  normalizeTransactionType(p) === currentTxType &&
+                  matchesUsageType(p, parsedData)
+                ).slice(0, 3);
                 if (filtered.length > 0) {
                   setSimilarProperties(filtered);
+                  return;
+                }
+                
+                const filteredFallback = byNeighborhood.filter((p: PropertyCardType) => 
+                  p.listing_id !== parsedData.listing_id && 
+                  normalizeTransactionType(p) === currentTxType
+                ).slice(0, 3);
+                if (filteredFallback.length > 0) {
+                  setSimilarProperties(filteredFallback);
                   return;
                 }
               } catch { }
@@ -203,8 +289,20 @@ export default function ListingDetailPage() {
                   limit: 6,
                   offset: 0,
                 });
-                const filtered = byCity.filter((p: PropertyCardType) => p.listing_id !== parsedData.listing_id).slice(0, 3);
-                setSimilarProperties(filtered);
+                const filtered = byCity.filter((p: PropertyCardType) => 
+                  p.listing_id !== parsedData.listing_id && 
+                  normalizeTransactionType(p) === currentTxType &&
+                  matchesUsageType(p, parsedData)
+                ).slice(0, 3);
+                if (filtered.length > 0) {
+                  setSimilarProperties(filtered);
+                } else {
+                  const filteredFallback = byCity.filter((p: PropertyCardType) => 
+                    p.listing_id !== parsedData.listing_id && 
+                    normalizeTransactionType(p) === currentTxType
+                  ).slice(0, 3);
+                  setSimilarProperties(filteredFallback);
+                }
               } catch {
                 setSimilarProperties([]);
               }
@@ -221,7 +319,8 @@ export default function ListingDetailPage() {
 
       if (!data) return;
 
-      const txType = data.transaction_type === "rental" ? "rent" : "sale";
+      const txType = getTransactionTypeForAPI(data.transaction_type);
+      const currentTxType = normalizeTransactionType(data);
 
       if (data.property_type === "apartment" && data.condominium_id) {
         try {
@@ -239,10 +338,25 @@ export default function ListingDetailPage() {
               features: condoFeatures,
             });
             const inSameCondo: PropertyCardType[] = (Array.isArray(condo.apartments) ? condo.apartments : [])
-              .filter((p: PropertyCardType) => p.listing_id !== data.listing_id)
+              .filter((p: PropertyCardType) => 
+                p.listing_id !== data.listing_id && 
+                normalizeTransactionType(p) === currentTxType &&
+                matchesUsageType(p, data)
+              )
               .slice(0, 3);
             if (inSameCondo.length > 0) {
               setSimilarProperties(inSameCondo);
+              return;
+            }
+            
+            const inSameCondoFallback: PropertyCardType[] = (Array.isArray(condo.apartments) ? condo.apartments : [])
+              .filter((p: PropertyCardType) => 
+                p.listing_id !== data.listing_id && 
+                normalizeTransactionType(p) === currentTxType
+              )
+              .slice(0, 3);
+            if (inSameCondoFallback.length > 0) {
+              setSimilarProperties(inSameCondoFallback);
               return;
             }
           }
@@ -259,9 +373,22 @@ export default function ListingDetailPage() {
             limit: 6,
             offset: 0,
           });
-          const filtered = byNeighborhood.filter((p: PropertyCardType) => p.listing_id !== data.listing_id).slice(0, 3);
+          const filtered = byNeighborhood.filter((p: PropertyCardType) => 
+            p.listing_id !== data.listing_id && 
+            normalizeTransactionType(p) === currentTxType &&
+            matchesUsageType(p, data)
+          ).slice(0, 3);
           if (filtered.length > 0) {
             setSimilarProperties(filtered);
+            return;
+          }
+          
+          const filteredFallback = byNeighborhood.filter((p: PropertyCardType) => 
+            p.listing_id !== data.listing_id && 
+            normalizeTransactionType(p) === currentTxType
+          ).slice(0, 3);
+          if (filteredFallback.length > 0) {
+            setSimilarProperties(filteredFallback);
             return;
           }
         } catch { }
@@ -275,8 +402,20 @@ export default function ListingDetailPage() {
           limit: 6,
           offset: 0,
         });
-        const filtered = byCity.filter((p: PropertyCardType) => p.listing_id !== data.listing_id).slice(0, 3);
-        setSimilarProperties(filtered);
+        const filtered = byCity.filter((p: PropertyCardType) => 
+          p.listing_id !== data.listing_id && 
+          normalizeTransactionType(p) === currentTxType &&
+          matchesUsageType(p, data)
+        ).slice(0, 3);
+        if (filtered.length > 0) {
+          setSimilarProperties(filtered);
+        } else {
+          const filteredFallback = byCity.filter((p: PropertyCardType) => 
+            p.listing_id !== data.listing_id && 
+            normalizeTransactionType(p) === currentTxType
+          ).slice(0, 3);
+          setSimilarProperties(filteredFallback);
+        }
       } catch {
         setSimilarProperties([]);
       }
