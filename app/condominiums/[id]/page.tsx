@@ -25,6 +25,8 @@ import { DetailMediaCarousel } from "../../../components/DetailMediaCarousel";
 import { getFeatureInfo } from "../../../lib/detailFeatures";
 import { formatPrice, toSentenceCase, translateMonth } from "../../../lib/detailFormatters";
 import { getStateAbbreviationById } from "../../../lib/brazilianStates";
+import { useBackButtonRedirect } from "../../../lib/useBackButtonRedirect";
+import BackRedirectModal from "../../../components/BackRedirectModal";
 
 type CondominiumDetail = CondominiumCard & {
   apartments?: PropertyCard[];
@@ -51,6 +53,7 @@ export default function CondominiumDetailPage() {
   const [showGallery, setShowGallery] = useState(false);
   const [cityName, setCityName] = useState<string | null>(null);
   const [pageUrl, setPageUrl] = useState<string | null>(null);
+  const [showBackRedirectModal, setShowBackRedirectModal] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -161,6 +164,40 @@ export default function CondominiumDetailPage() {
     }
   }, []);
 
+  const apartments = Array.isArray(condo?.apartments) ? condo.apartments : [];
+  const suggestedProperties = apartments.slice(0, 3);
+
+  const handleBackAttempt = () => {
+    if (suggestedProperties.length > 0) {
+      setShowBackRedirectModal(true);
+    } else {
+      router.back();
+    }
+  };
+
+  const { allowNavigation, dismissPopup } = useBackButtonRedirect(
+    handleBackAttempt,
+    suggestedProperties.length > 0 && !!condo
+  );
+
+  const handleContinueBack = () => {
+    setShowBackRedirectModal(false);
+    allowNavigation();
+  };
+
+  const handleDismissModal = () => {
+    setShowBackRedirectModal(false);
+    dismissPopup();
+  };
+
+  const handleBackButton = () => {
+    if (suggestedProperties.length > 0 && !!condo) {
+      handleBackAttempt();
+    } else {
+      router.back();
+    }
+  };
+
   if (loading) {
     return <ListingDetailSkeleton />;
   }
@@ -180,8 +217,6 @@ export default function CondominiumDetailPage() {
       </div>
     );
   }
-
-  const apartments = Array.isArray(condo.apartments) ? condo.apartments : [];
 
   const featuresData = (() => {
     const raw = condo && "features" in condo ? (condo as CondominiumDetail & { features?: unknown }).features : null;
@@ -566,7 +601,7 @@ export default function CondominiumDetailPage() {
           media={condo.media}
           title={condo.name}
           onImageClick={() => setShowGallery(true)}
-          onBack={() => router.back()}
+          onBack={handleBackButton}
         />
 
         {breadcrumbs.length > 0 && (
@@ -751,6 +786,13 @@ export default function CondominiumDetailPage() {
           onClose={() => setShowGallery(false)}
         />
       )}
+
+      <BackRedirectModal
+        isOpen={showBackRedirectModal}
+        onClose={handleDismissModal}
+        onContinue={handleContinueBack}
+        suggestedProperties={suggestedProperties}
+      />
 
       <Footer />
     </div>

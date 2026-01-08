@@ -35,11 +35,11 @@ export default function Footer({ onOwnerLeadClick }: FooterProps) {
             <div className="space-y-4 text-center">
               <div>
                 <Image
-                  src="/vitória_imoveis_logo.svg"
+                  src="/vitória_imoveis_logo_red.svg"
                   alt="Vitória Imóveis"
                   width={200}
                   height={48}
-                  className="h-12 w-auto mx-auto"
+                  className="h-10 w-auto mx-auto"
                 />
               </div>
               <div className="text-gray-600 text-sm">

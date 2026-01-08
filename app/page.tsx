@@ -197,10 +197,10 @@ function HomeContent() {
 
   return (
     <>
-      <div className="min-h-screen relative">
+      <div className="h-screen md:min-h-screen relative">
         <div className="absolute inset-0">
           <Image
-            src="/Vitoria_nx171007000006.jpg"
+            src="/background.jpg"
             alt="Vitória"
             fill
             priority
@@ -212,7 +212,7 @@ function HomeContent() {
         
         <Header />
         
-        <div className="relative z-20 flex flex-col items-center justify-center min-h-screen px-4 py-8">
+        <div className="relative z-20 flex flex-col items-center justify-center h-screen md:min-h-screen px-4 py-8">
           <div className="text-center mb-8 md:mb-12">
             <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-8xl font-extrabold text-white mb-3 md:mb-4 leading-none">
               Para você morar bem

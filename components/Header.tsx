@@ -11,15 +11,15 @@ export default function Header({ showLogo = true }: HeaderProps) {
   }
 
   return (
-    <header className="w-full absolute top-0 left-0 z-10 flex items-center h-24 px-8">
+    <header className="w-full absolute top-0 left-0 z-10 flex items-center md:items-start justify-center md:justify-start h-24 px-4 md:pl-16 md:pt-16">
       <div className="flex items-center">
         <Link href="/">
           <Image
-            src="/vitória_imoveis_logo.svg"
+            src="/vitória_imoveis_logo_white.svg"
             alt="Vitória Imóveis"
             width={200}
             height={64}
-            className="h-16 w-auto cursor-pointer"
+            className="h-10 md:h-12 w-auto cursor-pointer"
             priority
           />
         </Link>

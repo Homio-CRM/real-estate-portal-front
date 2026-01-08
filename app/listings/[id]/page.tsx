@@ -30,6 +30,8 @@ import { formatPrice, toSentenceCase, translatePeriod } from "../../../lib/detai
 import { DetailMediaCarousel } from "../../../components/DetailMediaCarousel";
 import { formatCurrency } from "../../../lib/formatCurrency";
 import { Json } from "../../../types/database";
+import { useBackButtonRedirect } from "../../../lib/useBackButtonRedirect";
+import BackRedirectModal from "../../../components/BackRedirectModal";
 
 export default function ListingDetailPage() {
   const params = useParams();
@@ -62,6 +64,7 @@ export default function ListingDetailPage() {
   const [showGallery, setShowGallery] = useState(false);
   const [cityName, setCityName] = useState<string | null>(null);
   const [pageUrl, setPageUrl] = useState<string | null>(null);
+  const [showBackRedirectModal, setShowBackRedirectModal] = useState(false);
   const listingFeatures = useMemo(
     () => parseFeaturesObject((property as { features?: unknown } | null)?.features),
     [property],
@@ -91,6 +94,37 @@ export default function ListingDetailPage() {
       setPageUrl(window.location.href);
     }
   }, []);
+
+  const handleBackAttempt = () => {
+    if (similarProperties.length > 0) {
+      setShowBackRedirectModal(true);
+    } else {
+      router.back();
+    }
+  };
+
+  const { allowNavigation, dismissPopup } = useBackButtonRedirect(
+    handleBackAttempt,
+    similarProperties.length > 0
+  );
+
+  const handleContinueBack = () => {
+    setShowBackRedirectModal(false);
+    allowNavigation();
+  };
+
+  const handleDismissModal = () => {
+    setShowBackRedirectModal(false);
+    dismissPopup();
+  };
+
+  const handleBackButton = () => {
+    if (similarProperties.length > 0) {
+      handleBackAttempt();
+    } else {
+      router.back();
+    }
+  };
 
   useEffect(() => {
     async function fetchProperty() {
@@ -347,7 +381,7 @@ export default function ListingDetailPage() {
           media={property.media}
           title={property.title || ""}
           onImageClick={() => setShowGallery(true)}
-          onBack={() => router.back()}
+          onBack={handleBackButton}
         />
 
         <div className="relative mx-auto w-full max-w-7xl px-0 sm:px-4">
@@ -654,6 +688,13 @@ export default function ListingDetailPage() {
           onClose={() => setShowGallery(false)}
         />
       )}
+
+      <BackRedirectModal
+        isOpen={showBackRedirectModal}
+        onClose={handleDismissModal}
+        onContinue={handleContinueBack}
+        suggestedProperties={similarProperties}
+      />
 
       <Footer />
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type DealType = "rent" | "sale" | "launch";
 type LeadOrigin = "owner" | "owner-hero" | "owner-footer";
@@ -102,23 +102,8 @@ export default function ContactForm({
     return `Olá, tenho interesse no imóvel ${targetUrl}`;
   }, [leadOrigin, localUrl, propertyUrl]);
 
-  const previousDefaultRef = useRef<string | null>(null);
-
   useEffect(() => {
-    setMessage((current) => {
-      const previousDefault = previousDefaultRef.current;
-      previousDefaultRef.current = defaultMessage;
-
-      if (!current || current.trim().length === 0) {
-        return defaultMessage;
-      }
-
-      if (previousDefault && current === previousDefault) {
-        return defaultMessage;
-      }
-
-      return current;
-    });
+    setMessage(defaultMessage);
   }, [defaultMessage]);
 
   const sanitizedPhone = useMemo(() => {
@@ -357,17 +342,16 @@ export default function ContactForm({
           />
         </label>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-700">Mensagem</span>
+        <label className="hidden">
+          <span className="sr-only">Mensagem</span>
           <textarea
             name="message"
             value={message}
-            onChange={(event) => {
-              setMessage(event.target.value);
-              setSuccessMessage(null);
-            }}
+            readOnly
             rows={4}
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            tabIndex={-1}
+            className="sr-only"
+            aria-hidden="true"
           />
         </label>
       </div>
