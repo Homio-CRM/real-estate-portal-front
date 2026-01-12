@@ -17,6 +17,7 @@ import { CondominiumCard as CondominiumCardType } from "../../types/listings";
 import { parseFiltersFromSearchParams } from "../../lib/filters";
 import { buildLaunchesUrl } from "../../lib/navigation";
 import { getStateAbbreviationById } from "../../lib/brazilianStates";
+import { translatePropertyType } from "../../lib/propertyTypes";
 
 async function getCityName(cityId: number): Promise<{ name: string; stateId: number } | null> {
   try {
@@ -176,39 +177,17 @@ function LaunchesContent() {
       urlFilters.localizacao = newApiFilters.localizacao;
     }
 
-    Object.entries(newApiFilters).forEach(([filterKey, filterValue]) => {
-      if (filterKey === "operacao" || filterKey === "localizacao") {
-        return;
-      }
+    if (newApiFilters.bairro && newApiFilters.bairro !== "") {
+      urlFilters.bairro = newApiFilters.bairro;
+    }
 
-      if (Array.isArray(filterValue)) {
-        if (filterValue.length > 0) {
-          urlFilters[filterKey] = filterValue;
-        }
-      } else if (filterValue) {
-        urlFilters[filterKey] = filterValue;
+    if (newApiFilters.tipo) {
+      const tiposArray = Array.isArray(newApiFilters.tipo) ? newApiFilters.tipo : [newApiFilters.tipo];
+      const filteredTipos = tiposArray.filter(t => t && t !== "");
+      if (filteredTipos.length > 0) {
+        urlFilters.tipo = filteredTipos;
       }
-    });
-
-    Object.entries(initialFilters).forEach(([filterKey, filterValue]) => {
-      if (urlFilters[filterKey] !== undefined) {
-        return;
-      }
-      if (filterKey === "operacao" || filterKey === "localizacao") {
-        return;
-      }
-      if (!filterValue) {
-        return;
-      }
-      if (filterKey === "tipo") {
-        const tiposArray = Array.isArray(filterValue) ? filterValue : [filterValue];
-        if (tiposArray.length > 0 && tiposArray[0] !== "") {
-          urlFilters[filterKey] = tiposArray;
-        }
-      } else {
-        urlFilters[filterKey] = filterValue as string;
-      }
-    });
+    }
 
     const newUrl = buildLaunchesUrl(urlFilters);
     router.push(newUrl);
@@ -255,6 +234,10 @@ function LaunchesContent() {
     : apiFilters.tipo
       ? [apiFilters.tipo]
       : [];
+
+  const displayTipo = selectedTipos.length > 0
+    ? selectedTipos.map(t => translatePropertyType(t))
+    : "";
 
   const filterByRange = (min: number | null | undefined, max: number | null | undefined, target: number) => {
     if (min !== null && min !== undefined && target < min) {
@@ -417,7 +400,7 @@ function LaunchesContent() {
   const combinedFilters = {
     ...apiFilters,
     operacao: "lancamento",
-    tipo: selectedTipos,
+    tipo: displayTipo,
     ...clientFilters,
   };
 

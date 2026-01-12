@@ -290,6 +290,13 @@ export type Database = {
             foreignKeyName: "condominium_reference_unity_fkey"
             columns: ["reference_unity"]
             isOneToOne: false
+            referencedRelation: "listing_minimal_view"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "condominium_reference_unity_fkey"
+            columns: ["reference_unity"]
+            isOneToOne: false
             referencedRelation: "listing_search"
             referencedColumns: ["listing_id"]
           },
@@ -297,7 +304,21 @@ export type Database = {
             foreignKeyName: "condominium_reference_unity_fkey"
             columns: ["reference_unity"]
             isOneToOne: false
+            referencedRelation: "listing_search_all_ad_types"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "condominium_reference_unity_fkey"
+            columns: ["reference_unity"]
+            isOneToOne: false
             referencedRelation: "listing_view"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "condominium_reference_unity_fkey"
+            columns: ["reference_unity"]
+            isOneToOne: false
+            referencedRelation: "listing_view_list"
             referencedColumns: ["listing_id"]
           },
         ]
@@ -1088,6 +1109,13 @@ export type Database = {
             foreignKeyName: "entity_features_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: false
+            referencedRelation: "listing_minimal_view"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "entity_features_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
             referencedRelation: "listing_search"
             referencedColumns: ["listing_id"]
           },
@@ -1095,7 +1123,21 @@ export type Database = {
             foreignKeyName: "entity_features_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: false
+            referencedRelation: "listing_search_all_ad_types"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "entity_features_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
             referencedRelation: "listing_view"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "entity_features_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listing_view_list"
             referencedColumns: ["listing_id"]
           },
         ]
@@ -1212,6 +1254,13 @@ export type Database = {
             foreignKeyName: "entity_location_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: false
+            referencedRelation: "listing_minimal_view"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "entity_location_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
             referencedRelation: "listing_search"
             referencedColumns: ["listing_id"]
           },
@@ -1219,7 +1268,21 @@ export type Database = {
             foreignKeyName: "entity_location_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: false
+            referencedRelation: "listing_search_all_ad_types"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "entity_location_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
             referencedRelation: "listing_view"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "entity_location_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listing_view_list"
             referencedColumns: ["listing_id"]
           },
         ]
@@ -1301,6 +1364,13 @@ export type Database = {
             foreignKeyName: "entity_participants_listing_fkey"
             columns: ["listing_id"]
             isOneToOne: false
+            referencedRelation: "listing_minimal_view"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "entity_participants_listing_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
             referencedRelation: "listing_search"
             referencedColumns: ["listing_id"]
           },
@@ -1308,7 +1378,21 @@ export type Database = {
             foreignKeyName: "entity_participants_listing_fkey"
             columns: ["listing_id"]
             isOneToOne: false
+            referencedRelation: "listing_search_all_ad_types"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "entity_participants_listing_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
             referencedRelation: "listing_view"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "entity_participants_listing_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listing_view_list"
             referencedColumns: ["listing_id"]
           },
         ]
@@ -1566,6 +1650,13 @@ export type Database = {
             foreignKeyName: "listing_details_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: true
+            referencedRelation: "listing_minimal_view"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "listing_details_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: true
             referencedRelation: "listing_search"
             referencedColumns: ["listing_id"]
           },
@@ -1573,7 +1664,21 @@ export type Database = {
             foreignKeyName: "listing_details_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: true
+            referencedRelation: "listing_search_all_ad_types"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "listing_details_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: true
             referencedRelation: "listing_view"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "listing_details_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: true
+            referencedRelation: "listing_view_list"
             referencedColumns: ["listing_id"]
           },
         ]
@@ -1622,6 +1727,13 @@ export type Database = {
             foreignKeyName: "listing_floor_finish_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: false
+            referencedRelation: "listing_minimal_view"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "listing_floor_finish_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
             referencedRelation: "listing_search"
             referencedColumns: ["listing_id"]
           },
@@ -1629,7 +1741,21 @@ export type Database = {
             foreignKeyName: "listing_floor_finish_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: false
+            referencedRelation: "listing_search_all_ad_types"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "listing_floor_finish_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
             referencedRelation: "listing_view"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "listing_floor_finish_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listing_view_list"
             referencedColumns: ["listing_id"]
           },
         ]
@@ -1682,6 +1808,13 @@ export type Database = {
             foreignKeyName: "listing_note_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: false
+            referencedRelation: "listing_minimal_view"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "listing_note_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
             referencedRelation: "listing_search"
             referencedColumns: ["listing_id"]
           },
@@ -1689,7 +1822,21 @@ export type Database = {
             foreignKeyName: "listing_note_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: false
+            referencedRelation: "listing_search_all_ad_types"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "listing_note_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
             referencedRelation: "listing_view"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "listing_note_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listing_view_list"
             referencedColumns: ["listing_id"]
           },
         ]
@@ -1732,6 +1879,13 @@ export type Database = {
             foreignKeyName: "listing_room_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: false
+            referencedRelation: "listing_minimal_view"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "listing_room_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
             referencedRelation: "listing_search"
             referencedColumns: ["listing_id"]
           },
@@ -1739,7 +1893,21 @@ export type Database = {
             foreignKeyName: "listing_room_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: false
+            referencedRelation: "listing_search_all_ad_types"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "listing_room_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
             referencedRelation: "listing_view"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "listing_room_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listing_view_list"
             referencedColumns: ["listing_id"]
           },
           {
@@ -1828,6 +1996,13 @@ export type Database = {
             foreignKeyName: "fk_media_listing"
             columns: ["listing_id"]
             isOneToOne: false
+            referencedRelation: "listing_minimal_view"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "fk_media_listing"
+            columns: ["listing_id"]
+            isOneToOne: false
             referencedRelation: "listing_search"
             referencedColumns: ["listing_id"]
           },
@@ -1835,7 +2010,21 @@ export type Database = {
             foreignKeyName: "fk_media_listing"
             columns: ["listing_id"]
             isOneToOne: false
+            referencedRelation: "listing_search_all_ad_types"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "fk_media_listing"
+            columns: ["listing_id"]
+            isOneToOne: false
             referencedRelation: "listing_view"
+            referencedColumns: ["listing_id"]
+          },
+          {
+            foreignKeyName: "fk_media_listing"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listing_view_list"
             referencedColumns: ["listing_id"]
           },
         ]
@@ -2206,7 +2395,83 @@ export type Database = {
           },
         ]
       }
+      listing_minimal_view: {
+        Row: {
+          ad_type: Database["public"]["Enums"]["ad_type_enum"] | null
+          bathroom_count: number | null
+          bedroom_count: number | null
+          city_id: number | null
+          city_name: string | null
+          created_at: string | null
+          garage_count: number | null
+          iptu_amount: number | null
+          iptu_currency: string | null
+          key_location: Database["public"]["Enums"]["key_location_enum"] | null
+          key_location_other: string | null
+          list_price_amount: number | null
+          list_price_currency: string | null
+          listing_id: string | null
+          neighborhood: string | null
+          primary_media_url: string | null
+          private_area: number | null
+          property_administration_fee_amount: number | null
+          property_type:
+            | Database["public"]["Enums"]["property_type_enum"]
+            | null
+          public_id: string | null
+          rental_price_amount: number | null
+          title: string | null
+          total_area: number | null
+          transaction_type:
+            | Database["public"]["Enums"]["transaction_enum"]
+            | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_location_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "city"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listing_search: {
+        Row: {
+          ad_type: Database["public"]["Enums"]["ad_type_enum"] | null
+          address: string | null
+          agency_id: string | null
+          bathroom_count: number | null
+          bedroom_count: number | null
+          city_id: number | null
+          complement: string | null
+          country_code: string | null
+          created_at: string | null
+          description: string | null
+          display_address: string | null
+          features: Json | null
+          list_price_amount: number | null
+          list_price_currency: string | null
+          listing_id: string | null
+          neighborhood: string | null
+          postal_code: string | null
+          primary_media_url: string | null
+          property_type:
+            | Database["public"]["Enums"]["property_type_enum"]
+            | null
+          public_id: string | null
+          state_id: number | null
+          street_number: string | null
+          title: string | null
+          transaction_type:
+            | Database["public"]["Enums"]["transaction_enum"]
+            | null
+          zone: string | null
+        }
+        Relationships: []
+      }
+      listing_search_all_ad_types: {
         Row: {
           ad_type: Database["public"]["Enums"]["ad_type_enum"] | null
           agency_id: string | null
@@ -2391,6 +2656,64 @@ export type Database = {
           },
         ]
       }
+      listing_view_list: {
+        Row: {
+          ad_type: Database["public"]["Enums"]["ad_type_enum"] | null
+          agency_id: string | null
+          bathroom_count: number | null
+          bedroom_count: number | null
+          built_area: number | null
+          city_id: number | null
+          condominium_location_id: string | null
+          created_at: string | null
+          createdBy: string | null
+          display_address: string | null
+          garage_count: number | null
+          iptu_amount: number | null
+          key_location: Database["public"]["Enums"]["key_location_enum"] | null
+          key_location_other: string | null
+          land_area: number | null
+          latitude: number | null
+          list_price_amount: number | null
+          listing_id: string | null
+          listing_location_id: string | null
+          longitude: number | null
+          neighborhood: string | null
+          occupation_status:
+            | Database["public"]["Enums"]["occupation_status_enum"]
+            | null
+          primary_media_url: string | null
+          private_area: number | null
+          property_administration_fee_amount: number | null
+          property_type:
+            | Database["public"]["Enums"]["property_type_enum"]
+            | null
+          public_id: string | null
+          rental_price_amount: number | null
+          state_id: number | null
+          title: string | null
+          total_area: number | null
+          tower: string | null
+          transaction_status:
+            | Database["public"]["Enums"]["transaction_status_enum"]
+            | null
+          transaction_type:
+            | Database["public"]["Enums"]["transaction_enum"]
+            | null
+          unity: string | null
+          updated_at: string | null
+          zone: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_createdby_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       _postgis_deprecate: {
@@ -2520,6 +2843,7 @@ export type Database = {
             }
             Returns: string
           }
+      daily_maintenance_vacuum_analyze: { Args: never; Returns: undefined }
       debug__get_refresh_listing_search_definition: {
         Args: never
         Returns: string

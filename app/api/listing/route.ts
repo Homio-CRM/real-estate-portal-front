@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { translatePropertyTypeToDB, getAllPropertyTypes } from "../../../lib/propertyTypes";
+import { translatePropertyTypeToDB } from "../../../lib/propertyTypes";
 import { Database } from "../../../types/database";
 
 type ListingSearchRow = Database["public"]["Views"]["listing_search"]["Row"];
@@ -55,9 +55,34 @@ export async function GET(request: Request) {
 
         const tipoArray = tipo.includes(",") ? tipo.split(",").map(t => t.trim()) : [tipo];
 
-        const allTypes = getAllPropertyTypes();
+        const allTypesRaw = [
+          { dbValue: "residential_apartment", displayValue: "Apartamento" },
+          { dbValue: "residential_home", displayValue: "Casa" },
+          { dbValue: "residential_condo", displayValue: "Condomínio" },
+          { dbValue: "residential_village_house", displayValue: "Casa Geminada" },
+          { dbValue: "residential_farm_ranch", displayValue: "Casa" },
+          { dbValue: "residential_penthouse", displayValue: "Cobertura" },
+          { dbValue: "residential_agricultural", displayValue: "Terreno" },
+          { dbValue: "residential_flat", displayValue: "Apartamento" },
+          { dbValue: "residential_kitnet", displayValue: "Kitnet" },
+          { dbValue: "residential_studio", displayValue: "Kitnet" },
+          { dbValue: "residential_land_lot", displayValue: "Terreno" },
+          { dbValue: "residential_sobrado", displayValue: "Casa" },
+          { dbValue: "commercial_consultorio", displayValue: "Escritório" },
+          { dbValue: "commercial_edificio_residencial", displayValue: "Apartamento" },
+          { dbValue: "commercial_industrial", displayValue: "Galpão" },
+          { dbValue: "commercial_garage", displayValue: "Garagem" },
+          { dbValue: "commercial_hotel", displayValue: "Hotel" },
+          { dbValue: "commercial_building", displayValue: "Edifício Comercial" },
+          { dbValue: "commercial_corporate_floor", displayValue: "Andar Corporativo" },
+          { dbValue: "commercial_land_lot", displayValue: "Terreno Comercial" },
+          { dbValue: "commercial_business", displayValue: "Comércio" },
+          { dbValue: "commercial_studio", displayValue: "Kitnet" },
+          { dbValue: "commercial_office", displayValue: "Escritório" },
+          { dbValue: "commercial_edificio_comercial", displayValue: "Edifício Comercial" },
+        ];
         const displayToDbMap = new Map<string, Set<string>>();
-        allTypes.forEach(({ dbValue, displayValue }) => {
+        allTypesRaw.forEach(({ dbValue, displayValue }) => {
           if (!displayToDbMap.has(displayValue)) {
             displayToDbMap.set(displayValue, new Set());
           }
@@ -68,14 +93,14 @@ export async function GET(request: Request) {
           if (tipoItem.startsWith('residential_') || tipoItem.startsWith('commercial_')) {
             dbPropertyTypes.push(tipoItem);
           } else {
-            const translated = translatePropertyTypeToDB(tipoItem);
-            if (translated && translated !== tipoItem) {
-              dbPropertyTypes.push(translated);
-            }
-
             const dbTypesForDisplay = displayToDbMap.get(tipoItem);
             if (dbTypesForDisplay) {
               dbTypesForDisplay.forEach(dbType => dbPropertyTypes.push(dbType));
+            } else {
+              const translated = translatePropertyTypeToDB(tipoItem);
+              if (translated && translated !== tipoItem) {
+                dbPropertyTypes.push(translated);
+              }
             }
           }
         });
@@ -99,7 +124,7 @@ export async function GET(request: Request) {
     const fetchItemsByAdType = async (adTypes: string[], fetchLimit: number, excludeIds: Set<string>, includeCityFilter: boolean = true): Promise<ListingSearchRow[]> => {
       const query = buildBaseQuery(adTypes, includeCityFilter)
         .order('list_price_amount', { ascending: false, nullsFirst: false })
-        .limit(Math.min(fetchLimit + 5, 50));
+        .limit(Math.min(fetchLimit + 5, 1000));
       const { data } = await query;
 
       if (!data || data.length === 0) {

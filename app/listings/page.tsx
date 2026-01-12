@@ -18,7 +18,7 @@ import { PropertyCard as PropertyCardType, CondominiumCard as CondominiumCardTyp
 import { parseFiltersFromSearchParams, validateFilters, getTransactionType } from "../../lib/filters";
 import { buildListingsUrl } from "../../lib/navigation";
 import { getStateAbbreviationById } from "../../lib/brazilianStates";
-import { translatePropertyType } from "../../lib/propertyTypes";
+import { translatePropertyType, getDBTypesForDisplayTypes } from "../../lib/propertyTypes";
 
 const cityNameCache = new Map<number, { name: string; stateId: number }>();
 
@@ -103,11 +103,14 @@ function ListingsContent() {
       setCurrentLocation("");
     }
 
-    const tiposArray = Array.isArray(filtersToUse.tipo)
-      ? filtersToUse.tipo.filter((tipo) => tipo && tipo !== "")
-      : filtersToUse.tipo
-        ? [filtersToUse.tipo]
-        : [];
+    let tiposArray: string[] = [];
+    if (filtersToUse.tipo) {
+      if (Array.isArray(filtersToUse.tipo)) {
+        tiposArray = filtersToUse.tipo.filter((tipo) => tipo && tipo !== "");
+      } else if (filtersToUse.tipo !== "") {
+        tiposArray = [filtersToUse.tipo];
+      }
+    }
 
     const isOnlyCondoSelection =
       tiposArray.length === 1 &&
@@ -225,10 +228,6 @@ function ListingsContent() {
     }
   }, []);
 
-  const tipoString = useMemo(() => {
-    return Array.isArray(initialFilters.tipo) ? initialFilters.tipo.join(",") : initialFilters.tipo;
-  }, [initialFilters.tipo]);
-
   useEffect(() => {
     const newApiFilters = {
       tipo: initialFilters.tipo,
@@ -254,7 +253,6 @@ function ListingsContent() {
     initialFilters.localizacao,
     initialFilters.operacao,
     initialFilters.tipo,
-    tipoString,
     initialFilters.bairro,
     performSearch,
   ]);
@@ -264,8 +262,8 @@ function ListingsContent() {
 
     if (key === "tipo") {
       if (Array.isArray(value)) {
-        processedValue = value;
-      } else if (value) {
+        processedValue = value.filter(t => t && t !== "");
+      } else if (value && value !== "") {
         processedValue = [value];
       } else {
         processedValue = [];
@@ -281,47 +279,25 @@ function ListingsContent() {
       urlFilters.localizacao = newApiFilters.localizacao;
     }
 
-    if (key === "operacao") {
-      urlFilters.operacao = (processedValue as string) || "todos";
-    } else if (newApiFilters.operacao !== undefined && newApiFilters.operacao !== null) {
-      urlFilters.operacao = newApiFilters.operacao || "todos";
-    } else if (initialFilters.operacao) {
-      urlFilters.operacao = initialFilters.operacao;
+    if (newApiFilters.operacao) {
+      urlFilters.operacao = newApiFilters.operacao === "" ? "todos" : newApiFilters.operacao;
     }
 
-    Object.entries(newApiFilters).forEach(([filterKey, filterValue]) => {
-      if (filterKey === "localizacao" || filterKey === "operacao") {
-        return;
-      }
+    if (newApiFilters.bairro && newApiFilters.bairro !== "") {
+      urlFilters.bairro = newApiFilters.bairro;
+    }
 
-      if (Array.isArray(filterValue)) {
-        if (filterValue.length > 0) {
-          urlFilters[filterKey] = filterValue;
-        }
-      } else if (filterValue) {
-        urlFilters[filterKey] = filterValue;
+    if (key === "tipo") {
+      if (Array.isArray(processedValue) && processedValue.length > 0) {
+        urlFilters.tipo = processedValue;
       }
-    });
-
-    Object.entries(initialFilters).forEach(([filterKey, filterValue]) => {
-      if (urlFilters[filterKey] !== undefined) {
-        return;
+    } else if (newApiFilters.tipo) {
+      const tiposArray = Array.isArray(newApiFilters.tipo) ? newApiFilters.tipo : [newApiFilters.tipo];
+      const filteredTipos = tiposArray.filter(t => t && t !== "");
+      if (filteredTipos.length > 0) {
+        urlFilters.tipo = filteredTipos;
       }
-      if (filterKey === "localizacao" || filterKey === "operacao") {
-        return;
-      }
-      if (!filterValue) {
-        return;
-      }
-      if (filterKey === "tipo") {
-        const tiposArray = Array.isArray(filterValue) ? filterValue : [filterValue];
-        if (tiposArray.length > 0 && tiposArray[0] !== "") {
-          urlFilters[filterKey] = tiposArray;
-        }
-      } else {
-        urlFilters[filterKey] = filterValue as string;
-      }
-    });
+    }
 
     const newUrl = buildListingsUrl(urlFilters);
     router.push(newUrl);
@@ -336,7 +312,7 @@ function ListingsContent() {
       tipo: "",
       operacao: "",
       bairro: "",
-      localizacao: "",
+      localizacao: initialFilters.localizacao || "",
     };
 
     setApiFilters(clearedApiFilters);
@@ -355,19 +331,9 @@ function ListingsContent() {
 
     const urlFilters: Record<string, string> = {};
 
-    Object.entries(initialFilters).forEach(([key, value]) => {
-      if (!value || value === "" || key === "tipo" || key === "operacao" || key === "bairro") {
-        return;
-      }
-
-      if (Array.isArray(value)) {
-        if (value.length > 0) {
-          urlFilters[key] = value.join(",");
-        }
-      } else {
-        urlFilters[key] = value;
-      }
-    });
+    if (initialFilters.localizacao) {
+      urlFilters.localizacao = initialFilters.localizacao;
+    }
 
     const newUrl = buildListingsUrl(urlFilters);
     router.push(newUrl);
@@ -500,11 +466,18 @@ function ListingsContent() {
     clientFilters.caracteristicas,
   ]);
 
-  const displayTipo = apiFilters.tipo
-    ? (Array.isArray(apiFilters.tipo)
-      ? apiFilters.tipo.map(t => translatePropertyType(t))
-      : translatePropertyType(apiFilters.tipo))
-    : "";
+  const displayTipo = useMemo(() => {
+    if (!apiFilters.tipo) {
+      return "";
+    }
+    if (Array.isArray(apiFilters.tipo)) {
+      if (apiFilters.tipo.length === 0) {
+        return "";
+      }
+      return apiFilters.tipo.map(t => translatePropertyType(t));
+    }
+    return translatePropertyType(apiFilters.tipo);
+  }, [apiFilters.tipo]);
 
   const combinedFilters = {
     ...apiFilters,
@@ -550,7 +523,7 @@ function ListingsContent() {
   useEffect(() => {
     setCurrentPage(1);
   }, [
-    tipoString,
+    initialFilters.tipo,
     initialFilters.operacao,
     initialFilters.localizacao,
     initialFilters.bairro
