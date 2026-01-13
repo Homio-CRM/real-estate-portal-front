@@ -208,10 +208,10 @@ export async function GET(request: Request) {
         }
 
         const listPriceAmount = item.list_price_amount ? item.list_price_amount / 100 : null;
-        const rentalPriceAmount = item.rental_price_amount ? item.rental_price_amount / 100 : null;
-        const iptuAmount = item.iptu_amount ? item.iptu_amount / 100 : null;
-        const propertyAdminFeeAmount = item.property_administration_fee_amount ? item.property_administration_fee_amount / 100 : null;
-        const spuAmount = item.spu ? Number(item.spu) / 100 : null;
+        const rentalPriceAmount = null;
+        const iptuAmount = null;
+        const propertyAdminFeeAmount = null;
+        const spuAmount = null;
 
         return {
           listing_id: item.listing_id,
@@ -220,32 +220,32 @@ export async function GET(request: Request) {
           agency_id: item.agency_id,
           list_price_amount: listPriceAmount,
           rental_price_amount: rentalPriceAmount,
-          rental_period: item.rental_period || null,
+          rental_period: null,
           public_id: item.listing_id,
           description: item.description || null,
-          area: item.total_area || item.built_area || null,
+          area: null,
           bathroom_count: item.bathroom_count || null,
           bedroom_count: item.bedroom_count || null,
-          garage_count: item.garage_count || null,
+          garage_count: null,
           suite_count: null,
           year_built: null,
-          built_area: item.built_area || null,
-          land_area: item.land_area || null,
-          private_area: item.private_area || null,
+          built_area: null,
+          land_area: null,
+          private_area: null,
           display_address: item.display_address || 'Endereço não informado',
           neighborhood: item.neighborhood || 'Bairro não informado',
           address: item.display_address || 'Endereço não informado',
           city_id: item.city_id,
           state_id: item.state_id,
           property_type: item.property_type,
-          condominium_id: item.condominium_location_id || item.listing_location_id || null,
+          condominium_id: null,
           features: features,
           property_administration_fee_amount: propertyAdminFeeAmount,
-          property_administration_fee_period: item.property_administration_fee_period || null,
+          property_administration_fee_period: null,
           iptu_amount: iptuAmount,
-          iptu_period: item.iptu_period || null,
-          spu: spuAmount ? spuAmount.toString() : null,
-          spu_period: item.spu_period || null,
+          iptu_period: null,
+          spu: null,
+          spu_period: null,
           primary_image_url: item.primary_media_url || "/placeholder-property.jpg",
           image: item.primary_media_url || "/placeholder-property.jpg",
           media_count: mediaCount,

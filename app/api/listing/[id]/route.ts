@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../../../../types/database";
 
-type ListingSearchRow = Database["public"]["Views"]["listing_search"]["Row"];
 type MediaItemRow = Database["public"]["Tables"]["media_item"]["Row"];
 
 const PLACEHOLDER_IMAGE = "/placeholder-property.jpg";
@@ -23,11 +22,8 @@ export async function GET(
         title,
         transaction_type,
         agency_id,
-        transaction_status,
         property_type,
         list_price_amount,
-        rental_price_amount,
-        rental_period,
         primary_media_url,
         display_address,
         neighborhood,
@@ -41,7 +37,7 @@ export async function GET(
       return NextResponse.json({ error: "Listing not found" }, { status: 404 });
     }
 
-    const listingTyped = listing as ListingSearchRow;
+    const listingTyped = listing;
 
     const hasValidNeighborhood = listingTyped.neighborhood && 
       listingTyped.neighborhood.trim() !== "" && 
@@ -97,7 +93,7 @@ export async function GET(
     }
 
     const listPriceAmount = listingTyped.list_price_amount ? listingTyped.list_price_amount / 100 : null;
-    const rentalPriceAmount = listingTyped.rental_price_amount ? listingTyped.rental_price_amount / 100 : null;
+    const rentalPriceAmount = null;
 
     const property = {
       ...listingTyped,
