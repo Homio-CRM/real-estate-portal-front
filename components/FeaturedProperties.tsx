@@ -153,8 +153,14 @@ export default function FeaturedProperties({
           return priceB - priceA;
         });
 
+        const sortedRentResults = rentResults.sort((a, b) => {
+          const priceA = a.rental_price_amount || 0;
+          const priceB = b.rental_price_amount || 0;
+          return priceB - priceA;
+        });
+
         const limitedSale = sortedSaleResults.slice(0, 6);
-        const limitedRent = rentResults.slice(0, 6);
+        const limitedRent = sortedRentResults.slice(0, 6);
 
         if (!isMounted) {
           return;
@@ -462,6 +468,10 @@ export default function FeaturedProperties({
                               {property.rental_period && (
                                 <> /{translateRentalPeriod(property.rental_period)}</>
                               )}
+                            </p>
+                          ) : activeTab === "alugar" && !property.rental_price_amount ? (
+                            <p className="text-lg font-bold text-primary">
+                              Preço sob consulta
                             </p>
                           ) : (
                             <p className="text-lg font-bold text-primary">

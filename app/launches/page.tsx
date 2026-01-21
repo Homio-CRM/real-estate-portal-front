@@ -261,8 +261,9 @@ function LaunchesContent() {
     }
 
     if (apiFilters.bairro && apiFilters.bairro !== "") {
-      const condoNeighborhood = condo.neighborhood || condo.display_address || "";
-      if (!condoNeighborhood || condoNeighborhood.toLowerCase() !== apiFilters.bairro.toLowerCase()) {
+      const condoNeighborhood = (condo.neighborhood || condo.display_address || "").toLowerCase();
+      const filterBairro = apiFilters.bairro.toLowerCase();
+      if (!condoNeighborhood || !condoNeighborhood.includes(filterBairro)) {
         return false;
       }
     }

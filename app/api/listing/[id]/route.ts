@@ -24,6 +24,7 @@ export async function GET(
         agency_id,
         property_type,
         list_price_amount,
+        rental_price_amount,
         primary_media_url,
         display_address,
         neighborhood,
@@ -93,7 +94,9 @@ export async function GET(
     }
 
     const listPriceAmount = listingTyped.list_price_amount ? listingTyped.list_price_amount / 100 : null;
-    const rentalPriceAmount = null;
+    const rentalPriceAmount = listingTyped.rental_price_amount ? listingTyped.rental_price_amount / 100 : null;
+    const isRent = listingTyped.transaction_type === "rent";
+    const mainNumericPrice = isRent ? rentalPriceAmount : listPriceAmount;
 
     const property = {
       ...listingTyped,
@@ -106,9 +109,9 @@ export async function GET(
       })),
       media_count: mediaCount,
       primary_image_url: listingTyped.primary_media_url,
-      forRent: listingTyped.transaction_type === "rent",
-      price: listPriceAmount
-        ? `R$ ${listPriceAmount.toLocaleString("pt-BR")}`
+      forRent: isRent,
+      price: mainNumericPrice
+        ? `R$ ${mainNumericPrice.toLocaleString("pt-BR")}`
         : "Preço sob consulta",
       image: listingTyped.primary_media_url || PLACEHOLDER_IMAGE,
       list_price_amount: listPriceAmount,

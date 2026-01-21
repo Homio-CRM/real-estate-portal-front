@@ -122,8 +122,9 @@ export async function GET(request: Request) {
     };
 
     const fetchItemsByAdType = async (adTypes: string[], fetchLimit: number, excludeIds: Set<string>, includeCityFilter: boolean = true): Promise<ListingSearchRow[]> => {
+      const isRent = transactionType === "rent";
       const query = buildBaseQuery(adTypes, includeCityFilter)
-        .order('list_price_amount', { ascending: false, nullsFirst: false })
+        .order(isRent ? "rental_price_amount" : "list_price_amount", { ascending: false, nullsFirst: false })
         .limit(Math.min(fetchLimit + 5, 1000));
       const { data } = await query;
 
@@ -208,7 +209,9 @@ export async function GET(request: Request) {
         }
 
         const listPriceAmount = item.list_price_amount ? item.list_price_amount / 100 : null;
-        const rentalPriceAmount = null;
+        const rentalPriceAmount = item.rental_price_amount ? item.rental_price_amount / 100 : null;
+        const isRent = item.transaction_type === "rent";
+        const mainNumericPrice = isRent ? rentalPriceAmount : listPriceAmount;
         const iptuAmount = null;
         const propertyAdminFeeAmount = null;
         const spuAmount = null;
@@ -256,10 +259,10 @@ export async function GET(request: Request) {
             is_primary: m.is_primary,
             order: m.order
           })),
-          price: listPriceAmount ? `R$ ${listPriceAmount.toLocaleString('pt-BR')}` : 'Preço sob consulta',
-          price_formatted: listPriceAmount ? `R$ ${listPriceAmount.toLocaleString('pt-BR')}` : 'Preço sob consulta',
-          for_rent: item.transaction_type === 'rent',
-          forRent: item.transaction_type === 'rent'
+          price: mainNumericPrice ? `R$ ${mainNumericPrice.toLocaleString("pt-BR")}` : "Preço sob consulta",
+          price_formatted: mainNumericPrice ? `R$ ${mainNumericPrice.toLocaleString("pt-BR")}` : "Preço sob consulta",
+          for_rent: isRent,
+          forRent: isRent
         };
       } catch {
         return null;

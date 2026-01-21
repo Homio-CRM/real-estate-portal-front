@@ -91,7 +91,10 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
   const [computedListingUrl, setComputedListingUrl] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
   const dealType: "rent" | "sale" = props.forRent ? "rent" : "sale";
-  const propertyPriceAmount = props.list_price_amount ?? props.rental_price_amount ?? null;
+  const isRent = transaction_type === "rent" || props.forRent;
+  const propertyPriceAmount = isRent
+    ? (rental_price_amount ?? list_price_amount ?? null)
+    : (list_price_amount ?? rental_price_amount ?? null);
   const propertyPublicId = props.public_id ?? props.listing_id ?? "";
 
   const displayedImage = images[currentImageIdx] ?? "/placeholder-property.jpg";
@@ -110,7 +113,7 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
     }
   };
 
-  const priceFormatted = transaction_type === "rent" && rental_price_amount
+  const priceFormatted = isRent && rental_price_amount
     ? `${formatCurrency(rental_price_amount)}${rental_period ? ` /${translateRentalPeriod(rental_period)}` : ""}`
     : formatCurrency(list_price_amount ?? price);
 

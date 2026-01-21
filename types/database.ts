@@ -2461,6 +2461,7 @@ export type Database = {
             | Database["public"]["Enums"]["property_type_enum"]
             | null
           public_id: string | null
+          rental_price_amount: number | null
           state_id: number | null
           street_number: string | null
           title: string | null
@@ -2542,13 +2543,6 @@ export type Database = {
           },
           {
             foreignKeyName: "listing_condominium_id_fkey"
-            columns: ["listing_location_id"]
-            isOneToOne: false
-            referencedRelation: "condominium"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "listing_condominium_id_fkey"
             columns: ["condominium_location_id"]
             isOneToOne: false
             referencedRelation: "condominium"
@@ -2558,8 +2552,8 @@ export type Database = {
             foreignKeyName: "listing_condominium_id_fkey"
             columns: ["listing_location_id"]
             isOneToOne: false
-            referencedRelation: "condominium_search"
-            referencedColumns: ["condominium_id"]
+            referencedRelation: "condominium"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "listing_condominium_id_fkey"
@@ -2571,13 +2565,20 @@ export type Database = {
           {
             foreignKeyName: "listing_condominium_id_fkey"
             columns: ["listing_location_id"]
+            isOneToOne: false
+            referencedRelation: "condominium_search"
+            referencedColumns: ["condominium_id"]
+          },
+          {
+            foreignKeyName: "listing_condominium_id_fkey"
+            columns: ["condominium_location_id"]
             isOneToOne: false
             referencedRelation: "launch_search"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "listing_condominium_id_fkey"
-            columns: ["condominium_location_id"]
+            columns: ["listing_location_id"]
             isOneToOne: false
             referencedRelation: "launch_search"
             referencedColumns: ["id"]
