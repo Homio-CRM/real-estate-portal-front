@@ -6,7 +6,7 @@ import LocationRedirectProvider from "../components/LocationRedirectProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Portal Imobiliário",
+  title: "Vitória Imóveis	",
   description: "Encontre o imóvel dos seus sonhos",
 };
 

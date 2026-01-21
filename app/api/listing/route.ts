@@ -47,7 +47,7 @@ export async function GET(request: Request) {
       }
 
       if (bairro) {
-        baseQuery = baseQuery.eq('neighborhood', bairro);
+        baseQuery = baseQuery.ilike('neighborhood', bairro);
       }
 
       if (tipo) {
