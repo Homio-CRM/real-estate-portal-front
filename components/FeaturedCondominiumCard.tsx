@@ -13,6 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import { CondominiumCard as CondominiumCardType } from "../types/listings";
 import { useEffect, useState, type MouseEvent } from "react";
+import Image from "next/image";
 
 interface FeaturedCondominiumCardProps extends CondominiumCardType {
   className?: string;
@@ -40,6 +41,7 @@ export default function FeaturedCondominiumCard(props: FeaturedCondominiumCardPr
       ? [image]
       : [];
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set([0]));
 
   useEffect(() => {
     if (images.length === 0) {
@@ -51,7 +53,20 @@ export default function FeaturedCondominiumCard(props: FeaturedCondominiumCardPr
     }
   }, [images.length, currentImageIdx]);
 
+  useEffect(() => {
+    images.forEach((imgUrl, idx) => {
+      if (!loadedImages.has(idx) && imgUrl) {
+        const img = new window.Image();
+        img.src = imgUrl;
+        img.onload = () => {
+          setLoadedImages((prev) => new Set([...prev, idx]));
+        };
+      }
+    });
+  }, [images, loadedImages]);
+
   const displayedImage = images[currentImageIdx] ?? "/placeholder-property.jpg";
+  const isCurrentImageLoaded = loadedImages.has(currentImageIdx);
 
   const handleCardClick = () => {
     if (!id) {
@@ -71,14 +86,30 @@ export default function FeaturedCondominiumCard(props: FeaturedCondominiumCardPr
   const handlePreviousImage = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     if (images.length > 1) {
-      setCurrentImageIdx((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+      const newIdx = currentImageIdx === 0 ? images.length - 1 : currentImageIdx - 1;
+      setCurrentImageIdx(newIdx);
+      if (!loadedImages.has(newIdx)) {
+        const img = new window.Image();
+        img.src = images[newIdx];
+        img.onload = () => {
+          setLoadedImages((prev) => new Set([...prev, newIdx]));
+        };
+      }
     }
   };
 
   const handleNextImage = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     if (images.length > 1) {
-      setCurrentImageIdx((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+      const newIdx = currentImageIdx === images.length - 1 ? 0 : currentImageIdx + 1;
+      setCurrentImageIdx(newIdx);
+      if (!loadedImages.has(newIdx)) {
+        const img = new window.Image();
+        img.src = images[newIdx];
+        img.onload = () => {
+          setLoadedImages((prev) => new Set([...prev, newIdx]));
+        };
+      }
     }
   };
 
@@ -103,12 +134,27 @@ export default function FeaturedCondominiumCard(props: FeaturedCondominiumCardPr
       <div className="relative">
         <div className="w-full h-64 relative overflow-hidden">
           {displayedImage && displayedImage !== "/placeholder-property.jpg" ? (
-            <img
-              src={displayedImage}
-              alt={name}
-              loading="lazy"
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
+            <>
+              <Image
+                src={displayedImage}
+                alt={name}
+                fill
+                className={`object-cover group-hover:scale-105 transition-all duration-300 ${
+                  isCurrentImageLoaded ? "opacity-100" : "opacity-0"
+                }`}
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                loading="lazy"
+                quality={85}
+                onLoad={() => {
+                  setLoadedImages((prev) => new Set([...prev, currentImageIdx]));
+                }}
+              />
+              {!isCurrentImageLoaded && (
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse flex items-center justify-center">
+                  <div className="w-12 h-12 border-4 border-gray-300 border-t-gray-400 rounded-full animate-spin" />
+                </div>
+              )}
+            </>
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
               <Camera size={40} className="text-gray-300" />

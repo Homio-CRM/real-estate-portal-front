@@ -10,6 +10,7 @@ import { formatCurrency } from "../lib/formatCurrency";
 import ContactForm from "./ContactForm";
 import { getStateAbbreviationById } from "../lib/brazilianStates";
 import { translateRentalPeriod } from "../lib/rentalPeriod";
+import Image from "next/image";
 
 export default function HorizontalPropertyCard(props: PropertyCardType) {
   const router = useRouter();
@@ -87,6 +88,7 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
     ? media.map((m) => m.url).filter((url): url is string => url !== undefined && url !== null)
     : image ? [image] : [];
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
   const [showContactModal, setShowContactModal] = useState(false);
   const [computedListingUrl, setComputedListingUrl] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
@@ -98,18 +100,47 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
   const propertyPublicId = props.public_id ?? props.listing_id ?? "";
 
   const displayedImage = images[currentImageIdx] ?? "/placeholder-property.jpg";
+  const isCurrentImageLoaded = loadedImages.has(currentImageIdx);
+
+  useEffect(() => {
+    images.forEach((imgUrl, idx) => {
+      if (!loadedImages.has(idx) && imgUrl) {
+        const img = new window.Image();
+        img.src = imgUrl;
+        img.onload = () => {
+          setLoadedImages((prev) => new Set([...prev, idx]));
+        };
+      }
+    });
+  }, [images, loadedImages]);
 
   const handlePreviousImage = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     if (images.length > 1) {
-      setCurrentImageIdx((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+      const newIdx = currentImageIdx === 0 ? images.length - 1 : currentImageIdx - 1;
+      setCurrentImageIdx(newIdx);
+      if (!loadedImages.has(newIdx)) {
+        const img = new window.Image();
+        img.src = images[newIdx];
+        img.onload = () => {
+          setLoadedImages((prev) => new Set([...prev, newIdx]));
+        };
+      }
     }
   };
 
   const handleNextImage = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     if (images.length > 1) {
-      setCurrentImageIdx((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+      const newIdx = currentImageIdx === images.length - 1 ? 0 : currentImageIdx + 1;
+      setCurrentImageIdx(newIdx);
+      if (!loadedImages.has(newIdx)) {
+        const img = new window.Image();
+        img.src = images[newIdx];
+        img.onload = () => {
+          setLoadedImages((prev) => new Set([...prev, newIdx]));
+        };
+      }
     }
   };
 
@@ -201,11 +232,28 @@ export default function HorizontalPropertyCard(props: PropertyCardType) {
         <div className="flex flex-col lg:flex-row lg:items-stretch">
           <div className="w-full lg:w-80 h-64 lg:h-72 relative overflow-hidden flex-shrink-0">
             {displayedImage && displayedImage !== "/placeholder-property.jpg" ? (
-              <img
-                src={displayedImage}
-                alt={title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
+              <>
+                <Image
+                  key={`${listing_id}-${currentImageIdx}`}
+                  src={displayedImage}
+                  alt={title}
+                  fill
+                  className={`object-cover group-hover:scale-105 transition-all duration-300 ${
+                    isCurrentImageLoaded ? "opacity-100" : "opacity-0"
+                  }`}
+                  sizes="(max-width: 1024px) 100vw, 320px"
+                  loading="lazy"
+                  quality={85}
+                  onLoadingComplete={() => {
+                    setLoadedImages((prev) => new Set([...prev, currentImageIdx]));
+                  }}
+                />
+                {!isCurrentImageLoaded && (
+                  <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
+                    <div className="w-12 h-12 border-4 border-gray-300 border-t-gray-400 rounded-full animate-spin" />
+                  </div>
+                )}
+              </>
             ) : (
               <div className="w-full h-full bg-gray-200 flex items-center justify-center">
                 <Camera size={32} className="text-gray-400" />

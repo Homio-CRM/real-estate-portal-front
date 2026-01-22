@@ -10,6 +10,7 @@ import ContactForm from "./ContactForm";
 import { getStateAbbreviationById } from "../lib/brazilianStates";
 import { cleanHtmlText } from "../lib/utils";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 
 export default function HorizontalCondominiumCard(props: CondominiumCardType) {
   const router = useRouter();
@@ -38,6 +39,7 @@ export default function HorizontalCondominiumCard(props: CondominiumCardType) {
 
   const [cityName, setCityName] = useState<string | null>(city_name ?? null);
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
   const [showContactModal, setShowContactModal] = useState(false);
   const [computedCondoUrl, setComputedCondoUrl] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
@@ -112,6 +114,19 @@ export default function HorizontalCondominiumCard(props: CondominiumCardType) {
       : [];
 
   const displayedImage = images[currentImageIdx] ?? "/placeholder-property.jpg";
+  const isCurrentImageLoaded = loadedImages.has(currentImageIdx);
+
+  useEffect(() => {
+    images.forEach((imgUrl, idx) => {
+      if (!loadedImages.has(idx) && imgUrl) {
+        const img = new window.Image();
+        img.src = imgUrl;
+        img.onload = () => {
+          setLoadedImages((prev) => new Set([...prev, idx]));
+        };
+      }
+    });
+  }, [images, loadedImages]);
 
   const formatAreaRange = () => {
     if (min_area && max_area) {
@@ -212,14 +227,30 @@ export default function HorizontalCondominiumCard(props: CondominiumCardType) {
   const handlePreviousImage = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     if (images.length > 1) {
-      setCurrentImageIdx((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+      const newIdx = currentImageIdx === 0 ? images.length - 1 : currentImageIdx - 1;
+      setCurrentImageIdx(newIdx);
+      if (!loadedImages.has(newIdx)) {
+        const img = new window.Image();
+        img.src = images[newIdx];
+        img.onload = () => {
+          setLoadedImages((prev) => new Set([...prev, newIdx]));
+        };
+      }
     }
   };
 
   const handleNextImage = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     if (images.length > 1) {
-      setCurrentImageIdx((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+      const newIdx = currentImageIdx === images.length - 1 ? 0 : currentImageIdx + 1;
+      setCurrentImageIdx(newIdx);
+      if (!loadedImages.has(newIdx)) {
+        const img = new window.Image();
+        img.src = images[newIdx];
+        img.onload = () => {
+          setLoadedImages((prev) => new Set([...prev, newIdx]));
+        };
+      }
     }
   };
 
@@ -268,11 +299,28 @@ export default function HorizontalCondominiumCard(props: CondominiumCardType) {
         <div className="flex flex-col lg:flex-row lg:items-stretch">
           <div className="w-full lg:w-80 h-60 lg:h-auto lg:min-h-full relative overflow-hidden flex-shrink-0">
           {displayedImage && displayedImage !== "/placeholder-property.jpg" ? (
-            <img
-              src={displayedImage}
-              alt={name}
-              className="block w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
+            <>
+              <Image
+                key={`${id}-${currentImageIdx}`}
+                src={displayedImage}
+                alt={name}
+                fill
+                className={`object-cover group-hover:scale-105 transition-all duration-300 ${
+                  isCurrentImageLoaded ? "opacity-100" : "opacity-0"
+                }`}
+                sizes="(max-width: 1024px) 100vw, 320px"
+                loading="lazy"
+                quality={85}
+                onLoadingComplete={() => {
+                  setLoadedImages((prev) => new Set([...prev, currentImageIdx]));
+                }}
+              />
+              {!isCurrentImageLoaded && (
+                <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
+                  <div className="w-12 h-12 border-4 border-gray-300 border-t-gray-400 rounded-full animate-spin" />
+                </div>
+              )}
+            </>
           ) : (
             <div className="w-full h-full bg-gray-200 flex items-center justify-center">
               <Camera size={32} className="text-gray-400" />
@@ -375,8 +423,8 @@ export default function HorizontalCondominiumCard(props: CondominiumCardType) {
             </div>
           </div>
         </div>
+        </div>
       </div>
-    </div>
       {contactModal}
     </>
   );

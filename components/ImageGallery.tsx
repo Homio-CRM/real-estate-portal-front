@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Button } from '@/components/ui/button'
+import { Button } from './ui/button'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface MediaItem {
@@ -20,12 +20,30 @@ interface ImageGalleryProps {
 
 export function ImageGallery({ mediaItems, onClose, initialIndex = 0 }: ImageGalleryProps) {
     const [currentIndex, setCurrentIndex] = useState(initialIndex)
+    const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set())
+    const [isCurrentLoading, setIsCurrentLoading] = useState(true)
 
     useEffect(() => {
         if (initialIndex >= 0 && initialIndex < mediaItems.length) {
             setCurrentIndex(initialIndex)
         }
     }, [initialIndex, mediaItems.length])
+
+    useEffect(() => {
+        setIsCurrentLoading(!loadedImages.has(currentIndex))
+    }, [currentIndex, loadedImages])
+
+    useEffect(() => {
+        mediaItems.forEach((item, idx) => {
+            if (!loadedImages.has(idx) && item.url) {
+                const img = new window.Image()
+                img.src = item.url
+                img.onload = () => {
+                    setLoadedImages((prev) => new Set([...prev, idx]))
+                }
+            }
+        })
+    }, [mediaItems, loadedImages])
 
     const goToPrevious = () => {
         setCurrentIndex((prevIndex) =>
@@ -88,7 +106,12 @@ export function ImageGallery({ mediaItems, onClose, initialIndex = 0 }: ImageGal
                 </Button>
 
                 <div className="relative w-full h-full flex items-center justify-center px-16 py-8">
-                    <div className="relative w-full h-full max-w-7xl max-h-full">
+                    {isCurrentLoading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                            <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin" />
+                        </div>
+                    )}
+                    <div className={`relative w-full h-full max-w-7xl max-h-full transition-opacity duration-300 ${isCurrentLoading ? 'opacity-0' : 'opacity-100'}`}>
                         <Image
                             src={currentImage.url}
                             alt={currentImage.caption || `Foto ${currentIndex + 1}`}
@@ -96,8 +119,34 @@ export function ImageGallery({ mediaItems, onClose, initialIndex = 0 }: ImageGal
                             className="object-contain"
                             priority
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 80vw"
+                            quality={85}
+                            onLoadingComplete={() => setLoadedImages((prev) => new Set([...prev, currentIndex]))}
                         />
                     </div>
+                    {currentIndex > 0 && (
+                        <div className="absolute opacity-0 pointer-events-none -z-10">
+                            <Image
+                                src={mediaItems[currentIndex - 1].url}
+                                alt=""
+                                width={1920}
+                                height={1080}
+                                priority={false}
+                                onLoadingComplete={() => setLoadedImages((prev) => new Set([...prev, currentIndex - 1]))}
+                            />
+                        </div>
+                    )}
+                    {currentIndex < mediaItems.length - 1 && (
+                        <div className="absolute opacity-0 pointer-events-none -z-10">
+                            <Image
+                                src={mediaItems[currentIndex + 1].url}
+                                alt=""
+                                width={1920}
+                                height={1080}
+                                priority={false}
+                                onLoadingComplete={() => setLoadedImages((prev) => new Set([...prev, currentIndex + 1]))}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-center">

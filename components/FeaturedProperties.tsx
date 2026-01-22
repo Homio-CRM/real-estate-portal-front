@@ -12,6 +12,7 @@ import { translateRentalPeriod } from "../lib/rentalPeriod";
 import { buildListingsUrl } from "../lib/navigation";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import Image from "next/image";
 
 interface FeaturedPropertiesProps {
   cityId?: number;
@@ -54,6 +55,7 @@ export default function FeaturedProperties({
 
   const [currentIdx, setCurrentIdx] = useState<Record<string, number>>({});
   const [cityNames, setCityNames] = useState<Record<number, string>>(initialCityNames ?? {});
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   const activeTabRef = useRef<"comprar" | "alugar">(initialActiveTab ?? "comprar");
   const cityNamesRef = useRef<Record<number, string>>(initialCityNames ?? {});
 
@@ -285,6 +287,28 @@ export default function FeaturedProperties({
     return [...first4, { url: bg, isMore: true, moreCount: more }];
   };
 
+  useEffect(() => {
+    const preloadImages = () => {
+      const allProperties = [...saleProperties, ...rentProperties];
+      allProperties.forEach((property) => {
+        const imgs = getPropertyImages(property);
+        imgs.forEach((imgUrl) => {
+          if (imgUrl && !loadedImages.has(imgUrl)) {
+            const img = new window.Image();
+            img.src = imgUrl;
+            img.onload = () => {
+              setLoadedImages((prev) => new Set([...prev, imgUrl]));
+            };
+          }
+        });
+      });
+    };
+
+    if (saleProperties.length > 0 || rentProperties.length > 0) {
+      preloadImages();
+    }
+  }, [saleProperties, rentProperties, loadedImages]);
+
   const prevSlide = (property: PropertyCard) => {
     const id = String(property.listing_id || property.title);
     buildSlides(property);
@@ -382,16 +406,40 @@ export default function FeaturedProperties({
                             className="relative flex-none min-w-full w-full h-full overflow-hidden"
                           >
                             {slide.url && slide.url.trim() !== "" ? (
-                              <img
-                                src={slide.url}
-                                alt={`${property.title} - Imagem ${slideIdx + 1}`}
-                                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                loading="lazy"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                                }}
-                              />
+                              <>
+                                <Image
+                                  src={slide.url}
+                                  alt={`${property.title} - Imagem ${slideIdx + 1}`}
+                                  fill
+                                  className={`object-cover group-hover:scale-105 transition-all duration-300 ${
+                                    loadedImages.has(slide.url) ? "opacity-100" : "opacity-0"
+                                  }`}
+                                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                  loading="lazy"
+                                  quality={85}
+                                  onLoad={() => {
+                                    setLoadedImages((prev) => new Set([...prev, slide.url]));
+                                  }}
+                                  onError={() => {
+                                    const placeholder = document.querySelector(`[data-slide-error="${id}-${slideIdx}"]`);
+                                    if (placeholder) {
+                                      placeholder.classList.remove('hidden');
+                                    }
+                                  }}
+                                />
+                                {!loadedImages.has(slide.url) && (
+                                  <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
+                                    <div className="w-12 h-12 border-4 border-gray-300 border-t-gray-400 rounded-full animate-spin" />
+                                  </div>
+                                )}
+                                <div 
+                                  data-slide-error={`${id}-${slideIdx}`}
+                                  className="hidden absolute inset-0 w-full h-full bg-gray-100 flex items-center justify-center text-gray-400"
+                                >
+                                  <Camera size={48} className="mb-2" />
+                                  <span className="text-sm">Sem imagem</span>
+                                </div>
+                              </>
                             ) : null}
                             <div className={`${slide.url && slide.url.trim() !== "" ? 'hidden' : ''} absolute inset-0 w-full h-full bg-gray-100 flex items-center justify-center text-gray-400`}>
                               <Camera size={48} className="mb-2" />

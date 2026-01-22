@@ -71,11 +71,10 @@ export default function FeaturedCondominiums({
           cityId,
           timestamp: Date.now(),
         });
-      } catch (err) {
+      } catch {
         if (!isMounted) {
           return;
         }
-        console.error("Error loading featured condominiums:", err);
         setError("Erro ao carregar condomínios em destaque");
       } finally {
         if (isMounted) {

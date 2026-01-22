@@ -548,7 +548,7 @@ function ListingsContent() {
 
               <div className="flex-1 w-full">
                 <Skeleton className="h-24 w-full mb-6 rounded-lg" />
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {Array.from({ length: 5 }).map((_, index) => (
                     <HorizontalPropertyCardSkeleton key={index} />
                   ))}
@@ -598,7 +598,7 @@ function ListingsContent() {
                       </div>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       {initialFilters.tipo === "Condomínio"
                         ? paginatedResults.map((condo) => (
                           <HorizontalCondominiumCard key={(condo as CondominiumCardType).id} {...(condo as CondominiumCardType)} />

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Camera, ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
 
 type DetailMediaItem = {
   id?: string | number;
@@ -31,6 +32,25 @@ export function DetailMediaCarousel({
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    const preloadImages = () => {
+      items.forEach((item, idx) => {
+        if (!loadedImages.has(idx) && item.url) {
+          const img = new window.Image();
+          img.src = item.url;
+          img.onload = () => {
+            setLoadedImages((prev) => new Set([...prev, idx]));
+          };
+        }
+      });
+    };
+
+    if (items.length > 0) {
+      preloadImages();
+    }
+  }, [items, loadedImages]);
 
   const handleBack = () => {
     if (onBack) {
@@ -129,19 +149,37 @@ export function DetailMediaCarousel({
         ref={scrollRef}
         className="flex h-full overflow-x-scroll snap-x snap-mandatory gap-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
-        {items.map((mediaItem, idx) => (
-          <div
-            key={mediaItem.id ?? `${mediaItem.url}-${idx}`}
-            className="relative cursor-pointer overflow-hidden group flex-shrink-0 h-full w-full snap-center md:max-w-[70%] lg:max-w-[50%]"
-            onClick={onImageClick}
-          >
-            <img
-              src={mediaItem.url}
-              alt={title ?? `Imagem ${idx + 1}`}
-              className="h-full w-full object-cover transition-transform group-hover:scale-105"
-            />
-          </div>
-        ))}
+        {items.map((mediaItem, idx) => {
+          const isLoaded = loadedImages.has(idx);
+          
+          return (
+            <div
+              key={mediaItem.id ?? `${mediaItem.url}-${idx}`}
+              className="relative cursor-pointer overflow-hidden group flex-shrink-0 h-full w-full snap-center md:max-w-[70%] lg:max-w-[50%]"
+              onClick={onImageClick}
+            >
+              <Image
+                src={mediaItem.url}
+                alt={title ?? `Imagem ${idx + 1}`}
+                fill
+                className={`object-cover transition-all duration-300 group-hover:scale-105 ${
+                  isLoaded ? "opacity-100" : "opacity-0"
+                }`}
+                loading="eager"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 50vw"
+                quality={85}
+                onLoad={() => {
+                  setLoadedImages((prev) => new Set([...prev, idx]));
+                }}
+              />
+              {!isLoaded && (
+                <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
+                  <div className="w-12 h-12 border-4 border-gray-300 border-t-gray-400 rounded-full animate-spin" />
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
